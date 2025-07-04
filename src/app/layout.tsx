@@ -1,17 +1,10 @@
-import type { Metadata } from "next";
-import { Inter } from "next/font/google";
-import "./globals.css";
-import Navigation from "@/components/layout/Navigation";
-import Footer from '@/components/layout/Footer'
-
-const inter = Inter({
-  subsets: ["latin"],
-});
+import './globals.css'
+import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: "Virtera Energy - Sustainable Energy Solutions",
-  description: "Partnerships with our neighbors. Leading sustainable energy solutions for a cleaner future.",
-};
+  title: 'Toption - Top Options Trading Platform',
+  description: 'Smart options screening with Yahoo Finance data, real-time market quotes, and trade journal.',
+}
 
 export default function RootLayout({
   children,
@@ -20,15 +13,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={`${inter.className} bg-[#F0F2F5] text-gray-800`}>
-        <div className="relative min-h-screen flex flex-col">
-          <Navigation />
-          <main className="flex-1 flex flex-col">
-            {children}
-          </main>
-          <Footer />
-        </div>
+      <body className="bg-slate-950 text-white min-h-screen">
+        {children}
       </body>
     </html>
-  );
-}
+  )
+} 

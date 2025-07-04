@@ -1,72 +1,34 @@
-# Virtera Energy Landing Page
+# 🚀 Toption - Top Options Trading Platform
 
-A modern, responsive landing page for Virtera Energy, a sustainable energy consulting firm. Built with Next.js 15, TypeScript, Tailwind CSS, and Framer Motion.
+## Quick Start
+1. Open this folder in Cursor
+2. Run `npm install`
+3. Run `npm run dev`
+4. Visit http://localhost:3000
+
+## Deploy to Vercel
+```bash
+npm run build
+npx vercel --prod
+```
 
 ## Features
+- Smart options screening with Yahoo Finance data
+- Real-time market quotes
+- Trade journal & watchlists
+- User authentication via Supabase
+- Free tier (5 scans/day) + Pro/Premium plans
+- Modern UI with Tailwind CSS
 
-### 🎨 Design & Animation
-- **Hero Slider**: Animated hero section with rock-like geometric animations inspired by GreenHarbor design
-- **Smooth Transitions**: Framer Motion animations throughout the site
-- **Responsive Design**: Mobile-first approach with Tailwind CSS
-- **Modern UI**: Clean, professional design with consistent branding
+## Tech Stack
+- Next.js 14 + TypeScript
+- Supabase (auth + database)
+- Yahoo Finance API (free)
+- Tailwind CSS + Lucide icons
+- Vercel deployment
 
-### 📱 Pages
-- **Home**: Hero slider with animated content transitions
-- **About**: Company information, team, and values
-- **Contact**: Interactive contact form with expandable information panel
-- **Sustainability**: Corporate commitments and health & safety information
-- **Portfolio**: Project showcase with filtering capabilities
-
-### 🔐 Authentication
-- **Supabase Integration**: Complete authentication system
-- **Protected Routes**: Middleware for route protection
-- **Auth Pages**: Sign in, sign up, and password reset functionality
-- **User Management**: Profile and sign out functionality
-
-### 🛠 Technical Stack
-- **Next.js 15**: App Router with TypeScript
-- **Tailwind CSS**: Utility-first styling
-- **Framer Motion**: Smooth animations and transitions
-- **Lucide React**: Modern icon library
-- **Supabase**: Authentication and database
-- **Responsive Images**: Next.js Image optimization
-
-## Getting Started
-
-### Prerequisites
-- Node.js 18+ 
-- npm or yarn
-
-### Installation
-
-1. Clone the repository:
-```bash
-git clone <repository-url>
-cd virteralanding
-```
-
-2. Install dependencies:
-```bash
-npm install
-```
-
-3. Set up environment variables:
-```bash
-cp .env.local.example .env.local
-```
-
-Edit `.env.local` with your Supabase credentials:
-```
-NEXT_PUBLIC_SUPABASE_URL=your-project-url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
-```
-
-4. Run the development server:
-```bash
-npm run dev
-```
-
-5. Open [http://localhost:3000](http://localhost:3000) in your browser.
+## Domain
+Ready for: toption.trade 🎯
 
 ## Project Structure
 
@@ -74,50 +36,36 @@ npm run dev
 src/
 ├── app/                    # Next.js App Router pages
 │   ├── page.tsx           # Home page
-│   ├── about/page.tsx     # About page
-│   ├── contact/page.tsx   # Contact page
-│   ├── sustainability/page.tsx # Sustainability page
-│   ├── portfolio/page.tsx # Portfolio page
-│   └── layout.tsx         # Root layout
+│   ├── auth/page.tsx      # Auth page
+│   ├── dashboard/page.tsx # Dashboard page
+│   ├── globals.css        # Global styles
+│   ├── layout.tsx         # Root layout
+│   └── api/               # API routes
+│       ├── quotes/route.ts
+│       ├── options/route.ts
+│       ├── screener/route.ts
+│       ├── watchlist/route.ts
+│       └── trades/route.ts
 ├── components/            # React components
-│   ├── layout/           # Layout components
-│   │   ├── Navigation.tsx
-│   │   └── Hero.tsx
-│   ├── features/         # Feature components
-│   └── shared/           # Shared components
+│   ├── auth/             # Auth components
+│   │   └── AuthForm.tsx
+│   └── dashboard/        # Dashboard components
+│       ├── EnhancedOverview.tsx
+│       └── OptionsScreener.tsx
 ├── lib/                  # Utility libraries
-│   └── supabase.ts       # Supabase client
-├── pages/                # Pages directory for auth
-│   ├── _app.tsx          # Auth app wrapper
-│   └── auth/             # Authentication pages
-│       ├── signin.tsx
-│       ├── signup.tsx
-│       └── reset-password.tsx
+│   ├── supabase.ts       # Supabase client
+│   └── yahooFinance.ts   # Yahoo Finance API
+├── types/                # TypeScript types
+│   └── database.ts       # Database types
 └── middleware.ts         # Route protection middleware
 ```
 
-## Key Features
+## Environment Variables
 
-### Hero Slider Animation
-The main hero section features a unique animation system inspired by the GreenHarbor design:
-- **Rock Animation**: Geometric shapes that rotate and scale continuously
-- **Content Transitions**: Smooth text and image transitions between slides
-- **Progress Indicators**: Visual progress bars and slide indicators
-- **Auto-play**: Automatic slide transitions with manual controls
-
-### Authentication System
-Complete authentication flow with Supabase:
-- **Server-side Auth**: Secure authentication with SSR support
-- **Protected Routes**: Middleware protection for dashboard routes
-- **Auth Pages**: Standalone authentication pages outside app directory
-- **User Management**: Profile display and sign out functionality
-
-### Responsive Design
-Mobile-first responsive design:
-- **Breakpoints**: Optimized for mobile, tablet, and desktop
-- **Navigation**: Collapsible mobile menu
-- **Images**: Responsive image optimization
-- **Typography**: Scalable text sizing
+| Variable | Description | Required |
+|----------|-------------|----------|
+| `NEXT_PUBLIC_SUPABASE_URL` | Supabase project URL | Yes |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anonymous key | Yes |
 
 ## Development
 
@@ -135,13 +83,6 @@ Mobile-first responsive design:
 - **Prettier**: Code formatting (recommended)
 - **Component Structure**: Functional components with hooks
 
-### Performance
-
-- **Image Optimization**: Next.js automatic image optimization
-- **Code Splitting**: Automatic route-based code splitting
-- **Bundle Analysis**: Built-in bundle analyzer
-- **SEO**: Meta tags and structured data
-
 ## Deployment
 
 ### Vercel (Recommended)
@@ -155,13 +96,6 @@ The application can be deployed to any platform that supports Next.js:
 - AWS Amplify
 - DigitalOcean App Platform
 - Self-hosted servers
-
-## Environment Variables
-
-| Variable | Description | Required |
-|----------|-------------|----------|
-| `NEXT_PUBLIC_SUPABASE_URL` | Supabase project URL | Yes |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anonymous key | Yes |
 
 ## Contributing
 
@@ -177,4 +111,4 @@ This project is licensed under the MIT License.
 
 ## Support
 
-For support and questions, please contact the development team or create an issue in the repository.
+For support and questions, please contact the development team or create an issue in the repository. 

@@ -34,6 +34,13 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
+# IDE
+.vscode/
+.idea/
+
+# OS
+Thumbs.db
+
 # Large media files
 # public/*.mp4
 # public/*.mov
