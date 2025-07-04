@@ -1,30 +1,33 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerClient } from '@/lib/supabase'
-import { cookies } from 'next/headers'
 
 export async function GET(request: NextRequest) {
   try {
-    const cookieStore = cookies()
-    const supabase = createServerClient(cookieStore)
-    
-    const { data: { user } } = await supabase.auth.getUser()
-    
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    // Mock watchlist data for demonstration
+    const mockWatchlist = [
+      {
+        id: '1',
+        user_id: 'user123',
+        symbol: 'AAPL',
+        notes: 'High IV, good for premium selling',
+        created_at: '2024-01-05T10:00:00Z'
+      },
+      {
+        id: '2',
+        user_id: 'user123',
+        symbol: 'TSLA',
+        notes: 'Volatile, good for spreads',
+        created_at: '2024-01-04T14:30:00Z'
+      },
+      {
+        id: '3',
+        user_id: 'user123',
+        symbol: 'NVDA',
+        notes: 'AI momentum play',
+        created_at: '2024-01-03T09:15:00Z'
+      }
+    ]
 
-    const { data: watchlist, error } = await supabase
-      .from('watchlists')
-      .select('*')
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: false })
-
-    if (error) {
-      console.error('Error fetching watchlist:', error)
-      return NextResponse.json({ error: 'Failed to fetch watchlist' }, { status: 500 })
-    }
-
-    return NextResponse.json({ watchlist: watchlist || [] })
+    return NextResponse.json({ watchlist: mockWatchlist })
   } catch (error) {
     console.error('Error in watchlist GET:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
@@ -33,35 +36,22 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const cookieStore = cookies()
-    const supabase = createServerClient(cookieStore)
-    
-    const { data: { user } } = await supabase.auth.getUser()
-    
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
     const { symbol } = await request.json()
     
     if (!symbol) {
       return NextResponse.json({ error: 'Symbol is required' }, { status: 400 })
     }
 
-    const { data, error } = await supabase
-      .from('watchlists')
-      .insert({
-        user_id: user.id,
-        symbol: symbol.toUpperCase()
-      })
-      .select()
-
-    if (error) {
-      console.error('Error adding to watchlist:', error)
-      return NextResponse.json({ error: 'Failed to add to watchlist' }, { status: 500 })
+    // Mock successful watchlist addition
+    const newWatchlistItem = {
+      id: Date.now().toString(),
+      user_id: 'user123',
+      symbol: symbol.toUpperCase(),
+      notes: '',
+      created_at: new Date().toISOString()
     }
 
-    return NextResponse.json({ success: true, watchlist: data })
+    return NextResponse.json({ success: true, watchlist: newWatchlistItem })
   } catch (error) {
     console.error('Error in watchlist POST:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
