@@ -415,7 +415,7 @@ export default OnboardingQuestionnaire
 
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { createBrowserClient } from '@/lib/supabase'
 import { 
   Users, 
@@ -441,7 +441,7 @@ interface AnalyticsData {
   }[]
 }
 
-const SimpleAnalytics: React.FC = () => {
+const SimpleAnalytics = () => {
   const [data, setData] = useState<AnalyticsData | null>(null)
   const [loading, setLoading] = useState(true)
   const supabase = createBrowserClient()
