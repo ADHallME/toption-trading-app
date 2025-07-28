@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { User } from '@supabase/supabase-js'
 import { createBrowserClient } from '@/lib/supabase'
 import OptionsScreener from './OptionsScreener'
+import { StrategiesModule, BacktestModule, ResearchModule, AnalyticsModule } from '@/components/trading'
 import { 
   TrendingUp, TrendingDown, BarChart3, Target, Brain, Shield, 
   Search, Settings, Bell, User as UserIcon, Maximize2, Minimize2, X, Plus,
@@ -663,20 +664,17 @@ const EnhancedOverview: React.FC<EnhancedOverviewProps> = ({ user }) => {
         {/* Screener Tab */}
         {activeTab === 'screener' && <OptionsScreener />}
         
-        {/* Placeholder for other tabs */}
-        {activeTab !== 'overview' && activeTab !== 'screener' && (
-          <div className="flex items-center justify-center h-96 bg-slate-900/50 backdrop-blur-sm border border-slate-700/50 rounded-xl">
-            <div className="text-center">
-              <div className="w-16 h-16 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                <BarChart3 className="w-8 h-8 text-white" />
-              </div>
-              <h3 className="text-xl font-semibold text-white mb-2">
-                {tabs.find(tab => tab.id === activeTab)?.label} Module
-              </h3>
-              <p className="text-gray-400">Advanced {activeTab} interface coming next...</p>
-            </div>
-          </div>
-        )}
+        {/* Strategies Tab */}
+        {activeTab === 'strategies' && <StrategiesModule />}
+        
+        {/* Backtest Tab */}
+        {activeTab === 'backtest' && <BacktestModule />}
+        
+        {/* Research Tab */}
+        {activeTab === 'research' && <ResearchModule />}
+        
+        {/* Analytics Tab */}
+        {activeTab === 'analytics' && <AnalyticsModule />}
       </div>
     </div>
   );
