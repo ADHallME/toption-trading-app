@@ -2,7 +2,7 @@
 
 'use client'
 
-import React, { useState } from 'react'
+import { useState } from 'react'
 import { createBrowserClient } from '@/lib/supabase'
 import { 
   ArrowRight, 
@@ -24,7 +24,7 @@ interface OnboardingData {
   experience: string
 }
 
-const OnboardingQuestionnaire: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
+const OnboardingQuestionnaire = ({ onComplete }: { onComplete: () => void }) => {
   const [currentStep, setCurrentStep] = useState(1)
   const [data, setData] = useState<OnboardingData>({
     strategies: [],
