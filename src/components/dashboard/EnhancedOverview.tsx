@@ -474,6 +474,82 @@ const EnhancedOverview: React.FC<EnhancedOverviewProps> = ({ user }) => {
         {/* Overview Tab */}
         {activeTab === 'overview' && (
           <div className="space-y-6">
+            {/* Time Savings Hero Section */}
+            <div className="bg-gradient-to-r from-emerald-500/10 to-teal-500/10 border border-emerald-500/20 rounded-xl p-6">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center space-x-3">
+                  <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-full flex items-center justify-center">
+                    <Clock className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-semibold text-white">AI Time Savings</h3>
+                    <p className="text-emerald-400 text-sm">vs Manual Screening</p>
+                  </div>
+                </div>
+                <div className="text-xs bg-emerald-500/20 text-emerald-400 px-3 py-1 rounded-full font-semibold">
+                  PREMIUM FEATURE
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="text-center">
+                  <div className="text-3xl font-bold text-emerald-400 mb-1">16.7 hours</div>
+                  <div className="text-gray-400 text-sm mb-2">Saved this week</div>
+                  <div className="text-xs text-emerald-300">Worth $418 of your time</div>
+                  <div className="text-xs text-gray-500 mt-1">@ $25/hour value</div>
+                </div>
+                
+                <div className="text-center">
+                  <div className="text-3xl font-bold text-blue-400 mb-1">127 hours</div>
+                  <div className="text-gray-400 text-sm mb-2">Saved this month</div>
+                  <div className="text-xs text-blue-300">Worth $3,175</div>
+                  <div className="text-xs text-gray-500 mt-1">ROI: 3,200% vs $99 cost</div>
+                </div>
+                
+                <div className="text-center">
+                  <div className="text-3xl font-bold text-purple-400 mb-1">892 hours</div>
+                  <div className="text-gray-400 text-sm mb-2">Total saved</div>
+                  <div className="text-xs text-purple-300">Worth $22,300</div>
+                  <div className="text-xs text-gray-500 mt-1">Since joining 3 months ago</div>
+                </div>
+              </div>
+              
+              {/* Breakdown */}
+              <div className="mt-6 pt-4 border-t border-emerald-500/20">
+                <h4 className="text-sm font-semibold text-white mb-3">How We Calculate Your Savings:</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <span className="text-gray-300">Manual screening time:</span>
+                      <span className="text-white font-mono">20 hrs/week</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-300">With Toption AI:</span>
+                      <span className="text-emerald-400 font-mono">3.3 hrs/week</span>
+                    </div>
+                    <div className="flex justify-between border-t border-slate-700 pt-2">
+                      <span className="text-emerald-400 font-semibold">Time saved:</span>
+                      <span className="text-emerald-400 font-mono font-bold">16.7 hrs/week</span>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <span className="text-gray-300">Opportunities found:</span>
+                      <span className="text-white font-mono">47 this week</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-300">Without AI:</span>
+                      <span className="text-red-400 font-mono">12 this week</span>
+                    </div>
+                    <div className="flex justify-between border-t border-slate-700 pt-2">
+                      <span className="text-blue-400 font-semibold">Extra opportunities:</span>
+                      <span className="text-blue-400 font-mono font-bold">+35 found</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
             {/* Top Row - Opportunities */}
             <div className="space-y-4">
               <OpportunityTable 
@@ -635,7 +711,97 @@ const EnhancedOverview: React.FC<EnhancedOverviewProps> = ({ user }) => {
               </div>
             </div>
 
-            {/* Alerts Row - Condensed */}
+            {/* Real-Time Alerts Section */}
+            <div className="bg-slate-900/50 backdrop-blur-sm border border-slate-700/50 rounded-xl p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold flex items-center space-x-2">
+                  <Bell className="w-5 h-5 text-red-400" />
+                  <span>Live Trading Alerts</span>
+                  <div className="text-xs bg-red-500/20 text-red-400 px-2 py-1 rounded">PREMIUM</div>
+                </h3>
+                <div className="flex items-center space-x-2">
+                  <div className="w-2 h-2 bg-red-400 rounded-full animate-pulse"></div>
+                  <span className="text-red-400 text-sm font-semibold">3 Active</span>
+                </div>
+              </div>
+              
+              <div className="space-y-3">
+                {/* High Priority Alert */}
+                <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center space-x-2">
+                      <AlertTriangle className="w-5 h-5 text-red-400" />
+                      <span className="text-red-400 font-semibold">HIGH PRIORITY: AAPL $185 Put</span>
+                      <span className="text-xs bg-red-500/20 text-red-400 px-2 py-1 rounded">2m ago</span>
+                    </div>
+                    <button className="text-red-400 hover:text-red-300 text-sm">Dismiss</button>
+                  </div>
+                  <p className="text-gray-300 text-sm mb-2">Premium spiked 40% in 10 minutes - Earnings announcement detected in 3 days</p>
+                  <div className="flex items-center space-x-4 text-xs">
+                    <span className="text-gray-400">IV: 68% (+12%)</span>
+                    <span className="text-gray-400">Volume: 15,240 (+340%)</span>
+                    <span className="text-emerald-400">Action: AVOID - IV Crush Risk</span>
+                  </div>
+                </div>
+                
+                {/* Medium Priority Alert */}
+                <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center space-x-2">
+                      <Clock className="w-5 h-5 text-yellow-400" />
+                      <span className="text-yellow-400 font-semibold">OPPORTUNITY: SPY $480 Call</span>
+                      <span className="text-xs bg-yellow-500/20 text-yellow-400 px-2 py-1 rounded">5m ago</span>
+                    </div>
+                    <button className="text-yellow-400 hover:text-yellow-300 text-sm">View</button>
+                  </div>
+                  <p className="text-gray-300 text-sm mb-2">Oversold condition with high premium - 78% historical success rate</p>
+                  <div className="flex items-center space-x-4 text-xs">
+                    <span className="text-gray-400">Premium: $2.85</span>
+                    <span className="text-gray-400">PoP: 78%</span>
+                    <span className="text-emerald-400">Action: BUY - Strong Setup</span>
+                  </div>
+                </div>
+                
+                {/* Info Alert */}
+                <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center space-x-2">
+                      <TrendingUp className="w-5 h-5 text-blue-400" />
+                      <span className="text-blue-400 font-semibold">TREND: NVDA Unusual Activity</span>
+                      <span className="text-xs bg-blue-500/20 text-blue-400 px-2 py-1 rounded">12m ago</span>
+                    </div>
+                    <button className="text-blue-400 hover:text-blue-300 text-sm">Details</button>
+                  </div>
+                  <p className="text-gray-300 text-sm mb-2">Call volume 300% above average - Potential breakout setup</p>
+                  <div className="flex items-center space-x-4 text-xs">
+                    <span className="text-gray-400">Strikes: $850-$870</span>
+                    <span className="text-gray-400">Expiry: 12/15</span>
+                    <span className="text-blue-400">Action: MONITOR - Building Interest</span>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Alert Settings */}
+              <div className="mt-4 pt-4 border-t border-slate-700/50">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-gray-400">Alert Settings</span>
+                  <div className="flex items-center space-x-4">
+                    <label className="flex items-center space-x-2">
+                      <input type="checkbox" className="form-checkbox" defaultChecked />
+                      <span className="text-gray-300">Earnings Warnings</span>
+                    </label>
+                    <label className="flex items-center space-x-2">
+                      <input type="checkbox" className="form-checkbox" defaultChecked />
+                      <span className="text-gray-300">Volume Spikes</span>
+                    </label>
+                    <label className="flex items-center space-x-2">
+                      <input type="checkbox" className="form-checkbox" defaultChecked />
+                      <span className="text-gray-300">Premium Alerts</span>
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </div>
             <div className="bg-slate-900/50 backdrop-blur-sm border border-slate-700/50 rounded-xl p-6">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-semibold flex items-center space-x-2">

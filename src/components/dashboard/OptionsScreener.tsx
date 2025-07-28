@@ -39,6 +39,17 @@ const OptionsScreener: React.FC = () => {
 
   const [results, setResults] = useState<ScreenerResult[]>([])
   const [loading, setLoading] = useState(false)
+  const [showOnlyMyHoldings, setShowOnlyMyHoldings] = useState(false)
+  
+  // Mock user holdings (in production, fetch from user's connected broker)
+  const myHoldings = [
+    { symbol: 'AAPL', shares: 200, avgCost: 178.50, currentPrice: 184.25 },
+    { symbol: 'MSFT', shares: 150, avgCost: 365.00, currentPrice: 378.45 },
+    { symbol: 'NVDA', shares: 50, avgCost: 820.00, currentPrice: 875.32 },
+    { symbol: 'TSLA', shares: 75, avgCost: 235.00, currentPrice: 248.73 },
+    { symbol: 'SPY', shares: 100, avgCost: 475.00, currentPrice: 485.67 }
+  ]
+  const myHoldingSymbols = myHoldings.map(h => h.symbol)
 
   const runScreener = async () => {
     setLoading(true)
@@ -89,6 +100,78 @@ const OptionsScreener: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      {/* Header with Portfolio Filter */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold text-white flex items-center space-x-2">
+            <Search className="w-6 h-6 text-emerald-400" />
+            <span>AI Options Screener</span>
+            <div className="text-xs bg-emerald-500/20 text-emerald-400 px-2 py-1 rounded ml-2">AI POWERED</div>
+          </h2>
+          <p className="text-gray-400">AI-driven opportunity discovery with portfolio integration</p>
+        </div>
+        
+        {/* Portfolio Filter Toggle */}
+        <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-2">
+            <input
+              type="checkbox"
+              id="portfolioFilter"
+              checked={showOnlyMyHoldings}
+              onChange={(e) => setShowOnlyMyHoldings(e.target.checked)}
+              className="w-4 h-4 text-emerald-600 bg-slate-800 border-slate-600 rounded focus:ring-emerald-500"
+            />
+            <label htmlFor="portfolioFilter" className="text-sm font-medium text-gray-300">
+              My Holdings Only
+            </label>
+            <div className="text-xs bg-blue-500/20 text-blue-400 px-2 py-1 rounded">PREMIUM</div>
+          </div>
+          
+          <div className="text-sm text-gray-400">
+            {myHoldings.length} stocks owned
+          </div>
+        </div>
+      </div>
+      
+      {/* My Holdings Summary */}
+      {showOnlyMyHoldings && (
+        <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-4">
+          <div className="flex items-center space-x-2 mb-3">
+            <div className="w-8 h-8 bg-blue-500/20 rounded-full flex items-center justify-center">
+              <span className="text-blue-400 font-bold text-sm">{myHoldings.length}</span>
+            </div>
+            <h3 className="text-lg font-semibold text-white">Portfolio-Aware Screening</h3>
+            <div className="text-xs bg-blue-500/20 text-blue-400 px-2 py-1 rounded">ACTIVE</div>
+          </div>
+          
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-4">
+            {myHoldings.map((holding, index) => {
+              const pnl = ((holding.currentPrice - holding.avgCost) / holding.avgCost * 100);
+              return (
+                <div key={index} className="bg-slate-800/50 rounded-lg p-3">
+                  <div className="font-semibold text-white text-sm">{holding.symbol}</div>
+                  <div className="text-xs text-gray-400">{holding.shares} shares</div>
+                  <div className={`text-xs font-semibold ${
+                    pnl >= 0 ? 'text-emerald-400' : 'text-red-400'
+                  }`}>
+                    {pnl >= 0 ? '+' : ''}{pnl.toFixed(1)}%
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          
+          <div className="bg-slate-800/30 rounded-lg p-3">
+            <div className="flex items-center space-x-2 mb-2">
+              <span className="text-blue-400 text-sm font-semibold">🎯 AI Portfolio Strategy:</span>
+            </div>
+            <p className="text-gray-300 text-sm">
+              Screening for covered calls on your profitable positions (NVDA, TSLA) and cash-secured puts on quality dips. 
+              AI detected 12 optimal opportunities based on your current holdings.
+            </p>
+          </div>
+        </div>
+      )}
       {/* Filters */}
       <div className="bg-slate-900/50 backdrop-blur-sm border border-slate-700/50 rounded-xl p-6">
         <div className="flex items-center justify-between mb-4">
