@@ -8,7 +8,7 @@ import { StrategiesModule, BacktestModule, ResearchModule, AnalyticsModule } fro
 import { 
   TrendingUp, TrendingDown, BarChart3, Target, Brain, Shield, 
   Search, Settings, Bell, User as UserIcon, Maximize2, Minimize2, X, Plus,
-  ChevronDown, ChevronRight, Eye, EyeOff, RefreshCw, Filter,
+  ChevronDown, ChevronRight, ChevronUp, Eye, EyeOff, RefreshCw, Filter,
   AlertTriangle, CheckCircle, Clock, DollarSign, Percent,
   Activity, Zap, ArrowUpRight, ArrowDownRight, Menu, Home,
   SlidersHorizontal, Calendar, Star, BookmarkPlus, Play,
@@ -25,7 +25,8 @@ interface EnhancedOverviewProps {
 }
 
 const EnhancedOverview: React.FC<EnhancedOverviewProps> = ({ user }) => {
-  const [activeTab, setActiveTab] = useState('overview');
+  const [activeTab, setActiveTab] = useState('watchlist');
+  const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({});
   const [showQuickAdd, setShowQuickAdd] = useState(false);
   const [capitalAmount, setCapitalAmount] = useState(25000);
   const [viewMode, setViewMode] = useState('cards');
@@ -183,6 +184,13 @@ const EnhancedOverview: React.FC<EnhancedOverviewProps> = ({ user }) => {
     }
   };
 
+  const toggleSection = (sectionId: string) => {
+    setCollapsedSections(prev => ({
+      ...prev,
+      [sectionId]: !prev[sectionId]
+    }));
+  };
+
   // Data arrays
   const highPremiumOpportunities = [
     { symbol: 'NVDA', strike: 850, expiry: '12/15', dte: 14, premium: 18.50, capitalRequired: 85000, roi: 0.089, pop: 71, strategy: 'Cash Secured Put', risk: 'Low' },
@@ -297,7 +305,7 @@ const EnhancedOverview: React.FC<EnhancedOverviewProps> = ({ user }) => {
   ];
 
   const tabs = [
-    { id: 'overview', label: 'Overview', icon: <Home className="w-4 h-4" /> },
+    { id: 'watchlist', label: 'Watchlist', icon: <Eye className="w-4 h-4" /> },
     { id: 'screener', label: 'Screener', icon: <Filter className="w-4 h-4" /> },
     { id: 'strategies', label: 'Strategies', icon: <Target className="w-4 h-4" /> },
     { id: 'backtest', label: 'Backtest', icon: <BarChart3 className="w-4 h-4" /> },
@@ -305,9 +313,15 @@ const EnhancedOverview: React.FC<EnhancedOverviewProps> = ({ user }) => {
     { id: 'analytics', label: 'Analytics', icon: <Brain className="w-4 h-4" /> }
   ];
 
-  const OpportunityTable = ({ data, title, description }: { data: any[], title: string, description: string }) => (
+  const CollapsibleOpportunityTable = ({ id, data, title, description, collapsedSections, toggleSection }: { 
+    id: string, data: any[], title: string, description: string, 
+    collapsedSections: Record<string, boolean>, toggleSection: (id: string) => void 
+  }) => (
     <div className="bg-slate-800/50 rounded-lg p-4 mb-4">
-      <div className="flex items-center justify-between mb-3">
+      <button
+        onClick={() => toggleSection(id)}
+        className="flex items-center justify-between w-full mb-3"
+      >
         <div className="flex items-center space-x-2">
           <h4 className="font-semibold text-white">{title}</h4>
           <div className="group relative">
@@ -317,57 +331,58 @@ const EnhancedOverview: React.FC<EnhancedOverviewProps> = ({ user }) => {
             </div>
           </div>
         </div>
-        <button
-          onClick={() => setViewMode(viewMode === 'cards' ? 'table' : 'cards')}
-          className="text-gray-400 hover:text-white"
-        >
-          {viewMode === 'cards' ? <LayoutGrid className="w-4 h-4" /> : <Layout className="w-4 h-4" />}
-        </button>
-      </div>
+        <div className="flex items-center space-x-2">
+          <span className="text-xs text-gray-400">{data.length} opportunities</span>
+          {collapsedSections[id] ? <ChevronDown className="w-4 h-4 text-gray-400" /> : <ChevronUp className="w-4 h-4 text-gray-400" />}
+        </div>
+      </button>
       
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="text-left text-gray-400 text-xs border-b border-slate-700/50">
-              <th className="pb-2">Symbol</th>
-              <th className="pb-2">Strike</th>
-              <th className="pb-2">Exp</th>
-              <th className="pb-2">DTE</th>
-              <th className="pb-2">Premium</th>
-              <th className="pb-2">Capital</th>
-              <th className="pb-2">ROI</th>
-              <th className="pb-2">PoP</th>
-              <th className="pb-2">Risk</th>
-              <th className="pb-2"></th>
-            </tr>
-          </thead>
-          <tbody>
-            {data.slice(0, 5).map((item, index) => (
-              <tr key={index} className="border-b border-slate-800/30 hover:bg-slate-700/30">
-                <td className="py-2 font-semibold text-white">{item.symbol}</td>
-                <td className="py-2 font-mono text-gray-300">{item.strike || item.strikes}</td>
-                <td className="py-2 font-mono text-gray-300">{item.expiry}</td>
-                <td className="py-2 font-mono text-gray-300">{item.dte}</td>
-                <td className="py-2 font-mono text-white">${item.premium}</td>
-                <td className="py-2 font-mono text-teal-400">{formatCapitalShort(item.capitalRequired)}</td>
-                <td className="py-2 font-mono text-emerald-400">{(item.roi * 100).toFixed(1)}%</td>
-                <td className="py-2 font-mono text-gray-300">{item.pop}%</td>
-                <td className="py-2">
-                  <div className={`w-3 h-3 rounded-full ${getRiskColor(item.risk)}`}></div>
-                </td>
-                <td className="py-2">
-                  <button
-                    onClick={() => addToWatchlist(item.symbol)}
-                    className="text-emerald-400 hover:text-emerald-300"
-                  >
-                    <Plus className="w-4 h-4" />
-                  </button>
-                </td>
+      {!collapsedSections[id] && (
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-left text-gray-400 text-xs border-b border-slate-700/50">
+                <th className="pb-2">Symbol</th>
+                <th className="pb-2">Strike</th>
+                <th className="pb-2">Exp</th>
+                <th className="pb-2">DTE</th>
+                <th className="pb-2">Premium</th>
+                <th className="pb-2">Capital</th>
+                <th className="pb-2">ROI</th>
+                <th className="pb-2">PoP</th>
+                <th className="pb-2">Risk</th>
+                <th className="pb-2">Add</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              {data.slice(0, 5).map((item, index) => (
+                <tr key={index} className="border-b border-slate-800/30 hover:bg-slate-700/30">
+                  <td className="py-2 font-semibold text-white">{item.symbol}</td>
+                  <td className="py-2 font-mono text-gray-300">{item.strike || item.strikes}</td>
+                  <td className="py-2 font-mono text-gray-300">{item.expiry}</td>
+                  <td className="py-2 font-mono text-gray-300">{item.dte}</td>
+                  <td className="py-2 font-mono text-white">${item.premium}</td>
+                  <td className="py-2 font-mono text-teal-400">{formatCapitalShort(item.capitalRequired)}</td>
+                  <td className="py-2 font-mono text-emerald-400">{(item.roi * 100).toFixed(1)}%</td>
+                  <td className="py-2 font-mono text-gray-300">{item.pop}%</td>
+                  <td className="py-2">
+                    <div className={`w-3 h-3 rounded-full ${getRiskColor(item.risk)}`}></div>
+                  </td>
+                  <td className="py-2">
+                    <button
+                      onClick={() => addToWatchlist(item.symbol)}
+                      className="text-emerald-400 hover:text-emerald-300 transition-colors"
+                      title="Add to watchlist"
+                    >
+                      <Plus className="w-4 h-4" />
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 
@@ -399,16 +414,42 @@ const EnhancedOverview: React.FC<EnhancedOverviewProps> = ({ user }) => {
               </div>
             </div>
             
-            <div className="hidden lg:flex items-center space-x-6">
+            {/* Expanded Ticker Bar */}
+            <div className="hidden lg:flex items-center space-x-4">
               <div className="flex items-center space-x-2">
                 <span className="text-gray-400 text-sm">SPY</span>
                 <span className="text-white font-mono">$485.67</span>
                 <span className="text-emerald-400 text-sm">+2.34 (0.48%)</span>
               </div>
+              <div className="h-4 w-px bg-slate-600"></div>
               <div className="flex items-center space-x-2">
                 <span className="text-gray-400 text-sm">VIX</span>
                 <span className="text-white font-mono">18.42</span>
                 <span className="text-red-400 text-sm">-0.87 (-4.51%)</span>
+              </div>
+              <div className="h-4 w-px bg-slate-600"></div>
+              <div className="flex items-center space-x-2">
+                <span className="text-gray-400 text-sm">DOW</span>
+                <span className="text-white font-mono">36,247</span>
+                <span className="text-emerald-400 text-sm">+185 (0.51%)</span>
+              </div>
+              <div className="h-4 w-px bg-slate-600"></div>
+              <div className="flex items-center space-x-2">
+                <span className="text-gray-400 text-sm">S&P</span>
+                <span className="text-white font-mono">4,892</span>
+                <span className="text-emerald-400 text-sm">+22 (0.45%)</span>
+              </div>
+              <div className="h-4 w-px bg-slate-600"></div>
+              <div className="flex items-center space-x-2">
+                <span className="text-gray-400 text-sm">BTC</span>
+                <span className="text-white font-mono">$97,234</span>
+                <span className="text-red-400 text-sm">-1,456 (-1.48%)</span>
+              </div>
+              <div className="h-4 w-px bg-slate-600"></div>
+              <div className="flex items-center space-x-2">
+                <span className="text-gray-400 text-sm">OIL</span>
+                <span className="text-white font-mono">$78.92</span>
+                <span className="text-emerald-400 text-sm">+0.34 (0.43%)</span>
               </div>
             </div>
           </div>
@@ -471,8 +512,8 @@ const EnhancedOverview: React.FC<EnhancedOverviewProps> = ({ user }) => {
 
       {/* Main Content */}
       <div className="p-6 space-y-6">
-        {/* Overview Tab */}
-        {activeTab === 'overview' && (
+        {/* Watchlist Tab */}
+        {activeTab === 'watchlist' && (
           <div className="space-y-6">
             {/* Time Savings Hero Section */}
             <div className="bg-gradient-to-r from-emerald-500/10 to-teal-500/10 border border-emerald-500/20 rounded-xl p-6">

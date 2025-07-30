@@ -301,6 +301,70 @@ const OptionsScreener: React.FC = () => {
                     <td className="py-2">
                       <div className={`w-3 h-3 rounded-full ${getRiskColor(result.risk)}`}></div>
                     </td>
+                    <td className="py-3">
+                      <div className="flex items-center space-x-2">
+                        <button className="text-emerald-400 hover:text-emerald-300 transition-colors">
+                          <BookmarkPlus className="w-4 h-4" />
+                        </button>
+                        <button className="text-blue-400 hover:text-blue-300 transition-colors">
+                          <Plus className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <div className="text-center py-12">
+            <Search className="w-12 h-12 text-gray-600 mx-auto mb-4" />
+            <p className="text-gray-400 mb-2">No results found</p>
+            <p className="text-gray-500 text-sm">Try adjusting your filters or run the screener</p>
+          </div>
+        )}
+      </div>
+
+      {/* Save Screener Dialog */}
+      {showSaveDialog && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-slate-800 border border-slate-600 rounded-xl p-6 w-96">
+            <h3 className="text-lg font-semibold text-white mb-4">Save Screener Configuration</h3>
+            <input
+              type="text"
+              value={newScreenerName}
+              onChange={(e) => setNewScreenerName(e.target.value)}
+              placeholder="Enter screener name..."
+              className="w-full bg-slate-700 border border-slate-600 rounded px-3 py-2 text-white mb-4 focus:border-emerald-500 focus:outline-none"
+              autoFocus
+            />
+            <div className="flex items-center space-x-3">
+              <button
+                onClick={saveScreener}
+                disabled={!newScreenerName.trim()}
+                className="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white py-2 rounded-lg font-semibold transition-colors disabled:opacity-50"
+              >
+                Save Screener
+              </button>
+              <button
+                onClick={() => {
+                  setShowSaveDialog(false)
+                  setNewScreenerName('')
+                }}
+                className="flex-1 bg-slate-600 hover:bg-slate-500 text-white py-2 rounded-lg transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+export default OptionsScreenerw-3 h-3 rounded-full ${getRiskColor(result.risk)}`}></div>
+                    </td>
                   </tr>
                 ))}
               </tbody>
