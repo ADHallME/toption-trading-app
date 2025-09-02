@@ -1,7 +1,7 @@
 // Sample data matching Polygon.io structure for development
 // This allows seamless transition when switching to paid tier
 
-export const sampleQuotes = {
+export const sampleQuotes: { [key: string]: any } = {
   'SPY': {
     status: 'OK',
     results: [{
@@ -82,7 +82,7 @@ export const sampleQuotes = {
   }
 };
 
-export const sampleOptionsData = {
+export const sampleOptionsData: { [key: string]: any } = {
   'SPY': {
     status: 'OK',
     results: [
