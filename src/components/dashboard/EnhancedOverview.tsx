@@ -7,7 +7,8 @@ import { getPolygonClient } from '@/lib/polygon/client'
 import { aiEngine, polygonToOpportunity, AIRecommendation } from '@/lib/ai/recommendation-engine'
 import { sampleOptionsData, sampleQuotes } from '@/lib/polygon/sample-data'
 import OptionsScreener from './OptionsScreener'
-import { StrategiesModule, BacktestModule, ResearchModule, AnalyticsModule } from '@/components/trading'
+import ResearchTab from './ResearchTab'
+import AnalyticsTab from './AnalyticsTab'
 import { 
   TrendingUp, TrendingDown, BarChart3, Target, Brain, Shield, 
   Search, Settings, Bell, User as UserIcon, X, Plus,
@@ -585,10 +586,8 @@ const EnhancedOverview: React.FC<EnhancedOverviewProps> = ({ user }) => {
 
         {/* Other Tabs */}
         {activeTab === 'screener' && <OptionsScreener />}
-        {activeTab === 'strategies' && <StrategiesModule />}
-        {activeTab === 'backtest' && <BacktestModule />}
-        {activeTab === 'research' && <ResearchModule />}
-        {activeTab === 'analytics' && <AnalyticsModule />}
+        {activeTab === 'research' && <ResearchTab />}
+        {activeTab === 'analytics' && <AnalyticsTab />}
       </div>
 
       {/* Quick Add Trade Modal */}
