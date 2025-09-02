@@ -45,21 +45,25 @@ const AIRecommendationCard: React.FC<{ rec: AIRecommendation; onSave: () => void
       </div>
       
       {/* Quick Metrics */}
-      <div className="grid grid-cols-4 gap-3 mb-3">
+      <div className="grid grid-cols-5 gap-2 mb-3">
         <div className="text-center">
           <div className="text-xs text-gray-500 mb-1">Premium</div>
           <div className="text-sm font-semibold text-emerald-400">${(opp.premium * 100).toFixed(0)}</div>
         </div>
         <div className="text-center">
-          <div className="text-xs text-gray-500 mb-1">Monthly</div>
+          <div className="text-xs text-gray-500 mb-1">ROI</div>
           <div className="text-sm font-semibold text-emerald-400">{opp.monthlyReturn.toFixed(1)}%</div>
         </div>
         <div className="text-center">
-          <div className="text-xs text-gray-500 mb-1">Capital</div>
-          <div className="text-sm font-semibold text-gray-300">${(opp.capitalRequired / 1000).toFixed(1)}k</div>
+          <div className="text-xs text-gray-500 mb-1">DTE</div>
+          <div className="text-sm font-semibold text-gray-300">{opp.dte}d</div>
         </div>
         <div className="text-center">
-          <div className="text-xs text-gray-500 mb-1">Win Rate</div>
+          <div className="text-xs text-gray-500 mb-1">Close</div>
+          <div className="text-sm font-semibold text-blue-400">{Math.round(opp.dte * 0.5)}d</div>
+        </div>
+        <div className="text-center">
+          <div className="text-xs text-gray-500 mb-1">PoP</div>
           <div className="text-sm font-semibold text-blue-400">{opp.probabilityOfProfit}%</div>
         </div>
       </div>
@@ -382,6 +386,77 @@ const EnhancedOverview: React.FC<EnhancedOverviewProps> = ({ user }) => {
         {/* Watchlist Tab */}
         {activeTab === 'watchlist' && (
           <div className="space-y-6">
+            {/* Opportunity Categories */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
+              {/* Covered Calls & CSPs */}
+              <div className="bg-slate-900/50 backdrop-blur-sm border border-slate-700/50 rounded-lg p-4">
+                <h4 className="text-sm font-semibold text-emerald-400 mb-3">Covered Calls & CSPs</h4>
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center p-2 bg-slate-800/50 rounded hover:bg-slate-800/70 cursor-pointer">
+                    <div>
+                      <span className="font-semibold text-white">SPY</span>
+                      <span className="text-xs text-gray-400 ml-2">CSP</span>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-emerald-400 font-semibold text-sm">2.8% ROI</div>
+                      <div className="text-xs text-gray-500">21 DTE</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Straddles & Strangles */}
+              <div className="bg-slate-900/50 backdrop-blur-sm border border-slate-700/50 rounded-lg p-4">
+                <h4 className="text-sm font-semibold text-blue-400 mb-3">Straddles & Strangles</h4>
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center p-2 bg-slate-800/50 rounded hover:bg-slate-800/70 cursor-pointer">
+                    <div>
+                      <span className="font-semibold text-white">TSLA</span>
+                      <span className="text-xs text-gray-400 ml-2">Strangle</span>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-blue-400 font-semibold text-sm">4.2% ROI</div>
+                      <div className="text-xs text-gray-500">45 DTE</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Condors & Butterflies */}
+              <div className="bg-slate-900/50 backdrop-blur-sm border border-slate-700/50 rounded-lg p-4">
+                <h4 className="text-sm font-semibold text-purple-400 mb-3">Condors & Butterflies</h4>
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center p-2 bg-slate-800/50 rounded hover:bg-slate-800/70 cursor-pointer">
+                    <div>
+                      <span className="font-semibold text-white">QQQ</span>
+                      <span className="text-xs text-gray-400 ml-2">IC</span>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-purple-400 font-semibold text-sm">1.9% ROI</div>
+                      <div className="text-xs text-gray-500">30 DTE</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Weeklies & Dailies */}
+              <div className="bg-slate-900/50 backdrop-blur-sm border border-slate-700/50 rounded-lg p-4">
+                <h4 className="text-sm font-semibold text-orange-400 mb-3">Weeklies & 0DTE</h4>
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center p-2 bg-slate-800/50 rounded hover:bg-slate-800/70 cursor-pointer">
+                    <div>
+                      <span className="font-semibold text-white">SPY</span>
+                      <span className="text-xs text-gray-400 ml-2">0DTE</span>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-orange-400 font-semibold text-sm">0.5% ROI</div>
+                      <div className="text-xs text-gray-500">0 DTE</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
             {/* AI Recommendations Section */}
             <div className="bg-slate-900/50 backdrop-blur-sm border border-slate-700/50 rounded-xl p-6">
               <div className="flex items-center justify-between mb-4">
