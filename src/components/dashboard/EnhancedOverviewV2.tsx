@@ -364,7 +364,9 @@ const EnhancedOverview: React.FC<EnhancedOverviewProps> = ({ user }) => {
             >
               <Plus className="w-4 h-4" />
               <span className="hidden sm:inline">Quick Trade</span>
-              <Info className="w-3 h-3 opacity-50 group-hover:opacity-100" title="Log trades manually for secure portfolio tracking" />
+              <span className="opacity-50 group-hover:opacity-100" title="Log trades manually for secure portfolio tracking">
+                <Info className="w-3 h-3" />
+              </span>
             </button>
             
             <div className="relative">
