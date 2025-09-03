@@ -49,6 +49,80 @@ export interface AIRecommendation {
 }
 
 class AIRecommendationEngine {
+  // Add the missing generateRecommendations method
+  async generateRecommendations(userProfile: any, strategyFilter: string = 'all'): Promise<AIRecommendation[]> {
+    // Mock data for now - will be replaced with Polygon
+    const mockOpportunities: OptionOpportunity[] = [
+      {
+        ticker: 'SPY',
+        strategy: 'wheel',
+        strike: 480,
+        expiration: '2024-01-19',
+        dte: 21,
+        premium: 2.85,
+        delta: -0.30,
+        theta: -0.08,
+        iv: 0.18,
+        volume: 25000,
+        openInterest: 50000,
+        monthlyReturn: 2.8,
+        annualizedReturn: 33.6,
+        capitalRequired: 48000,
+        maxLoss: 47715,
+        breakeven: 477.15,
+        probabilityOfProfit: 70
+      },
+      {
+        ticker: 'QQQ',
+        strategy: 'covered_call',
+        strike: 405,
+        expiration: '2024-01-26',
+        dte: 28,
+        premium: 3.20,
+        delta: 0.35,
+        theta: -0.12,
+        iv: 0.22,
+        volume: 18000,
+        openInterest: 35000,
+        monthlyReturn: 2.4,
+        annualizedReturn: 28.8,
+        capitalRequired: 40500,
+        maxLoss: 0,
+        breakeven: 408.20,
+        probabilityOfProfit: 65
+      },
+      {
+        ticker: 'TSLA',
+        strategy: 'strangle',
+        strike: 250,
+        expiration: '2024-02-16',
+        dte: 45,
+        premium: 8.50,
+        delta: -0.25,
+        theta: -0.15,
+        iv: 0.45,
+        volume: 30000,
+        openInterest: 60000,
+        monthlyReturn: 4.2,
+        annualizedReturn: 50.4,
+        capitalRequired: 5000,
+        maxLoss: 24150,
+        breakeven: 241.50,
+        probabilityOfProfit: 75
+      }
+    ];
+    
+    // Filter by strategy if specified
+    let filtered = mockOpportunities;
+    if (strategyFilter !== 'all') {
+      filtered = mockOpportunities.filter(opp => opp.strategy === strategyFilter);
+    }
+    
+    // Convert to recommendations
+    return this.recommend(filtered, userProfile || {}, 6);
+  }
+
+  
   // Score an opportunity based on user profile
   scoreOpportunity(opp: OptionOpportunity, profile: UserProfile): number {
     let score = 50; // Base score

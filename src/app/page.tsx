@@ -3,11 +3,17 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createBrowserClient } from '@/lib/supabase'
-import { TrendingUp, BarChart3, Target, Shield, ArrowRight, Star, Zap, Users, CheckCircle } from 'lucide-react'
+import { 
+  TrendingUp, BarChart3, Target, Shield, ArrowRight, Star, 
+  Zap, Users, CheckCircle, ChevronRight, Activity, Brain,
+  DollarSign, Clock, AlertTriangle, Eye, TrendingDown,
+  LineChart, PieChart, Percent, Database, Server
+} from 'lucide-react'
 
 export default function HomePage() {
   const [user, setUser] = useState<any>(null)
   const [loading, setLoading] = useState(true)
+  const [selectedTimeframe, setSelectedTimeframe] = useState('monthly')
   const router = useRouter()
   const supabase = createBrowserClient()
 
@@ -29,180 +35,455 @@ export default function HomePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-500"></div>
+      <div className="min-h-screen flex items-center justify-center bg-[#0a0f1b]">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-cyan-500"></div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-slate-950">
-      {/* Navigation */}
-      <nav className="flex justify-between items-center p-6">
+    <div className="min-h-screen bg-[#0a0f1b] text-white">
+      {/* Navigation - Clean like GreeksLab */}
+      <nav className="flex justify-between items-center px-8 py-6 border-b border-gray-800">
         <div className="flex items-center space-x-2">
-          <Target className="h-8 w-8 text-blue-500" />
-          <span className="text-2xl font-bold text-white">Toption</span>
+          <Target className="h-8 w-8 text-cyan-500" />
+          <span className="text-2xl font-bold">Toption</span>
         </div>
-        <button
-          onClick={handleGetStarted}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium transition-colors"
-        >
-          Get Started
-        </button>
+        <div className="flex items-center space-x-8">
+          <a href="#features" className="text-gray-300 hover:text-white transition-colors">Features</a>
+          <a href="#pricing" className="text-gray-300 hover:text-white transition-colors">Pricing</a>
+          <a href="#data" className="text-gray-300 hover:text-white transition-colors">Data</a>
+          <button className="text-gray-300 hover:text-white">Login</button>
+          <button
+            onClick={handleGetStarted}
+            className="bg-cyan-500 hover:bg-cyan-600 text-black font-bold px-6 py-2 rounded transition-all"
+          >
+            Start Free Trial
+          </button>
+        </div>
       </nav>
 
-      {/* Hero Section */}
-      <div className="max-w-7xl mx-auto px-6 py-20">
-        <div className="text-center">
-          <h1 className="text-6xl font-bold text-white mb-6">
-            Top Options Trading
-            <span className="text-blue-500"> Platform</span>
-          </h1>
-          <p className="text-xl text-gray-300 mb-8 max-w-3xl mx-auto">
-            Smart options screening with Yahoo Finance data, real-time market quotes, 
-            and comprehensive trade journal. Find the best opportunities with AI-powered analysis.
-          </p>
-          <div className="flex justify-center space-x-4">
-            <button
-              onClick={handleGetStarted}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg font-medium text-lg transition-colors flex items-center space-x-2"
-            >
-              <span>Start Trading</span>
-              <ArrowRight className="h-5 w-5" />
-            </button>
-            <button className="border border-gray-600 hover:border-gray-500 text-white px-8 py-3 rounded-lg font-medium text-lg transition-colors">
-              Learn More
-            </button>
+      {/* Hero Section - Data-focused like GreeksLab */}
+      <div className="text-center py-20 px-8">
+        <div className="inline-flex items-center space-x-2 bg-cyan-500/10 border border-cyan-500/30 rounded-full px-4 py-2 mb-6">
+          <Database className="w-4 h-4 text-cyan-400" />
+          <span className="text-cyan-400 text-sm font-semibold">Premium Polygon.io Data Included</span>
+        </div>
+        
+        <h1 className="text-5xl md:text-6xl font-bold mb-4">
+          Stop wasting money
+        </h1>
+        <h1 className="text-4xl md:text-5xl font-bold text-cyan-500 mb-8">
+          Screen Every Options Strategy in Real-Time
+        </h1>
+        
+        <p className="text-xl text-gray-400 max-w-3xl mx-auto mb-4">
+          Build, test, and refine your options strategies with <span className="text-cyan-400 font-semibold">institutional-grade data</span>.
+        </p>
+        <p className="text-xl text-gray-400 max-w-3xl mx-auto mb-12">
+          Trade with confidence.
+        </p>
+        
+        <button
+          onClick={handleGetStarted}
+          className="bg-cyan-500 hover:bg-cyan-600 text-black font-bold px-8 py-4 rounded text-lg transition-all mb-4"
+        >
+          Start My Free Trial →
+        </button>
+        
+        <div className="flex items-center justify-center space-x-6 text-sm text-gray-500">
+          <span className="flex items-center"><CheckCircle className="w-4 h-4 mr-1 text-green-500" /> No credit card required</span>
+          <span className="flex items-center"><CheckCircle className="w-4 h-4 mr-1 text-green-500" /> 30-day free trial</span>
+          <span className="flex items-center"><CheckCircle className="w-4 h-4 mr-1 text-green-500" /> Cancel anytime</span>
+        </div>
+      </div>
+
+      {/* Stats Section - Professional metrics */}
+      <div className="bg-[#0f1823] py-16">
+        <div className="max-w-7xl mx-auto px-8 grid grid-cols-2 md:grid-cols-6 gap-8 text-center">
+          <div>
+            <DollarSign className="w-8 h-8 mx-auto mb-2 text-green-500" />
+            <div className="text-sm text-gray-400">Total Return</div>
+            <div className="text-2xl font-bold text-green-500">$2,415.00</div>
+            <div className="text-xs text-gray-500">2.42%</div>
+          </div>
+          <div>
+            <Target className="w-8 h-8 mx-auto mb-2 text-cyan-500" />
+            <div className="text-sm text-gray-400">Win Rate</div>
+            <div className="text-2xl font-bold">91.3%</div>
+            <div className="text-xs text-gray-500">21 / 23 days</div>
+          </div>
+          <div>
+            <Activity className="w-8 h-8 mx-auto mb-2 text-purple-500" />
+            <div className="text-sm text-gray-400">Avg Daily P&L</div>
+            <div className="text-2xl font-bold">$105.00</div>
+            <div className="text-xs text-gray-500">Per day</div>
+          </div>
+          <div>
+            <BarChart3 className="w-8 h-8 mx-auto mb-2 text-yellow-500" />
+            <div className="text-sm text-gray-400">Daily CVaR (USD)</div>
+            <div className="text-2xl font-bold text-red-400">-$670.00</div>
+            <div className="text-xs text-gray-500">Worst 5% of days</div>
+          </div>
+          <div>
+            <TrendingUp className="w-8 h-8 mx-auto mb-2 text-orange-500" />
+            <div className="text-sm text-gray-400">Max Drawdown</div>
+            <div className="text-2xl font-bold">0.65%</div>
+            <div className="text-xs text-gray-500">Peak to trough</div>
+          </div>
+          <div>
+            <Percent className="w-8 h-8 mx-auto mb-2 text-blue-500" />
+            <div className="text-sm text-gray-400">Sharpe Ratio</div>
+            <div className="text-2xl font-bold">7.83</div>
+            <div className="text-xs text-gray-500">Risk-adjusted return</div>
           </div>
         </div>
       </div>
 
-      {/* Features Section */}
-      <div className="max-w-7xl mx-auto px-6 py-20">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          <div className="bg-slate-900 p-8 rounded-xl">
-            <TrendingUp className="h-12 w-12 text-blue-500 mb-4" />
-            <h3 className="text-xl font-semibold text-white mb-3">Smart Screening</h3>
-            <p className="text-gray-400">
-              AI-powered options screening with real-time data from Yahoo Finance. 
-              Find high-probability trades with advanced filters.
-            </p>
-          </div>
-          <div className="bg-slate-900 p-8 rounded-xl">
-            <BarChart3 className="h-12 w-12 text-green-500 mb-4" />
-            <h3 className="text-xl font-semibold text-white mb-3">Real-time Quotes</h3>
-            <p className="text-gray-400">
-              Live market data and options chains. Track your positions 
-              with real-time updates and alerts.
-            </p>
-          </div>
-          <div className="bg-slate-900 p-8 rounded-xl">
-            <Target className="h-12 w-12 text-purple-500 mb-4" />
-            <h3 className="text-xl font-semibold text-white mb-3">Trade Journal</h3>
-            <p className="text-gray-400">
-              Comprehensive trade tracking and analysis. Learn from your 
-              trades with detailed performance metrics.
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* Pricing Section */}
-      <div className="max-w-7xl mx-auto px-6 py-20">
-        <div className="text-center mb-16">
-          <h2 className="text-4xl font-bold text-white mb-4">Simple Pricing</h2>
-          <p className="text-xl text-gray-300">Start free, upgrade when you're ready</p>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          <div className="bg-slate-900 p-8 rounded-xl border border-gray-700">
-            <h3 className="text-2xl font-semibold text-white mb-2">Free</h3>
-            <p className="text-3xl font-bold text-blue-500 mb-4">$0<span className="text-lg text-gray-400">/month</span></p>
-            <ul className="space-y-3 mb-8">
-              <li className="flex items-center text-gray-300">
-                <CheckCircle className="h-5 w-5 text-green-500 mr-3" />
-                5 screener runs per day
-              </li>
-              <li className="flex items-center text-gray-300">
-                <CheckCircle className="h-5 w-5 text-green-500 mr-3" />
-                Basic watchlist
-              </li>
-              <li className="flex items-center text-gray-300">
-                <CheckCircle className="h-5 w-5 text-green-500 mr-3" />
-                Trade journal (10 trades)
-              </li>
-            </ul>
-            <button className="w-full bg-gray-700 hover:bg-gray-600 text-white py-3 rounded-lg font-medium transition-colors">
-              Get Started Free
-            </button>
-          </div>
-          <div className="bg-blue-600 p-8 rounded-xl border border-blue-500 relative">
-            <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-              <span className="bg-blue-500 text-white px-4 py-1 rounded-full text-sm font-medium">Most Popular</span>
+      {/* Features Grid */}
+      <div id="features" className="py-20 px-8">
+        <div className="max-w-7xl mx-auto">
+          <h2 className="text-4xl font-bold text-center mb-4">Beyond Basic Screening</h2>
+          <p className="text-xl text-gray-400 text-center mb-12">Everything you need to trade options professionally</p>
+          
+          <div className="grid md:grid-cols-3 gap-8">
+            <div className="bg-[#0f1823] p-8 rounded-lg border border-gray-800">
+              <Brain className="w-12 h-12 text-cyan-500 mb-4" />
+              <h3 className="text-xl font-bold mb-3">AI Strategy Optimization</h3>
+              <p className="text-gray-400">
+                Machine learning algorithms analyze your trading patterns and suggest optimal entry/exit points based on historical performance.
+              </p>
             </div>
-            <h3 className="text-2xl font-semibold text-white mb-2">Pro</h3>
-            <p className="text-3xl font-bold text-white mb-4">$29<span className="text-lg text-blue-200">/month</span></p>
-            <ul className="space-y-3 mb-8">
-              <li className="flex items-center text-blue-100">
-                <CheckCircle className="h-5 w-5 text-white mr-3" />
-                Unlimited screener runs
-              </li>
-              <li className="flex items-center text-blue-100">
-                <CheckCircle className="h-5 w-5 text-white mr-3" />
-                Advanced filters
-              </li>
-              <li className="flex items-center text-blue-100">
-                <CheckCircle className="h-5 w-5 text-white mr-3" />
-                Unlimited trade journal
-              </li>
-              <li className="flex items-center text-blue-100">
-                <CheckCircle className="h-5 w-5 text-white mr-3" />
-                Real-time alerts
-              </li>
-            </ul>
-            <button className="w-full bg-white hover:bg-gray-100 text-blue-600 py-3 rounded-lg font-medium transition-colors">
-              Start Pro Trial
-            </button>
+            
+            <div className="bg-[#0f1823] p-8 rounded-lg border border-gray-800">
+              <LineChart className="w-12 h-12 text-purple-500 mb-4" />
+              <h3 className="text-xl font-bold mb-3">Real-Time Greeks</h3>
+              <p className="text-gray-400">
+                Live delta, gamma, theta, and vega calculations. See exactly how your positions will move with the market.
+              </p>
+            </div>
+            
+            <div className="bg-[#0f1823] p-8 rounded-lg border border-gray-800">
+              <Server className="w-12 h-12 text-green-500 mb-4" />
+              <h3 className="text-xl font-bold mb-3">Institutional Data</h3>
+              <p className="text-gray-400">
+                Direct Polygon.io integration gives you the same data hedge funds use. No delayed quotes or estimated prices.
+              </p>
+            </div>
+            
+            <div className="bg-[#0f1823] p-8 rounded-lg border border-gray-800">
+              <Target className="w-12 h-12 text-yellow-500 mb-4" />
+              <h3 className="text-xl font-bold mb-3">Multi-Leg Strategies</h3>
+              <p className="text-gray-400">
+                Screen iron condors, butterflies, strangles, and custom spreads. Not just simple puts and calls.
+              </p>
+            </div>
+            
+            <div className="bg-[#0f1823] p-8 rounded-lg border border-gray-800">
+              <AlertTriangle className="w-12 h-12 text-red-500 mb-4" />
+              <h3 className="text-xl font-bold mb-3">Risk Analytics</h3>
+              <p className="text-gray-400">
+                CVaR, max drawdown, and position sizing calculators. Know your risk before you trade.
+              </p>
+            </div>
+            
+            <div className="bg-[#0f1823] p-8 rounded-lg border border-gray-800">
+              <Zap className="w-12 h-12 text-orange-500 mb-4" />
+              <h3 className="text-xl font-bold mb-3">0DTE Alerts</h3>
+              <p className="text-gray-400">
+                Real-time notifications when premium spikes occur. Catch the moves that matter in seconds.
+              </p>
+            </div>
           </div>
-          <div className="bg-slate-900 p-8 rounded-xl border border-gray-700">
-            <h3 className="text-2xl font-semibold text-white mb-2">Premium</h3>
-            <p className="text-3xl font-bold text-purple-500 mb-4">$99<span className="text-lg text-gray-400">/month</span></p>
-            <ul className="space-y-3 mb-8">
-              <li className="flex items-center text-gray-300">
-                <CheckCircle className="h-5 w-5 text-green-500 mr-3" />
-                Everything in Pro
-              </li>
-              <li className="flex items-center text-gray-300">
-                <CheckCircle className="h-5 w-5 text-green-500 mr-3" />
-                AI trade recommendations
-              </li>
-              <li className="flex items-center text-gray-300">
-                <CheckCircle className="h-5 w-5 text-green-500 mr-3" />
-                Portfolio analytics
-              </li>
-              <li className="flex items-center text-gray-300">
-                <CheckCircle className="h-5 w-5 text-green-500 mr-3" />
-                Priority support
-              </li>
-            </ul>
-            <button className="w-full bg-gray-700 hover:bg-gray-600 text-white py-3 rounded-lg font-medium transition-colors">
-              Contact Sales
-            </button>
+        </div>
+      </div>
+
+      {/* Data Quality Section */}
+      <div id="data" className="bg-[#0f1823] py-20 px-8">
+        <div className="max-w-7xl mx-auto">
+          <h2 className="text-4xl font-bold text-center mb-4">Professional-Grade Data</h2>
+          <p className="text-xl text-gray-400 text-center mb-12">Why data quality matters for options trading</p>
+          
+          <div className="grid md:grid-cols-2 gap-12 items-center">
+            <div>
+              <div className="space-y-6">
+                <div className="flex items-start space-x-4">
+                  <CheckCircle className="w-6 h-6 text-green-500 mt-1 flex-shrink-0" />
+                  <div>
+                    <h3 className="font-bold text-lg mb-2">Real-Time Level 2 Data</h3>
+                    <p className="text-gray-400">See the full order book, not just top of book. Critical for accurate pricing.</p>
+                  </div>
+                </div>
+                
+                <div className="flex items-start space-x-4">
+                  <CheckCircle className="w-6 h-6 text-green-500 mt-1 flex-shrink-0" />
+                  <div>
+                    <h3 className="font-bold text-lg mb-2">Historical Greeks</h3>
+                    <p className="text-gray-400">10+ years of options data with full Greeks history for backtesting.</p>
+                  </div>
+                </div>
+                
+                <div className="flex items-start space-x-4">
+                  <CheckCircle className="w-6 h-6 text-green-500 mt-1 flex-shrink-0" />
+                  <div>
+                    <h3 className="font-bold text-lg mb-2">Microsecond Timestamps</h3>
+                    <p className="text-gray-400">Know exactly when each quote and trade occurred. Essential for 0DTE.</p>
+                  </div>
+                </div>
+                
+                <div className="flex items-start space-x-4">
+                  <CheckCircle className="w-6 h-6 text-green-500 mt-1 flex-shrink-0" />
+                  <div>
+                    <h3 className="font-bold text-lg mb-2">All US Options Exchanges</h3>
+                    <p className="text-gray-400">Consolidated data from every exchange. No gaps or missing strikes.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div className="bg-gradient-to-br from-cyan-500/10 to-purple-500/10 p-8 rounded-lg border border-cyan-500/30">
+              <h3 className="text-2xl font-bold mb-4">Polygon.io Partnership</h3>
+              <p className="text-gray-300 mb-4">
+                We include premium Polygon data worth <span className="text-cyan-400 font-bold">$2,000/month</span> with every subscription. 
+                This isn't delayed or sampled data - it's the same feed institutional traders use.
+              </p>
+              <div className="space-y-2">
+                <div className="flex justify-between">
+                  <span className="text-gray-400">API Calls/Month:</span>
+                  <span className="font-bold">Unlimited</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-400">WebSocket Streams:</span>
+                  <span className="font-bold">Real-time</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-400">Historical Data:</span>
+                  <span className="font-bold">10+ Years</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-400">Update Frequency:</span>
+                  <span className="font-bold">Microsecond</span>
+                </div>
+              </div>
+            </div>
           </div>
+        </div>
+      </div>
+
+      {/* Pricing Section - Premium positioning */}
+      <div id="pricing" className="py-20 px-8">
+        <div className="max-w-7xl mx-auto">
+          <h2 className="text-4xl font-bold text-center mb-4">Professional Tools, Professional Pricing</h2>
+          <p className="text-xl text-gray-400 text-center mb-4">
+            Includes <span className="text-cyan-400 font-bold">$2,000/month</span> worth of institutional data
+          </p>
+          
+          {/* Billing Toggle */}
+          <div className="flex justify-center mb-12">
+            <div className="bg-[#0f1823] rounded-lg p-1 inline-flex">
+              <button
+                onClick={() => setSelectedTimeframe('monthly')}
+                className={`px-4 py-2 rounded ${selectedTimeframe === 'monthly' ? 'bg-cyan-500 text-black' : 'text-gray-400'}`}
+              >
+                Monthly
+              </button>
+              <button
+                onClick={() => setSelectedTimeframe('annual')}
+                className={`px-4 py-2 rounded ${selectedTimeframe === 'annual' ? 'bg-cyan-500 text-black' : 'text-gray-400'}`}
+              >
+                Annual (Save 20%)
+              </button>
+            </div>
+          </div>
+          
+          <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+            {/* Starter */}
+            <div className="bg-[#0f1823] rounded-lg p-8 border border-gray-800">
+              <h3 className="text-2xl font-bold mb-2">Starter</h3>
+              <div className="mb-6">
+                <span className="text-4xl font-bold">
+                  ${selectedTimeframe === 'monthly' ? '49' : '39'}
+                </span>
+                <span className="text-gray-400">/{selectedTimeframe === 'monthly' ? 'month' : 'month'}</span>
+                {selectedTimeframe === 'annual' && (
+                  <div className="text-sm text-green-500 mt-1">Billed $468 annually</div>
+                )}
+              </div>
+              
+              <ul className="space-y-3 mb-8">
+                <li className="flex items-start">
+                  <CheckCircle className="w-5 h-5 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
+                  <span className="text-gray-300">100 scans per day</span>
+                </li>
+                <li className="flex items-start">
+                  <CheckCircle className="w-5 h-5 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
+                  <span className="text-gray-300">Basic strategies only</span>
+                </li>
+                <li className="flex items-start">
+                  <CheckCircle className="w-5 h-5 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
+                  <span className="text-gray-300">5-minute delayed data</span>
+                </li>
+                <li className="flex items-start">
+                  <CheckCircle className="w-5 h-5 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
+                  <span className="text-gray-300">Email alerts only</span>
+                </li>
+                <li className="flex items-start">
+                  <CheckCircle className="w-5 h-5 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
+                  <span className="text-gray-300">Community support</span>
+                </li>
+              </ul>
+              
+              <button className="w-full py-3 rounded bg-gray-800 hover:bg-gray-700 transition-colors font-semibold">
+                Start Free Trial
+              </button>
+            </div>
+            
+            {/* Professional - Highlighted */}
+            <div className="bg-gradient-to-b from-cyan-500/20 to-[#0f1823] rounded-lg p-8 border-2 border-cyan-500 relative">
+              <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
+                <span className="bg-cyan-500 text-black px-4 py-1 rounded-full text-sm font-bold">MOST POPULAR</span>
+              </div>
+              
+              <h3 className="text-2xl font-bold mb-2">Professional</h3>
+              <div className="mb-6">
+                <span className="text-4xl font-bold text-cyan-400">
+                  ${selectedTimeframe === 'monthly' ? '99' : '79'}
+                </span>
+                <span className="text-gray-400">/{selectedTimeframe === 'monthly' ? 'month' : 'month'}</span>
+                {selectedTimeframe === 'annual' && (
+                  <div className="text-sm text-green-500 mt-1">Billed $948 annually</div>
+                )}
+              </div>
+              
+              <ul className="space-y-3 mb-8">
+                <li className="flex items-start">
+                  <CheckCircle className="w-5 h-5 text-cyan-400 mr-2 mt-0.5 flex-shrink-0" />
+                  <span className="text-gray-300">Unlimited scans</span>
+                </li>
+                <li className="flex items-start">
+                  <CheckCircle className="w-5 h-5 text-cyan-400 mr-2 mt-0.5 flex-shrink-0" />
+                  <span className="text-gray-300">All strategies + custom</span>
+                </li>
+                <li className="flex items-start">
+                  <CheckCircle className="w-5 h-5 text-cyan-400 mr-2 mt-0.5 flex-shrink-0" />
+                  <span className="text-gray-300 font-semibold">Real-time Polygon data</span>
+                </li>
+                <li className="flex items-start">
+                  <CheckCircle className="w-5 h-5 text-cyan-400 mr-2 mt-0.5 flex-shrink-0" />
+                  <span className="text-gray-300">Push + SMS alerts</span>
+                </li>
+                <li className="flex items-start">
+                  <CheckCircle className="w-5 h-5 text-cyan-400 mr-2 mt-0.5 flex-shrink-0" />
+                  <span className="text-gray-300">AI recommendations</span>
+                </li>
+                <li className="flex items-start">
+                  <CheckCircle className="w-5 h-5 text-cyan-400 mr-2 mt-0.5 flex-shrink-0" />
+                  <span className="text-gray-300">Priority support</span>
+                </li>
+              </ul>
+              
+              <button onClick={handleGetStarted} className="w-full py-3 rounded bg-cyan-500 hover:bg-cyan-600 text-black font-bold transition-colors">
+                Start 30-Day Trial
+              </button>
+            </div>
+            
+            {/* Enterprise */}
+            <div className="bg-[#0f1823] rounded-lg p-8 border border-gray-800">
+              <h3 className="text-2xl font-bold mb-2">Enterprise</h3>
+              <div className="mb-6">
+                <span className="text-4xl font-bold">
+                  ${selectedTimeframe === 'monthly' ? '299' : '239'}
+                </span>
+                <span className="text-gray-400">/{selectedTimeframe === 'monthly' ? 'month' : 'month'}</span>
+                {selectedTimeframe === 'annual' && (
+                  <div className="text-sm text-green-500 mt-1">Billed $2,868 annually</div>
+                )}
+              </div>
+              
+              <ul className="space-y-3 mb-8">
+                <li className="flex items-start">
+                  <CheckCircle className="w-5 h-5 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
+                  <span className="text-gray-300">Everything in Pro</span>
+                </li>
+                <li className="flex items-start">
+                  <CheckCircle className="w-5 h-5 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
+                  <span className="text-gray-300">API access</span>
+                </li>
+                <li className="flex items-start">
+                  <CheckCircle className="w-5 h-5 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
+                  <span className="text-gray-300">Custom algorithms</span>
+                </li>
+                <li className="flex items-start">
+                  <CheckCircle className="w-5 h-5 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
+                  <span className="text-gray-300">Multiple accounts</span>
+                </li>
+                <li className="flex items-start">
+                  <CheckCircle className="w-5 h-5 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
+                  <span className="text-gray-300">White-glove onboarding</span>
+                </li>
+                <li className="flex items-start">
+                  <CheckCircle className="w-5 h-5 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
+                  <span className="text-gray-300">Dedicated support</span>
+                </li>
+              </ul>
+              
+              <button className="w-full py-3 rounded bg-gray-800 hover:bg-gray-700 transition-colors font-semibold">
+                Contact Sales
+              </button>
+            </div>
+          </div>
+          
+          <p className="text-center text-gray-400 mt-12">
+            All plans include 30-day free trial. No credit card required to start.
+          </p>
+        </div>
+      </div>
+
+      {/* ROI Section */}
+      <div className="bg-[#0f1823] py-20 px-8">
+        <div className="max-w-4xl mx-auto text-center">
+          <h2 className="text-4xl font-bold mb-8">The Math Is Simple</h2>
+          <div className="grid md:grid-cols-3 gap-8 mb-12">
+            <div>
+              <div className="text-3xl font-bold text-red-500 mb-2">$2,000</div>
+              <div className="text-gray-400">Polygon data alone</div>
+              <div className="text-sm text-gray-500">Per month retail</div>
+            </div>
+            <div>
+              <div className="text-3xl font-bold text-yellow-500 mb-2">$500+</div>
+              <div className="text-gray-400">Competitor tools</div>
+              <div className="text-sm text-gray-500">For basic features</div>
+            </div>
+            <div>
+              <div className="text-3xl font-bold text-green-500 mb-2">$99</div>
+              <div className="text-gray-400">Toption Pro</div>
+              <div className="text-sm text-gray-500">Everything included</div>
+            </div>
+          </div>
+          <p className="text-xl text-gray-300 mb-8">
+            One winning trade pays for a year of subscription.
+          </p>
+          <button onClick={handleGetStarted} className="bg-cyan-500 hover:bg-cyan-600 text-black font-bold px-8 py-4 rounded text-lg transition-all">
+            Start Your 30-Day Free Trial →
+          </button>
         </div>
       </div>
 
       {/* Footer */}
-      <footer className="border-t border-gray-800 py-12">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="flex justify-between items-center">
-            <div className="flex items-center space-x-2">
-              <Target className="h-6 w-6 text-blue-500" />
-              <span className="text-xl font-bold text-white">Toption</span>
-            </div>
-            <p className="text-gray-400">© 2024 Toption. All rights reserved.</p>
+      <footer className="border-t border-gray-800 py-12 px-8">
+        <div className="max-w-7xl mx-auto flex justify-between items-center">
+          <div className="flex items-center space-x-2">
+            <Target className="h-6 w-6 text-cyan-500" />
+            <span className="text-xl font-bold">Toption</span>
+          </div>
+          <div className="flex items-center space-x-6 text-gray-400">
+            <a href="/settings" className="hover:text-white">Features</a>
+            <a href="/settings" className="hover:text-white">Pricing</a>
+            <a href="/settings" className="hover:text-white">Roadmap</a>
+            <p>© 2024 Toption</p>
           </div>
         </div>
       </footer>
     </div>
   )
-} // Force Vercel redeploy - Sat Jul  5 09:16:05 EDT 2025
+}
