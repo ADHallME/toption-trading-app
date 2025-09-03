@@ -26,6 +26,7 @@ export interface OptionOpportunity {
   dte: number;
   premium: number;
   delta: number;
+  theta?: number; // Optional theta value
   iv: number;
   volume: number;
   openInterest: number;
@@ -241,6 +242,7 @@ export function polygonToOpportunity(
     dte,
     premium,
     delta: optionData.delta || -0.30,
+    theta: optionData.theta || -0.05, // Add theta here
     iv: optionData.implied_volatility || 0.25,
     volume: optionData.volume || 1000,
     openInterest: optionData.open_interest || 5000,

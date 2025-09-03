@@ -181,7 +181,7 @@ const AIRecommendationCard: React.FC<{
             </div>
             <div className="flex justify-between">
               <span className="text-gray-500">Theta:</span>
-              <span className="text-gray-300 font-mono">{opp.theta.toFixed(3)}</span>
+              <span className="text-gray-300 font-mono">{opp.theta?.toFixed(3) || 'N/A'}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-gray-500">IV:</span>
