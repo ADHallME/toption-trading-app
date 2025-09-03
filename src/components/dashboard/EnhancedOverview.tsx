@@ -6,7 +6,7 @@ import { createBrowserClient } from '@/lib/supabase'
 import { getPolygonClient } from '@/lib/polygon/client'
 import { aiEngine, polygonToOpportunity, AIRecommendation } from '@/lib/ai/recommendation-engine'
 import { sampleOptionsData, sampleQuotes } from '@/lib/polygon/sample-data'
-import OptionsScreener from './OptionsScreener'
+import OptionsScreenerEnhanced from './OptionsScreenerEnhanced'
 import ResearchTab from './ResearchTab'
 import AnalyticsTab from './AnalyticsTab'
 import { 
@@ -585,7 +585,7 @@ const EnhancedOverview: React.FC<EnhancedOverviewProps> = ({ user }) => {
         )}
 
         {/* Other Tabs */}
-        {activeTab === 'screener' && <OptionsScreener />}
+        {activeTab === 'screener' && <OptionsScreenerEnhanced />}
         {activeTab === 'research' && <ResearchTab />}
         {activeTab === 'analytics' && <AnalyticsTab />}
       </div>

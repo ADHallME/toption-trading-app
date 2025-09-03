@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createBrowserClient } from '@/lib/supabase'
 import { User } from '@supabase/supabase-js'
-import EnhancedOverview from '@/components/dashboard/EnhancedOverview'
+import EnhancedOverviewV2 from '@/components/dashboard/EnhancedOverviewV2'
 
 export default function DashboardPage() {
   const [user, setUser] = useState<User | null>(null)
@@ -35,7 +35,7 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-slate-950">
-      <EnhancedOverview user={user} />
+      <EnhancedOverviewV2 user={user} />
     </div>
   )
 } 
