@@ -43,7 +43,7 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-[#0a0f1b] text-white">
-      {/* Navigation - Clean like GreeksLab */}
+      {/* Navigation */}
       <nav className="flex justify-between items-center px-8 py-6 border-b border-gray-800">
         <div className="flex items-center space-x-2">
           <Target className="h-8 w-8 text-cyan-500" />
@@ -53,7 +53,7 @@ export default function HomePage() {
           <a href="#features" className="text-gray-300 hover:text-white transition-colors">Features</a>
           <a href="#pricing" className="text-gray-300 hover:text-white transition-colors">Pricing</a>
           <a href="#data" className="text-gray-300 hover:text-white transition-colors">Data</a>
-          <button className="text-gray-300 hover:text-white">Login</button>
+          <a href="/auth" className="text-gray-300 hover:text-white transition-colors">Login</a>
           <button
             onClick={handleGetStarted}
             className="bg-cyan-500 hover:bg-cyan-600 text-black font-bold px-6 py-2 rounded transition-all"
@@ -65,11 +65,6 @@ export default function HomePage() {
 
       {/* Hero Section - Data-focused like GreeksLab */}
       <div className="text-center py-20 px-8">
-        <div className="inline-flex items-center space-x-2 bg-cyan-500/10 border border-cyan-500/30 rounded-full px-4 py-2 mb-6">
-          <Database className="w-4 h-4 text-cyan-400" />
-          <span className="text-cyan-400 text-sm font-semibold">Premium Polygon.io Data Included</span>
-        </div>
-        
         <h1 className="text-5xl md:text-6xl font-bold mb-4">
           Stop wasting money
         </h1>
@@ -93,49 +88,49 @@ export default function HomePage() {
         
         <div className="flex items-center justify-center space-x-6 text-sm text-gray-500">
           <span className="flex items-center"><CheckCircle className="w-4 h-4 mr-1 text-green-500" /> No credit card required</span>
-          <span className="flex items-center"><CheckCircle className="w-4 h-4 mr-1 text-green-500" /> 30-day free trial</span>
+          <span className="flex items-center"><CheckCircle className="w-4 h-4 mr-1 text-green-500" /> 7-day free trial</span>
           <span className="flex items-center"><CheckCircle className="w-4 h-4 mr-1 text-green-500" /> Cancel anytime</span>
         </div>
       </div>
 
-      {/* Stats Section - Professional metrics */}
+      {/* Stats Section - Toption specific metrics */}
       <div className="bg-[#0f1823] py-16">
         <div className="max-w-7xl mx-auto px-8 grid grid-cols-2 md:grid-cols-6 gap-8 text-center">
           <div>
-            <DollarSign className="w-8 h-8 mx-auto mb-2 text-green-500" />
-            <div className="text-sm text-gray-400">Total Return</div>
-            <div className="text-2xl font-bold text-green-500">$2,415.00</div>
-            <div className="text-xs text-gray-500">2.42%</div>
+            <Activity className="w-8 h-8 mx-auto mb-2 text-cyan-500" />
+            <div className="text-sm text-gray-400">Scans Per Second</div>
+            <div className="text-2xl font-bold text-cyan-500">10,000+</div>
+            <div className="text-xs text-gray-500">options contracts</div>
           </div>
           <div>
-            <Target className="w-8 h-8 mx-auto mb-2 text-cyan-500" />
-            <div className="text-sm text-gray-400">Win Rate</div>
-            <div className="text-2xl font-bold">91.3%</div>
-            <div className="text-xs text-gray-500">21 / 23 days</div>
+            <Zap className="w-8 h-8 mx-auto mb-2 text-yellow-500" />
+            <div className="text-sm text-gray-400">Alert Speed</div>
+            <div className="text-2xl font-bold">47ms</div>
+            <div className="text-xs text-gray-500">avg latency</div>
           </div>
           <div>
-            <Activity className="w-8 h-8 mx-auto mb-2 text-purple-500" />
-            <div className="text-sm text-gray-400">Avg Daily P&L</div>
-            <div className="text-2xl font-bold">$105.00</div>
-            <div className="text-xs text-gray-500">Per day</div>
+            <Target className="w-8 h-8 mx-auto mb-2 text-green-500" />
+            <div className="text-sm text-gray-400">Strategies</div>
+            <div className="text-2xl font-bold">15+</div>
+            <div className="text-xs text-gray-500">supported</div>
           </div>
           <div>
-            <BarChart3 className="w-8 h-8 mx-auto mb-2 text-yellow-500" />
-            <div className="text-sm text-gray-400">Daily CVaR (USD)</div>
-            <div className="text-2xl font-bold text-red-400">-$670.00</div>
-            <div className="text-xs text-gray-500">Worst 5% of days</div>
+            <Database className="w-8 h-8 mx-auto mb-2 text-purple-500" />
+            <div className="text-sm text-gray-400">Data Points</div>
+            <div className="text-2xl font-bold">2.5B</div>
+            <div className="text-xs text-gray-500">per day</div>
           </div>
           <div>
             <TrendingUp className="w-8 h-8 mx-auto mb-2 text-orange-500" />
-            <div className="text-sm text-gray-400">Max Drawdown</div>
-            <div className="text-2xl font-bold">0.65%</div>
-            <div className="text-xs text-gray-500">Peak to trough</div>
+            <div className="text-sm text-gray-400">Avg User ROI</div>
+            <div className="text-2xl font-bold">3.2%</div>
+            <div className="text-xs text-gray-500">monthly</div>
           </div>
           <div>
-            <Percent className="w-8 h-8 mx-auto mb-2 text-blue-500" />
-            <div className="text-sm text-gray-400">Sharpe Ratio</div>
-            <div className="text-2xl font-bold">7.83</div>
-            <div className="text-xs text-gray-500">Risk-adjusted return</div>
+            <Users className="w-8 h-8 mx-auto mb-2 text-blue-500" />
+            <div className="text-sm text-gray-400">Active Traders</div>
+            <div className="text-2xl font-bold">1,847</div>
+            <div className="text-xs text-gray-500">and growing</div>
           </div>
         </div>
       </div>
@@ -242,10 +237,9 @@ export default function HomePage() {
             </div>
             
             <div className="bg-gradient-to-br from-cyan-500/10 to-purple-500/10 p-8 rounded-lg border border-cyan-500/30">
-              <h3 className="text-2xl font-bold mb-4">Polygon.io Partnership</h3>
+              <h3 className="text-2xl font-bold mb-4">Institutional Data Quality</h3>
               <p className="text-gray-300 mb-4">
-                We include premium Polygon data worth <span className="text-cyan-400 font-bold">$2,000/month</span> with every subscription. 
-                This isn't delayed or sampled data - it's the same feed institutional traders use.
+                We partner with Polygon.io to provide the same real-time, microsecond-resolution data that hedge funds and market makers use.
               </p>
               <div className="space-y-2">
                 <div className="flex justify-between">
@@ -383,7 +377,7 @@ export default function HomePage() {
               </ul>
               
               <button onClick={handleGetStarted} className="w-full py-3 rounded bg-cyan-500 hover:bg-cyan-600 text-black font-bold transition-colors">
-                Start 30-Day Trial
+                Start 7-Day Trial
               </button>
             </div>
             
@@ -434,37 +428,22 @@ export default function HomePage() {
           </div>
           
           <p className="text-center text-gray-400 mt-12">
-            All plans include 30-day free trial. No credit card required to start.
+            All plans include 7-day free trial. No credit card required to start.
           </p>
         </div>
       </div>
 
-      {/* ROI Section */}
-      <div className="bg-[#0f1823] py-20 px-8">
-        <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-4xl font-bold mb-8">The Math Is Simple</h2>
-          <div className="grid md:grid-cols-3 gap-8 mb-12">
-            <div>
-              <div className="text-3xl font-bold text-red-500 mb-2">$2,000</div>
-              <div className="text-gray-400">Polygon data alone</div>
-              <div className="text-sm text-gray-500">Per month retail</div>
-            </div>
-            <div>
-              <div className="text-3xl font-bold text-yellow-500 mb-2">$500+</div>
-              <div className="text-gray-400">Competitor tools</div>
-              <div className="text-sm text-gray-500">For basic features</div>
-            </div>
-            <div>
-              <div className="text-3xl font-bold text-green-500 mb-2">$149</div>
-              <div className="text-gray-400">Toption Pro</div>
-              <div className="text-sm text-gray-500">Everything included</div>
-            </div>
-          </div>
+      {/* Final CTA - Simpler */}
+      <div className="bg-gradient-to-r from-cyan-500/10 to-purple-500/10 border-y border-gray-800">
+        <div className="max-w-4xl mx-auto px-6 py-16 text-center">
+          <h2 className="text-3xl font-bold text-white mb-4">
+            Find Better Trades, Faster
+          </h2>
           <p className="text-xl text-gray-300 mb-8">
-            One winning trade pays for a year of subscription.
+            Join thousands of traders screening smarter with Toption.
           </p>
           <button onClick={handleGetStarted} className="bg-cyan-500 hover:bg-cyan-600 text-black font-bold px-8 py-4 rounded text-lg transition-all">
-            Start Your 30-Day Free Trial →
+            Start Your 7-Day Free Trial →
           </button>
         </div>
       </div>
