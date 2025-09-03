@@ -99,40 +99,40 @@ const OptionsScreenerEnhanced: React.FC = () => {
         
         // Multi-leg strategy logic
         if (selectedStrategy.includes('Strangle') || selectedStrategy.includes('Straddle')) {
-          const puts = optionsData.results.filter(o => o.contract_type === 'put')
-          const calls = optionsData.results.filter(o => o.contract_type === 'call')
+          // For sample data, we'll simulate multi-leg by using different strikes
+          const options = optionsData.results
           
-          if (puts.length > 0 && calls.length > 0) {
-            const put = puts[0]
-            const call = calls[0]
-            const combinedPremium = put.bid + call.bid
-            const dte = getDTE(put.expiration_date)
+          if (options.length >= 2) {
+            const option1 = options[0]
+            const option2 = options[1]
+            const combinedPremium = option1.bid + option2.bid
+            const dte = getDTE(option1.expiration_date)
             const isNaked = selectedStrategy.includes('Naked')
             
             screenResults.push({
               symbol: ticker,
-              expiration: put.expiration_date,
-              dte,
-              strike: put.strike_price,
-              strike2: call.strike_price,
+              expiration: option1.expiration_date,
+              dte: getDTE(option1.expiration_date),
+              strike: option1.strike_price,
+              strike2: option2.strike_price,
               premium: combinedPremium,
-              roi: calculateROI(combinedPremium, put.strike_price, dte),
-              roi_per_day: calculateROI(combinedPremium, put.strike_price, dte) / dte,
-              roi_per_year: (calculateROI(combinedPremium, put.strike_price, dte) / dte) * 365,
-              stock_price: put.strike_price * 1.05,
+              roi: calculateROI(combinedPremium, option1.strike_price, getDTE(option1.expiration_date)),
+              roi_per_day: calculateROI(combinedPremium, option1.strike_price, getDTE(option1.expiration_date)) / getDTE(option1.expiration_date),
+              roi_per_year: (calculateROI(combinedPremium, option1.strike_price, getDTE(option1.expiration_date)) / getDTE(option1.expiration_date)) * 365,
+              stock_price: option1.strike_price * 1.05,
               stock_distance: 5,
-              break_even: put.strike_price - combinedPremium,
+              break_even: option1.strike_price - combinedPremium,
               earnings: filters.avoid_earnings ? 'After' : (filters.after_earnings ? 'Passed' : 'Before'),
               dividend: ticker === 'SPY' ? 1.58 : ticker === 'AAPL' ? 0.96 : null,
               '30_day_change': '+2.5%',
-              oi: put.open_interest + call.open_interest,
-              delta: put.delta + call.delta,
-              theta: (put.theta || -0.05) + (call.theta || -0.05),
-              iv: (put.implied_volatility + call.implied_volatility) / 2,
+              oi: option1.open_interest + option2.open_interest,
+              delta: option1.delta + option2.delta,
+              theta: (option1.theta || -0.05) + (option2.theta || -0.05),
+              iv: (option1.implied_volatility + option2.implied_volatility) / 2,
               cash_required: isNaked ? 
-                Math.max(put.strike_price, call.strike_price) * 100 * 0.2 : 
-                put.strike_price * 100,
-              share_cost: put.strike_price * 100,
+                Math.max(option1.strike_price, option2.strike_price) * 100 * 0.2 : 
+                option1.strike_price * 100,
+              share_cost: option1.strike_price * 100,
               last_updated: 'Now',
               strategy: selectedStrategy
             })

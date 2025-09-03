@@ -302,11 +302,11 @@ export default function HomePage() {
               <h3 className="text-2xl font-bold mb-2">Starter</h3>
               <div className="mb-6">
                 <span className="text-4xl font-bold">
-                  ${selectedTimeframe === 'monthly' ? '49' : '39'}
+                  ${selectedTimeframe === 'monthly' ? '79' : '63'}
                 </span>
                 <span className="text-gray-400">/{selectedTimeframe === 'monthly' ? 'month' : 'month'}</span>
                 {selectedTimeframe === 'annual' && (
-                  <div className="text-sm text-green-500 mt-1">Billed $468 annually</div>
+                  <div className="text-sm text-green-500 mt-1">Billed $756 annually</div>
                 )}
               </div>
               
@@ -347,11 +347,11 @@ export default function HomePage() {
               <h3 className="text-2xl font-bold mb-2">Professional</h3>
               <div className="mb-6">
                 <span className="text-4xl font-bold text-cyan-400">
-                  ${selectedTimeframe === 'monthly' ? '99' : '79'}
+                  ${selectedTimeframe === 'monthly' ? '149' : '119'}
                 </span>
                 <span className="text-gray-400">/{selectedTimeframe === 'monthly' ? 'month' : 'month'}</span>
                 {selectedTimeframe === 'annual' && (
-                  <div className="text-sm text-green-500 mt-1">Billed $948 annually</div>
+                  <div className="text-sm text-green-500 mt-1">Billed $1,428 annually</div>
                 )}
               </div>
               
@@ -392,11 +392,11 @@ export default function HomePage() {
               <h3 className="text-2xl font-bold mb-2">Enterprise</h3>
               <div className="mb-6">
                 <span className="text-4xl font-bold">
-                  ${selectedTimeframe === 'monthly' ? '299' : '239'}
+                  ${selectedTimeframe === 'monthly' ? '499' : '399'}
                 </span>
                 <span className="text-gray-400">/{selectedTimeframe === 'monthly' ? 'month' : 'month'}</span>
                 {selectedTimeframe === 'annual' && (
-                  <div className="text-sm text-green-500 mt-1">Billed $2,868 annually</div>
+                  <div className="text-sm text-green-500 mt-1">Billed $4,788 annually</div>
                 )}
               </div>
               
@@ -455,7 +455,7 @@ export default function HomePage() {
               <div className="text-sm text-gray-500">For basic features</div>
             </div>
             <div>
-              <div className="text-3xl font-bold text-green-500 mb-2">$99</div>
+              <div className="text-3xl font-bold text-green-500 mb-2">$149</div>
               <div className="text-gray-400">Toption Pro</div>
               <div className="text-sm text-gray-500">Everything included</div>
             </div>
