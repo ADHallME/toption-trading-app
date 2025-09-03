@@ -39,10 +39,10 @@ const AIRecommendationCard: React.FC<{
   
   // Determine cash requirements based on strategy
   const getCashRequired = () => {
-    if (opp.strategy === 'cash_secured_put') return dollarAtRisk;
+    // Map the AI engine strategies to our display logic
+    if (opp.strategy === 'wheel') return dollarAtRisk; // CSP part of wheel
     if (opp.strategy === 'covered_call') return dollarAtRisk; // Assumes you own shares
-    if (opp.strategy === 'naked_strangle') return dollarAtRisk * 0.2; // Margin requirement
-    if (opp.strategy === 'covered_strangle') return dollarAtRisk;
+    if (opp.strategy === 'strangle') return dollarAtRisk * 0.2; // Margin requirement
     if (opp.strategy === 'iron_condor') return (opp.strike * 100 * 0.1); // Max loss
     return dollarAtRisk * 0.3; // Default margin
   };
@@ -79,7 +79,11 @@ const AIRecommendationCard: React.FC<{
         <div className="flex items-center space-x-2">
           <span className="text-lg font-bold text-white">{opp.ticker}</span>
           <span className="px-2 py-0.5 bg-blue-500/20 text-blue-400 rounded text-xs font-semibold">
-            {opp.strategy.replace('_', ' ').toUpperCase()}
+            {opp.strategy === 'wheel' ? 'WHEEL' : 
+             opp.strategy === 'strangle' ? 'STRANGLE' :
+             opp.strategy === 'iron_condor' ? 'IC' :
+             opp.strategy === 'covered_call' ? 'CC' :
+             opp.strategy.replace('_', ' ').toUpperCase()}
           </span>
           <div className="flex items-center px-2 py-0.5 bg-gradient-to-r from-purple-500/20 to-blue-500/20 rounded-full">
             <Sparkles className="w-3 h-3 text-purple-400 mr-1" />
@@ -222,11 +226,10 @@ const EnhancedOverview: React.FC<EnhancedOverviewProps> = ({ user }) => {
 
   const aiStrategies = [
     { value: 'all', label: 'All Strategies' },
-    { value: 'covered_calls_csps', label: 'Covered Calls & CSPs' },
-    { value: 'straddles_strangles', label: 'Straddles & Strangles' },
-    { value: 'condors_butterflies', label: 'Condors & Butterflies' },
-    { value: 'weeklies_0dte', label: 'Weeklies & 0DTE' },
-    { value: 'wheel', label: 'Wheel Strategy' }
+    { value: 'wheel', label: 'Wheel Strategy' },
+    { value: 'covered_call', label: 'Covered Calls' },
+    { value: 'strangle', label: 'Strangles' },
+    { value: 'iron_condor', label: 'Iron Condors' }
   ];
 
   const watchlistData = [
@@ -577,12 +580,10 @@ const EnhancedOverview: React.FC<EnhancedOverviewProps> = ({ user }) => {
                   className="w-full bg-slate-700 border border-slate-600 rounded px-3 py-2 text-white focus:border-emerald-500 focus:outline-none"
                 >
                   <option value="">Select Strategy</option>
-                  <option value="cash_secured_put">Cash Secured Put</option>
+                  <option value="wheel">Wheel (CSP + CC)</option>
                   <option value="covered_call">Covered Call</option>
-                  <option value="naked_strangle">Naked Strangle</option>
-                  <option value="covered_strangle">Covered Strangle</option>
+                  <option value="strangle">Strangle</option>
                   <option value="iron_condor">Iron Condor</option>
-                  <option value="butterfly">Butterfly</option>
                 </select>
               </div>
               
