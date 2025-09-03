@@ -103,7 +103,9 @@ const RiskAnalytics: React.FC = () => {
           <div className="bg-slate-800/50 rounded-lg p-4">
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm text-gray-400">Sharpe Ratio</span>
-              <Info className="w-3 h-3 text-gray-500" title="Risk-adjusted returns (higher is better)" />
+              <span title="Risk-adjusted returns (higher is better)">
+                <Info className="w-3 h-3 text-gray-500" />
+              </span>
             </div>
             <div className={`text-2xl font-bold ${getColorForMetric(metrics.sharpeRatio, 'sharpe')}`}>
               {metrics.sharpeRatio.toFixed(2)}
@@ -117,7 +119,9 @@ const RiskAnalytics: React.FC = () => {
           <div className="bg-slate-800/50 rounded-lg p-4">
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm text-gray-400">CVaR (95%)</span>
-              <Info className="w-3 h-3 text-gray-500" title="Average loss of worst 5% days" />
+              <span title="Average loss of worst 5% days">
+                <Info className="w-3 h-3 text-gray-500" />
+              </span>
             </div>
             <div className={`text-2xl font-bold ${getColorForMetric(metrics.cvar95, 'cvar')}`}>
               {formatCurrency(metrics.cvar95)}
@@ -131,7 +135,9 @@ const RiskAnalytics: React.FC = () => {
           <div className="bg-slate-800/50 rounded-lg p-4">
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm text-gray-400">CVaR (99%)</span>
-              <Info className="w-3 h-3 text-gray-500" title="Average loss of worst 1% days" />
+              <span title="Average loss of worst 1% days">
+                <Info className="w-3 h-3 text-gray-500" />
+              </span>
             </div>
             <div className={`text-2xl font-bold ${getColorForMetric(metrics.cvar99, 'cvar')}`}>
               {formatCurrency(metrics.cvar99)}
@@ -145,7 +151,9 @@ const RiskAnalytics: React.FC = () => {
           <div className="bg-slate-800/50 rounded-lg p-4">
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm text-gray-400">Max Drawdown</span>
-              <Info className="w-3 h-3 text-gray-500" title="Largest peak-to-trough decline" />
+              <span title="Largest peak-to-trough decline">
+                <Info className="w-3 h-3 text-gray-500" />
+              </span>
             </div>
             <div className="text-2xl font-bold text-red-400">
               {(metrics.maxDrawdown * 100).toFixed(2)}%
