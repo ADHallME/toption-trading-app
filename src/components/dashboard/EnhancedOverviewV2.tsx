@@ -83,7 +83,7 @@ const AIRecommendationCard: React.FC<{
              opp.strategy === 'strangle' ? 'STRANGLE' :
              opp.strategy === 'iron_condor' ? 'IC' :
              opp.strategy === 'covered_call' ? 'CC' :
-             opp.strategy.replace('_', ' ').toUpperCase()}
+             'UNKNOWN'}
           </span>
           <div className="flex items-center px-2 py-0.5 bg-gradient-to-r from-purple-500/20 to-blue-500/20 rounded-full">
             <Sparkles className="w-3 h-3 text-purple-400 mr-1" />
