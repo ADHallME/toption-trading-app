@@ -6,7 +6,7 @@ import EnhancedOverview from '@/components/dashboard/EnhancedOverview'
 export default function DashboardPage() {
   const { isSignedIn, user, isLoaded } = useUser()
 
-  // Just show loading while Clerk figures out auth state
+  // Wait for Clerk to load
   if (!isLoaded) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#0a0f1b]">
@@ -15,7 +15,7 @@ export default function DashboardPage() {
     )
   }
 
-  // If not signed in, show a message (middleware should prevent this)
+  // If not signed in, show message (don't redirect - let middleware handle it)
   if (!isSignedIn) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#0a0f1b]">
