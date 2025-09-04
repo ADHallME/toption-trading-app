@@ -1,21 +1,13 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
 import { useUser } from '@clerk/nextjs'
 import EnhancedOverview from '@/components/dashboard/EnhancedOverview'
 
 export default function DashboardPage() {
-  const router = useRouter()
   const { isSignedIn, user, isLoaded } = useUser()
 
-  useEffect(() => {
-    if (isLoaded && !isSignedIn) {
-      router.push('/sign-in')
-    }
-  }, [isSignedIn, isLoaded, router])
-
-  if (!isLoaded || !isSignedIn) {
+  // Just show loading while Clerk figures out auth state
+  if (!isLoaded) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#0a0f1b]">
         <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-cyan-500"></div>
@@ -23,5 +15,20 @@ export default function DashboardPage() {
     )
   }
 
+  // If not signed in, show a message (middleware should prevent this)
+  if (!isSignedIn) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#0a0f1b]">
+        <div className="text-center">
+          <p className="text-gray-400">Please sign in to access the dashboard</p>
+          <a href="/sign-in" className="text-cyan-500 hover:text-cyan-400 mt-4 inline-block">
+            Go to Sign In
+          </a>
+        </div>
+      </div>
+    )
+  }
+
+  // User is signed in, show the dashboard
   return <EnhancedOverview />
 }
