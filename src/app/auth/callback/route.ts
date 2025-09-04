@@ -7,9 +7,23 @@ export async function GET(request: Request) {
 
   if (code) {
     const supabase = createBrowserClient()
-    await supabase.auth.exchangeCodeForSession(code)
+    const { data: { session }, error } = await supabase.auth.exchangeCodeForSession(code)
+    
+    if (!error && session) {
+      // Check if user has completed onboarding
+      const { data: profile } = await supabase
+        .from('user_profiles')
+        .select('onboarding_completed')
+        .eq('user_id', session.user.id)
+        .single()
+      
+      // If no profile exists or onboarding not completed, redirect to onboarding
+      if (!profile || !profile.onboarding_completed) {
+        return NextResponse.redirect(new URL('/onboarding', requestUrl.origin))
+      }
+    }
   }
 
-  // URL to redirect to after sign in process completes
+  // Otherwise redirect to dashboard
   return NextResponse.redirect(new URL('/dashboard', requestUrl.origin))
 }
