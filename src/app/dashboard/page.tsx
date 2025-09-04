@@ -2,40 +2,26 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { createBrowserClient } from '@/lib/supabase'
-import { User } from '@supabase/supabase-js'
+import { useUser } from '@clerk/nextjs'
 import EnhancedOverview from '@/components/dashboard/EnhancedOverview'
 
 export default function DashboardPage() {
-  const [user, setUser] = useState<User | null>(null)
-  const [loading, setLoading] = useState(true)
   const router = useRouter()
-  const supabase = createBrowserClient()
+  const { isSignedIn, user, isLoaded } = useUser()
 
   useEffect(() => {
-    const getUser = async () => {
-      const { data: { session } } = await supabase.auth.getSession()
-      if (!session?.user) {
-        router.push('/auth')
-        return
-      }
-      setUser(session.user)
-      setLoading(false)
+    if (isLoaded && !isSignedIn) {
+      router.push('/sign-in')
     }
-    getUser()
-  }, [router, supabase.auth])
+  }, [isSignedIn, isLoaded, router])
 
-  if (loading) {
+  if (!isLoaded || !isSignedIn) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-500"></div>
+      <div className="min-h-screen flex items-center justify-center bg-[#0a0f1b]">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-cyan-500"></div>
       </div>
     )
   }
 
-  return (
-    <div className="min-h-screen bg-slate-950">
-      <EnhancedOverview user={user} />
-    </div>
-  )
-} 
+  return <EnhancedOverview />
+}
