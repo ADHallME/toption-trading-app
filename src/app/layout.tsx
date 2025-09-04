@@ -1,9 +1,12 @@
+import { ClerkProvider } from '@clerk/nextjs'
+import { Inter } from 'next/font/google'
 import './globals.css'
-import type { Metadata } from 'next'
 
-export const metadata: Metadata = {
-  title: 'Toption - Top Options Trading Platform',
-  description: 'Smart options screening with Yahoo Finance data, real-time market quotes, and trade journal.',
+const inter = Inter({ subsets: ['latin'] })
+
+export const metadata = {
+  title: 'Toption - AI-Powered Options Trading',
+  description: 'Smart options screening and analysis platform',
 }
 
 export default function RootLayout({
@@ -12,10 +15,10 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en">
-      <body className="bg-slate-950 text-white min-h-screen">
-        {children}
-      </body>
-    </html>
+    <ClerkProvider>
+      <html lang="en">
+        <body className={inter.className}>{children}</body>
+      </html>
+    </ClerkProvider>
   )
-} 
+}

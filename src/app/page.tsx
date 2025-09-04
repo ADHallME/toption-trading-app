@@ -1,8 +1,8 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { createBrowserClient } from '@/lib/supabase'
+import { useAuth } from '@clerk/nextjs'
 import { 
   TrendingUp, BarChart3, Target, Shield, ArrowRight, Star, 
   Zap, Users, CheckCircle, ChevronRight, Activity, Brain,
@@ -11,29 +11,19 @@ import {
 } from 'lucide-react'
 
 export default function HomePage() {
-  const [user, setUser] = useState<any>(null)
-  const [loading, setLoading] = useState(true)
   const [selectedTimeframe, setSelectedTimeframe] = useState('monthly')
   const router = useRouter()
-  const supabase = createBrowserClient()
-
-  useEffect(() => {
-    const checkUser = async () => {
-      const { data: { session } } = await supabase.auth.getSession()
-      if (session?.user) {
-        setUser(session.user)
-        router.push('/dashboard')
-      }
-      setLoading(false)
-    }
-    checkUser()
-  }, [router, supabase.auth])
+  const { isSignedIn, isLoaded } = useAuth()
 
   const handleGetStarted = () => {
-    router.push('/auth')
+    if (isSignedIn) {
+      router.push('/dashboard')
+    } else {
+      router.push('/sign-up')
+    }
   }
 
-  if (loading) {
+  if (!isLoaded) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#0a0f1b]">
         <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-cyan-500"></div>
