@@ -9,6 +9,7 @@ import {
   DollarSign, Clock, AlertTriangle, Eye, TrendingDown,
   LineChart, PieChart, Percent, Database, Server
 } from 'lucide-react'
+import Link from 'next/link'
 
 export default function HomePage() {
   const [selectedTimeframe, setSelectedTimeframe] = useState('monthly')
@@ -43,7 +44,7 @@ export default function HomePage() {
           <a href="#features" className="text-gray-300 hover:text-white transition-colors">Features</a>
           <a href="#pricing" className="text-gray-300 hover:text-white transition-colors">Pricing</a>
           <a href="#data" className="text-gray-300 hover:text-white transition-colors">Data</a>
-          <a href="/sign-in" className="text-gray-300 hover:text-white transition-colors">Login</a>
+          <Link href="/sign-in" className="text-gray-300 hover:text-white transition-colors">Login</Link>
           <button
             onClick={handleGetStarted}
             className="bg-cyan-500 hover:bg-cyan-600 text-black font-bold px-6 py-2 rounded transition-all"
