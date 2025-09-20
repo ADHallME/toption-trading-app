@@ -10,7 +10,7 @@ export default function Page() {
             card: "bg-gray-900 border border-gray-800"
           }
         }}
-        fallbackRedirectUrl="/dashboard"
+        forceRedirectUrl="/dashboard"
         signInUrl="/sign-in"
       />
     </div>

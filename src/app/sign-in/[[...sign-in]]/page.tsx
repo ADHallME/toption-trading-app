@@ -7,10 +7,11 @@ export default function Page() {
         appearance={{
           elements: {
             rootBox: "w-full max-w-md",
-            card: "bg-gray-900 border border-gray-800"
+            card: "bg-gray-900 border border-gray-800",
+            socialButtonsBlockButton: "bg-white hover:bg-gray-100 text-gray-900 border-gray-200"
           }
         }}
-        fallbackRedirectUrl="/dashboard"
+        forceRedirectUrl="/dashboard"
         signUpUrl="/sign-up"
       />
     </div>
