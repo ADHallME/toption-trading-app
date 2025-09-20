@@ -1,16 +1,18 @@
 import { authMiddleware } from '@clerk/nextjs'
-import { NextResponse } from 'next/server'
 
 export default authMiddleware({
   publicRoutes: ['/', '/sign-in', '/sign-up'],
   afterAuth(auth, req) {
-    // If user is signed in
-    if (auth.userId) {
-      // If they're on sign-in, sign-up, or any other non-dashboard route
-      if (!req.nextUrl.pathname.startsWith('/dashboard')) {
-        // Force redirect to dashboard
-        return NextResponse.redirect(new URL('/dashboard', req.url))
-      }
+    const url = new URL(req.url)
+    
+    // If user is signed in and trying to access /auth, redirect to dashboard
+    if (auth.userId && url.pathname === '/auth') {
+      return Response.redirect(new URL('/dashboard', req.url))
+    }
+    
+    // If user just signed in (on sign-in page), go to dashboard
+    if (auth.userId && url.pathname.includes('/sign-in')) {
+      return Response.redirect(new URL('/dashboard', req.url))
     }
   }
 })
