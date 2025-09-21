@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react'
 import { getPolygonClient } from '@/lib/polygon/client'
-import { sampleOptionsData } from '@/lib/polygon/sample-data'
+import { useEnhancedOptions, MarketType } from '@/hooks/useEnhancedOptions'
 import { 
   Search, Filter, RefreshCw, Download, Plus, ChevronDown, 
   TrendingUp, Calendar, DollarSign, AlertCircle, Info
