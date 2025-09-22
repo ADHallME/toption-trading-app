@@ -124,7 +124,7 @@ const TOP_ROI_OPPORTUNITIES = [
   },
 ]
 
-// Simple line chart component
+// Simple line chart component  
 const SimpleLineChart = ({ data, height = 200 }: { data: any[], height?: number }) => {
   if (!data || data.length === 0) return null
   
@@ -643,12 +643,232 @@ export default function ProfessionalTerminal() {
           </div>
         )}
 
-        {/* Main Content Area - Rest continues as before */}
+        {/* Main Content Area */}
         <div className="flex-1 p-4 overflow-auto">
           {activeWorkspace === 'main' ? (
             <div className="space-y-4">
-              {/* Main workspace panels remain the same */}
-              {/* ... existing code ... */}
+              {/* Watchlist Panel */}
+              <div className={`bg-gray-900 rounded-lg border border-gray-800 ${
+                expandedPanels.has('watchlist') ? '' : 'h-12'
+              }`}>
+                <div 
+                  className="flex items-center justify-between p-3 border-b border-gray-800 cursor-pointer"
+                  onClick={() => togglePanel('watchlist')}
+                >
+                  <div className="flex items-center gap-2">
+                    <ChevronRight className={`w-4 h-4 text-gray-400 transition-transform ${
+                      expandedPanels.has('watchlist') ? 'rotate-90' : ''
+                    }`} />
+                    <Eye className="w-4 h-4 text-blue-400" />
+                    <h3 className="text-sm font-semibold text-white">Watchlist</h3>
+                    <span className="text-xs text-gray-500">({watchlist.length} symbols)</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation()
+                      }}
+                      className="p-1 hover:bg-gray-800 rounded"
+                    >
+                      <Plus className="w-3 h-3 text-gray-400" />
+                    </button>
+                  </div>
+                </div>
+                {expandedPanels.has('watchlist') && (
+                  <div className="p-4">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-3">
+                      {watchlist.map(item => (
+                        <div key={item.symbol} className="bg-gray-800/50 rounded-lg p-3 hover:bg-gray-800 transition-colors">
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="font-semibold text-white">{item.symbol}</span>
+                            <Star className="w-4 h-4 text-yellow-400 cursor-pointer" />
+                          </div>
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="text-gray-400">${item.price.toFixed(2)}</span>
+                            <span className={item.change >= 0 ? 'text-green-400' : 'text-red-400'}>
+                              {item.change >= 0 ? '+' : ''}{item.change.toFixed(2)}%
+                            </span>
+                          </div>
+                          <div className="flex items-center justify-between text-xs text-gray-500 mt-1">
+                            <span>IV: {item.iv}%</span>
+                            <span>Rank: {item.ivRank}</span>
+                            {item.alerts > 0 && (
+                              <span className="text-orange-400">{item.alerts} alerts</span>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Strategy Opportunities Panel */}
+              <div className={`bg-gray-900 rounded-lg border border-gray-800 ${
+                expandedPanels.has('opportunities') ? '' : 'h-12'
+              }`}>
+                <div 
+                  className="flex items-center justify-between p-3 border-b border-gray-800 cursor-pointer"
+                  onClick={() => togglePanel('opportunities')}
+                >
+                  <div className="flex items-center gap-2">
+                    <ChevronRight className={`w-4 h-4 text-gray-400 transition-transform ${
+                      expandedPanels.has('opportunities') ? 'rotate-90' : ''
+                    }`} />
+                    <Target className="w-4 h-4 text-emerald-400" />
+                    <h3 className="text-sm font-semibold text-white">Opportunities by Strategy</h3>
+                    <span className="text-xs text-emerald-400">
+                      {Object.values(opportunities).flat().length} total
+                    </span>
+                  </div>
+                  <button 
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      refreshOptions()
+                    }}
+                    className="p-1 hover:bg-gray-800 rounded"
+                  >
+                    <RefreshCw className={`w-3 h-3 text-gray-400 ${optionsLoading ? 'animate-spin' : ''}`} />
+                  </button>
+                </div>
+                {expandedPanels.has('opportunities') && (
+                  <div className="p-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                      {Object.entries(opportunities).map(([strategy, opps]) => (
+                        <StrategyCard key={strategy} strategy={strategy} opportunities={opps} />
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Top ROI Opportunities Table */}
+              <div className={`bg-gray-900 rounded-lg border border-gray-800 ${
+                expandedPanels.has('chain') ? '' : 'h-12'
+              }`}>
+                <div 
+                  className="flex items-center justify-between p-3 border-b border-gray-800 cursor-pointer"
+                  onClick={() => togglePanel('chain')}
+                >
+                  <div className="flex items-center gap-2">
+                    <ChevronRight className={`w-4 h-4 text-gray-400 transition-transform ${
+                      expandedPanels.has('chain') ? 'rotate-90' : ''
+                    }`} />
+                    <Activity className="w-4 h-4 text-purple-400" />
+                    <h3 className="text-sm font-semibold text-white">Top ROI Opportunities</h3>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="relative" onClick={e => e.stopPropagation()}>
+                      <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 w-3 h-3 text-gray-400" />
+                      <input
+                        type="text"
+                        value={chainSearchQuery}
+                        onChange={(e) => {
+                          setChainSearchQuery(e.target.value)
+                          setShowChainSearchSuggestions(true)
+                        }}
+                        onFocus={() => setShowChainSearchSuggestions(true)}
+                        placeholder="Search ticker..."
+                        className="pl-7 pr-3 py-1 bg-gray-800 border border-gray-700 rounded text-xs text-white placeholder-gray-500 w-32 focus:w-48 transition-all focus:border-blue-500"
+                      />
+                      
+                      {showChainSearchSuggestions && chainSearchQuery && (
+                        <div className="absolute top-8 left-0 w-64 bg-gray-900 border border-gray-800 rounded-lg shadow-xl z-50 max-h-64 overflow-y-auto">
+                          {getFilteredSuggestions(chainSearchQuery).map(ticker => (
+                            <button
+                              key={ticker.symbol}
+                              onClick={() => handleTickerSelect(ticker.symbol, ticker.price)}
+                              className="w-full px-3 py-2 hover:bg-gray-800 text-left flex items-center justify-between group"
+                            >
+                              <div>
+                                <span className="text-sm font-medium text-white">{ticker.symbol}</span>
+                                <span className="text-xs text-gray-400 ml-2">{ticker.type}</span>
+                              </div>
+                              <div className="text-right">
+                                <div className="text-xs text-gray-300">${ticker.price.toFixed(2)}</div>
+                                <div className="text-xs text-gray-500">{ticker.name.substring(0, 20)}</div>
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    
+                    <button className="p-1 hover:bg-gray-800 rounded" onClick={e => e.stopPropagation()}>
+                      <Maximize2 className="w-3 h-3 text-gray-400" />
+                    </button>
+                  </div>
+                </div>
+                {expandedPanels.has('chain') && (
+                  <div className="p-4">
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-xs">
+                        <thead className="text-gray-400 border-b border-gray-800">
+                          <tr>
+                            <th className="text-left py-2 px-2">Symbol</th>
+                            <th className="text-left py-2 px-2">Type</th>
+                            <th className="text-right py-2 px-2">Strike</th>
+                            <th className="text-right py-2 px-2">DTE</th>
+                            <th className="text-right py-2 px-2">Premium</th>
+                            <th className="text-right py-2 px-2">ROI</th>
+                            <th className="text-right py-2 px-2">ROI/Day</th>
+                            <th className="text-right py-2 px-2">PoP</th>
+                            <th className="text-right py-2 px-2">Capital</th>
+                            <th className="text-right py-2 px-2">Distance</th>
+                            <th className="text-right py-2 px-2">IV</th>
+                          </tr>
+                        </thead>
+                        <tbody className="text-gray-300">
+                          {TOP_ROI_OPPORTUNITIES.map((opp, idx) => (
+                            <tr key={idx} className="border-b border-gray-800/50 hover:bg-gray-800/30">
+                              <td className="py-2 px-2 font-mono font-semibold text-white">{opp.symbol}</td>
+                              <td className="py-2 px-2">
+                                <span className="px-1 py-0.5 rounded text-xs bg-emerald-900/30 text-emerald-400">
+                                  {opp.type}
+                                </span>
+                              </td>
+                              <td className="text-right py-2 px-2">${opp.strike}</td>
+                              <td className="text-right py-2 px-2">{opp.dte}d</td>
+                              <td className="text-right py-2 px-2">${opp.premium.toFixed(2)}</td>
+                              <td className="text-right py-2 px-2 text-emerald-400 font-semibold">
+                                {opp.roi.toFixed(2)}%
+                              </td>
+                              <td className="text-right py-2 px-2">{opp.roiPerDay.toFixed(3)}%</td>
+                              <td className="text-right py-2 px-2">{opp.pop}%</td>
+                              <td className="text-right py-2 px-2">${opp.capital}</td>
+                              <td className="text-right py-2 px-2">{opp.distance}%</td>
+                              <td className="text-right py-2 px-2">{opp.iv}%</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Screener Panel */}
+              <div className={`bg-gray-900 rounded-lg border border-gray-800 ${
+                expandedPanels.has('screener') ? '' : 'h-12'
+              }`}>
+                <div 
+                  className="flex items-center justify-between p-3 border-b border-gray-800 cursor-pointer"
+                  onClick={() => togglePanel('screener')}
+                >
+                  <div className="flex items-center gap-2">
+                    <ChevronRight className={`w-4 h-4 text-gray-400 transition-transform ${
+                      expandedPanels.has('screener') ? 'rotate-90' : ''
+                    }`} />
+                    <Filter className="w-4 h-4 text-orange-400" />
+                    <h3 className="text-sm font-semibold text-white">Advanced Screener</h3>
+                  </div>
+                </div>
+                {expandedPanels.has('screener') && (
+                  <div className="p-4">
+                    <OptionsScreenerEnhanced />
+                  </div>
+                )}
+              </div>
             </div>
           ) : (
             // Analysis & Research Workspace
@@ -708,7 +928,7 @@ export default function ProfessionalTerminal() {
                 )}
               </div>
 
-              {/* Research Panel with Social Sentiment */}
+              {/* Enhanced Research with Social Sentiment */}
               {selectedAnalysisTicker && (
                 <div className="bg-gray-900 rounded-lg border border-gray-800">
                   <div className="p-4">
