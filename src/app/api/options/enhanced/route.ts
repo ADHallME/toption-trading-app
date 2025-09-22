@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getPolygonEnhancedClient } from '@/lib/polygon/enhanced-client';
-import { MarketType } from '@/hooks/useEnhancedOptions';
+
+// Define MarketType enum directly here to avoid importing from hooks
+enum MarketType {
+  EQUITY_OPTIONS = 'equity',
+  INDEX_OPTIONS = 'index',
+  FUTURES_OPTIONS = 'futures'
+}
 
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
@@ -8,7 +14,7 @@ export async function GET(request: NextRequest) {
   // Parse query parameters
   const underlying = searchParams.get('underlying') || 'SPY';
   const marketType = (searchParams.get('marketType') as MarketType) || MarketType.EQUITY_OPTIONS;
-  const expiration = searchParams.get('expiration') || undefined; // Changed from null to undefined
+  const expiration = searchParams.get('expiration') || undefined;
   const minStrike = searchParams.get('minStrike') ? parseFloat(searchParams.get('minStrike')!) : undefined;
   const maxStrike = searchParams.get('maxStrike') ? parseFloat(searchParams.get('maxStrike')!) : undefined;
   const contractType = searchParams.get('contractType') as 'call' | 'put' | 'both' || 'both';
@@ -24,7 +30,7 @@ export async function GET(request: NextRequest) {
     const optionsRequest = {
       underlying,
       marketType,
-      expiration, // Now properly undefined instead of null
+      expiration,
       minStrike,
       maxStrike,
       contractType,
