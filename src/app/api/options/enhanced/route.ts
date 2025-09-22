@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getPolygonEnhancedClient } from '@/lib/polygon/enhanced-client';
 
-// Define MarketType enum directly here to avoid importing from hooks
+// Use the exact same MarketType values as the enhanced-client
 enum MarketType {
-  EQUITY_OPTIONS = 'equity',
-  INDEX_OPTIONS = 'index',
-  FUTURES_OPTIONS = 'futures'
+  EQUITY_OPTIONS = 'equity_options',
+  INDEX_OPTIONS = 'index_options',
+  FUTURES_OPTIONS = 'futures_options',
+  COMMODITY_OPTIONS = 'commodity_options'
 }
 
 export async function GET(request: NextRequest) {
