@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { currentUser } from '@clerk/nextjs/server' // Changed from 'auth' to 'currentUser'
-import { createClient } from '@supabase/supabase-js'
+import { currentUser } from '@clerk/nextjs/server'
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
+// Temporarily commented out Supabase - using localStorage in the app
+// const supabase = createClient(
+//   process.env.NEXT_PUBLIC_SUPABASE_URL!,
+//   process.env.SUPABASE_SERVICE_ROLE_KEY!
+// )
 
 export async function GET(request: NextRequest) {
   try {
@@ -14,17 +14,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { data, error } = await supabase
-      .from('user_preferences')
-      .select('*')
-      .eq('user_id', user.id)
-      .single()
-
-    if (error && error.code !== 'PGRST116') {
-      throw error
-    }
-
-    return NextResponse.json({ preferences: data || {} })
+    // Return empty preferences - handled by localStorage  
+    return NextResponse.json({ preferences: {} })
   } catch (error) {
     console.error('Error fetching preferences:', error)
     return NextResponse.json(
@@ -41,18 +32,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const preferences = await request.json()
-
-    const { error } = await supabase
-      .from('user_preferences')
-      .upsert({
-        user_id: user.id,
-        ...preferences,
-        updated_at: new Date().toISOString()
-      })
-
-    if (error) throw error
-
+    // Preferences saving disabled - handled by localStorage
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error('Error saving preferences:', error)

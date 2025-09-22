@@ -492,8 +492,8 @@ export default function ProfessionalTerminal() {
                     AI is actively monitoring your watchlist and scanning for opportunities based on your preferences:
                   </p>
                   <ul className="text-xs text-gray-400 space-y-1">
-                    <li>• High ROI opportunities (>15%)</li>
-                    <li>• IV rank changes (>20 points)</li>
+                    <li>• High ROI opportunities (&gt;15%)</li>
+                    <li>• IV rank changes (&gt;20 points)</li>
                     <li>• Unusual options activity</li>
                     <li>• Earnings plays</li>
                   </ul>
