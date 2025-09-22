@@ -1,10 +1,5 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Disable static generation for dashboard pages
-  experimental: {
-    runtime: 'nodejs',
-  },
-  
   // Reduce build-time API calls
   typescript: {
     // Skip type checking during build (Vercel does this separately)

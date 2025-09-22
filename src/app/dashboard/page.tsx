@@ -6,10 +6,10 @@ export const revalidate = 0
 
 import { useState, useEffect } from 'react'
 import { useAuth } from '@clerk/nextjs'
-import dynamic from 'next/dynamic'
+import dynamicImport from 'next/dynamic'
 
 // Lazy load heavy components
-const ProfessionalTerminal = dynamic(
+const ProfessionalTerminal = dynamicImport(
   () => import('@/components/dashboard/ProfessionalTerminal'),
   { 
     loading: () => (
@@ -21,7 +21,7 @@ const ProfessionalTerminal = dynamic(
   }
 )
 
-const EnhancedOverview = dynamic(
+const EnhancedOverview = dynamicImport(
   () => import('@/components/dashboard/EnhancedOverview'),
   { ssr: false }
 )
