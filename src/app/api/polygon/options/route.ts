@@ -1,42 +1,32 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 
-const POLYGON_API_KEY = process.env.POLYGON_API_KEY
-const POLYGON_BASE_URL = 'https://api.polygon.io'
+const POLYGON_API_KEY = 'geKtXXWPX3aHDqmrcYhYbouXkfhXsaVp'
 
-export async function GET(request: NextRequest) {
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url)
+  const symbol = searchParams.get('symbol')
+  const expiration = searchParams.get('expiration')
+  const type = searchParams.get('type') || 'put' // 'call' or 'put'
+  
+  if (!symbol) {
+    return NextResponse.json({ error: 'Symbol required' }, { status: 400 })
+  }
+
   try {
-    const { searchParams } = new URL(request.url)
-    const ticker = searchParams.get('ticker')
-    const expiration = searchParams.get('expiration')
-    const strikeGte = searchParams.get('strike_gte')
-    const strikeLte = searchParams.get('strike_lte')
+    // Build the query URL based on parameters
+    let url = `https://api.polygon.io/v3/reference/options/contracts?underlying_ticker=${symbol}&limit=100`
     
-    if (!ticker) {
-      return NextResponse.json({ error: 'Ticker required' }, { status: 400 })
+    if (expiration) {
+      url += `&expiration_date=${expiration}`
     }
     
-    // Build query parameters
-    const params = new URLSearchParams({
-      apiKey: POLYGON_API_KEY || '',
-      'underlying_ticker': ticker.toUpperCase(),
-      'limit': '250',
-      'order': 'desc',
-      'sort': 'open_interest'
-    })
+    if (type) {
+      url += `&contract_type=${type}`
+    }
     
-    if (expiration) params.append('expiration_date', expiration)
-    if (strikeGte) params.append('strike_price.gte', strikeGte)
-    if (strikeLte) params.append('strike_price.lte', strikeLte)
+    url += `&apiKey=${POLYGON_API_KEY}`
     
-    // Fetch options chain from Polygon
-    const response = await fetch(
-      `${POLYGON_BASE_URL}/v3/snapshot/options/${ticker.toUpperCase()}?${params.toString()}`,
-      {
-        headers: {
-          'Authorization': `Bearer ${POLYGON_API_KEY}`
-        }
-      }
-    )
+    const response = await fetch(url)
     
     if (!response.ok) {
       throw new Error(`Polygon API error: ${response.status}`)
@@ -44,51 +34,31 @@ export async function GET(request: NextRequest) {
     
     const data = await response.json()
     
-    // Transform data for our frontend
-    const transformed = {
-      status: data.status,
-      results: data.results?.map((option: any) => ({
-        ticker: option.details?.ticker,
-        underlying_ticker: ticker.toUpperCase(),
-        contract_type: option.details?.contract_type,
-        expiration_date: option.details?.expiration_date,
-        strike_price: option.details?.strike_price,
-        
-        // Greeks
-        delta: option.greeks?.delta || 0,
-        gamma: option.greeks?.gamma || 0,
-        theta: option.greeks?.theta || 0,
-        vega: option.greeks?.vega || 0,
-        
-        // Pricing
-        bid: option.last_quote?.bid || 0,
-        ask: option.last_quote?.ask || 0,
-        mid: ((option.last_quote?.bid || 0) + (option.last_quote?.ask || 0)) / 2,
-        last: option.last_trade?.price || 0,
-        
-        // Volume & OI
-        volume: option.day?.volume || 0,
-        open_interest: option.open_interest || 0,
-        
-        // IV
-        implied_volatility: option.implied_volatility || 0,
-        
-        // Underlying
-        underlying_price: option.underlying_asset?.price || 0,
-        
-        // Change
-        change: option.day?.change || 0,
-        change_percent: option.day?.change_percent || 0
-      })) || []
-    }
+    // Calculate ROI and other metrics for each option
+    const processedOptions = data.results?.map((contract: any) => {
+      const strike = contract.strike_price
+      const expDate = new Date(contract.expiration_date)
+      const dte = Math.ceil((expDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+      
+      // We'll need to get actual premium from another endpoint
+      // For now, return the contract details
+      return {
+        symbol: contract.ticker,
+        underlying: symbol,
+        strike: strike,
+        expiration: contract.expiration_date,
+        dte: dte,
+        type: contract.contract_type,
+        contractSize: contract.shares_per_contract || 100
+      }
+    }) || []
     
-    return NextResponse.json(transformed)
-    
+    return NextResponse.json({ 
+      results: processedOptions,
+      count: processedOptions.length 
+    })
   } catch (error) {
-    console.error('Polygon API error:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch options data' },
-      { status: 500 }
-    )
+    console.error('Options chain error:', error)
+    return NextResponse.json({ error: 'Failed to fetch options chain' }, { status: 500 })
   }
 }
