@@ -87,415 +87,234 @@ const OptionsScreenerEnhanced: React.FC = () => {
     'Butterfly Spread'
   ]
 
+  const getDTE = (expirationDate: string): number => {
+    const expiry = new Date(expirationDate)
+    const today = new Date()
+    const timeDiff = expiry.getTime() - today.getTime()
+    return Math.ceil(timeDiff / (1000 * 3600 * 24))
+  }
+
   const runScreener = async () => {
     setLoading(true)
     
     try {
       const screenResults: ScreenerResult[] = []
       
+      // Fetch real options data from Polygon API
       for (const ticker of selectedTickers) {
-        const optionsData = sampleOptionsData[ticker]
-        if (!optionsData) continue
-        
-        // Multi-leg strategy logic
-        if (selectedStrategy.includes('Strangle') || selectedStrategy.includes('Straddle')) {
-          // For sample data, we'll simulate multi-leg by using different strikes
-          const options = optionsData.results
+        try {
+          // Fetch options chain from our API route
+          const response = await fetch(`/api/polygon/options?symbol=${ticker}&type=put`)
+          if (!response.ok) continue
           
-          if (options.length >= 2) {
-            const option1 = options[0]
-            const option2 = options[1]
-            const combinedPremium = option1.bid + option2.bid
-            const dte = getDTE(option1.expiration_date)
-            const isNaked = selectedStrategy.includes('Naked')
+          const data = await response.json()
+          const optionsData = data.results || []
+          
+          // Process each option contract
+          for (const option of optionsData) {
+            const dte = option.dte || getDTE(option.expiration)
             
-            screenResults.push({
-              symbol: ticker,
-              expiration: option1.expiration_date,
-              dte: getDTE(option1.expiration_date),
-              strike: option1.strike_price,
-              strike2: option2.strike_price,
-              premium: combinedPremium,
-              roi: calculateROI(combinedPremium, option1.strike_price, getDTE(option1.expiration_date)),
-              roi_per_day: calculateROI(combinedPremium, option1.strike_price, getDTE(option1.expiration_date)) / getDTE(option1.expiration_date),
-              roi_per_year: (calculateROI(combinedPremium, option1.strike_price, getDTE(option1.expiration_date)) / getDTE(option1.expiration_date)) * 365,
-              stock_price: option1.strike_price * 1.05,
-              stock_distance: 5,
-              break_even: option1.strike_price - combinedPremium,
-              earnings: filters.avoid_earnings ? 'After' : (filters.after_earnings ? 'Passed' : 'Before'),
-              dividend: ticker === 'SPY' ? 1.58 : ticker === 'AAPL' ? 0.96 : null,
-              '30_day_change': '+2.5%',
-              oi: option1.open_interest + option2.open_interest,
-              delta: option1.delta + option2.delta,
-              theta: (option1.theta || -0.05) + (option2.theta || -0.05),
-              iv: (option1.implied_volatility + option2.implied_volatility) / 2,
-              cash_required: isNaked ? 
-                Math.max(option1.strike_price, option2.strike_price) * 100 * 0.2 : 
-                option1.strike_price * 100,
-              share_cost: option1.strike_price * 100,
-              last_updated: 'Now',
-              strategy: selectedStrategy
-            })
-          }
-        } else {
-          // Single leg strategies
-          for (const option of optionsData.results.slice(0, 5)) {
-            const dte = getDTE(option.expiration_date)
-            const roi = calculateROI(option.bid, option.strike_price, dte)
-            const pop = calculatePOP(option.delta)
-            
+            // Apply filters
             if (dte < parseInt(filters.dte_min) || dte > parseInt(filters.dte_max)) continue
-            if (roi < parseFloat(filters.roi_min) || roi > parseFloat(filters.roi_max)) continue
-            if (pop < parseFloat(filters.pop_min)) continue
-            if (option.strike_price * 100 > parseFloat(filters.capital_max)) continue
-            if (option.open_interest < parseInt(filters.min_oi)) continue
-            if (option.delta < parseFloat(filters.delta_min) || option.delta > parseFloat(filters.delta_max)) continue
-            if ((option.theta || -0.05) < parseFloat(filters.theta_min) || (option.theta || -0.05) > parseFloat(filters.theta_max)) continue
+            if (option.roi && option.roi < parseFloat(filters.roi_min)) continue
             
-            screenResults.push({
+            const result: ScreenerResult = {
               symbol: ticker,
-              expiration: option.expiration_date,
-              dte,
-              strike: option.strike_price,
-              premium: option.bid,
-              roi,
-              roi_per_day: roi / dte,
-              roi_per_year: (roi / dte) * 365,
-              stock_price: option.strike_price * 1.05,
-              stock_distance: 5,
-              break_even: option.strike_price - option.bid,
-              earnings: filters.avoid_earnings ? 'After' : (filters.after_earnings ? 'Passed' : 'Before'),
-              dividend: ticker === 'SPY' ? 1.58 : ticker === 'AAPL' ? 0.96 : null,
-              '30_day_change': '+2.5%',
-              oi: option.open_interest,
-              delta: option.delta,
-              theta: option.theta || -0.05,
-              iv: option.implied_volatility,
-              cash_required: selectedStrategy === 'Covered Call' ? 
-                option.strike_price * 100 : 
-                option.strike_price * 100,
-              share_cost: option.strike_price * 100,
-              last_updated: 'Now',
+              expiration: option.expiration,
+              dte: dte,
+              strike: option.strike,
+              premium: option.premium || 0,
+              roi: option.roi || 0,
+              roi_per_day: option.roiPerDay || 0,
+              roi_per_year: (option.roi || 0) * (365 / dte),
+              stock_price: 0, // Will be fetched separately
+              stock_distance: 0,
+              break_even: option.strike - (option.premium || 0),
+              earnings: 'N/A',
+              dividend: null,
+              '30_day_change': '0%',
+              oi: option.openInterest || 0,
+              delta: 0,
+              theta: 0,
+              iv: 0,
+              cash_required: option.strike * 100,
+              share_cost: option.strike * 100,
+              last_updated: new Date().toISOString(),
               strategy: selectedStrategy
-            })
+            }
+            
+            screenResults.push(result)
           }
+        } catch (error) {
+          console.error(`Error fetching options for ${ticker}:`, error)
         }
       }
       
-      setResults(screenResults.sort((a, b) => b.roi - a.roi).slice(0, 20))
+      // Sort by ROI descending
+      screenResults.sort((a, b) => b.roi - a.roi)
+      
+      // Limit to top 50 results
+      setResults(screenResults.slice(0, 50))
     } catch (error) {
       console.error('Screener error:', error)
     } finally {
       setLoading(false)
     }
   }
-  
-  const getDTE = (expiry: string): number => {
-    const expiryDate = new Date(expiry)
-    const today = new Date()
-    return Math.ceil((expiryDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
-  }
-  
-  const calculateROI = (premium: number, strike: number, dte: number): number => {
-    return (premium / strike) * 100 * (30 / Math.max(dte, 1))
-  }
-  
-  const calculatePOP = (delta: number): number => {
-    return Math.round((1 + Math.abs(delta)) * 100)
+
+  const handleFilterChange = (key: keyof ScreenerFilters, value: string | boolean) => {
+    setFilters(prev => ({ ...prev, [key]: value }))
   }
 
   return (
     <div className="space-y-4">
-      {/* Header Section */}
-      <div className="bg-slate-900/50 backdrop-blur-sm border border-slate-700/50 rounded-xl p-4">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-bold text-white">
-            {selectedStrategy}
-            <span className="ml-2 text-sm font-normal text-gray-400">BEST OVERALL ROI</span>
-          </h2>
-          
-          {/* Strategy Dropdown */}
+      {/* Strategy Selection */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+        <div>
+          <label className="text-xs text-gray-400">Strategy</label>
           <select
             value={selectedStrategy}
             onChange={(e) => setSelectedStrategy(e.target.value)}
-            className="bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded font-semibold focus:outline-none"
+            className="w-full mt-1 px-2 py-1 bg-gray-800 border border-gray-700 rounded text-sm text-white"
           >
-            {strategyOptions.map(opt => (
-              <option key={opt} value={opt}>{opt}</option>
+            {strategyOptions.map(strategy => (
+              <option key={strategy} value={strategy}>{strategy}</option>
             ))}
           </select>
         </div>
         
-        <p className="text-sm text-gray-400 mb-4">
-          {selectedStrategy.includes('Strangle') || selectedStrategy.includes('Straddle') 
-            ? 'Showing optimal put/call combinations for maximum premium collection'
-            : 'Below is the best overall ROI for each stock\'s options across all strikes and expirations'}
-        </p>
-        
-        {/* Filter Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
-          <div>
-            <label className="block text-xs text-gray-500 mb-1">Moneyness From</label>
-            <div className="flex items-center">
-              <input
-                type="text"
-                value={filters.moneyness_from}
-                onChange={(e) => setFilters(prev => ({ ...prev, moneyness_from: e.target.value }))}
-                className="w-full bg-slate-800 border border-slate-600 rounded px-2 py-1 text-white text-sm"
-              />
-              <span className="ml-1 text-gray-500">%</span>
-            </div>
-          </div>
-          
-          <div>
-            <label className="block text-xs text-gray-500 mb-1">Moneyness To</label>
-            <div className="flex items-center">
-              <input
-                type="text"
-                value={filters.moneyness_to}
-                onChange={(e) => setFilters(prev => ({ ...prev, moneyness_to: e.target.value }))}
-                className="w-full bg-slate-800 border border-slate-600 rounded px-2 py-1 text-white text-sm"
-              />
-              <span className="ml-1 text-gray-500">%</span>
-            </div>
-          </div>
-          
-          <div>
-            <label className="block text-xs text-gray-500 mb-1">DTE Min</label>
+        <div>
+          <label className="text-xs text-gray-400">DTE Range</label>
+          <div className="flex gap-1 mt-1">
             <input
-              type="text"
+              type="number"
               value={filters.dte_min}
-              onChange={(e) => setFilters(prev => ({ ...prev, dte_min: e.target.value }))}
-              className="w-full bg-slate-800 border border-slate-600 rounded px-2 py-1 text-white text-sm"
+              onChange={(e) => handleFilterChange('dte_min', e.target.value)}
+              className="w-1/2 px-2 py-1 bg-gray-800 border border-gray-700 rounded text-sm text-white"
+              placeholder="Min"
             />
-          </div>
-          
-          <div>
-            <label className="block text-xs text-gray-500 mb-1">DTE Max</label>
             <input
-              type="text"
+              type="number"
               value={filters.dte_max}
-              onChange={(e) => setFilters(prev => ({ ...prev, dte_max: e.target.value }))}
-              className="w-full bg-slate-800 border border-slate-600 rounded px-2 py-1 text-white text-sm"
+              onChange={(e) => handleFilterChange('dte_max', e.target.value)}
+              className="w-1/2 px-2 py-1 bg-gray-800 border border-gray-700 rounded text-sm text-white"
+              placeholder="Max"
             />
-          </div>
-          
-          <div>
-            <label className="block text-xs text-gray-500 mb-1">ROI Min %</label>
-            <input
-              type="text"
-              value={filters.roi_min}
-              onChange={(e) => setFilters(prev => ({ ...prev, roi_min: e.target.value }))}
-              className="w-full bg-slate-800 border border-slate-600 rounded px-2 py-1 text-white text-sm"
-            />
-          </div>
-          
-          <div>
-            <label className="block text-xs text-gray-500 mb-1">PoP Min %</label>
-            <input
-              type="text"
-              value={filters.pop_min}
-              onChange={(e) => setFilters(prev => ({ ...prev, pop_min: e.target.value }))}
-              className="w-full bg-slate-800 border border-slate-600 rounded px-2 py-1 text-white text-sm"
-            />
-          </div>
-          
-          <div>
-            <label className="block text-xs text-gray-500 mb-1">Capital Max</label>
-            <input
-              type="text"
-              value={filters.capital_max}
-              onChange={(e) => setFilters(prev => ({ ...prev, capital_max: e.target.value }))}
-              className="w-full bg-slate-800 border border-slate-600 rounded px-2 py-1 text-white text-sm"
-            />
-          </div>
-          
-          <div>
-            <label className="block text-xs text-gray-500 mb-1">Delta Min</label>
-            <div className="flex items-center">
-              <span className="text-gray-500 mr-1">Δ</span>
-              <input
-                type="text"
-                value={filters.delta_min}
-                onChange={(e) => setFilters(prev => ({ ...prev, delta_min: e.target.value }))}
-                className="w-full bg-slate-800 border border-slate-600 rounded px-2 py-1 text-white text-sm"
-              />
-            </div>
-          </div>
-          
-          <div>
-            <label className="block text-xs text-gray-500 mb-1">Delta Max</label>
-            <div className="flex items-center">
-              <span className="text-gray-500 mr-1">Δ</span>
-              <input
-                type="text"
-                value={filters.delta_max}
-                onChange={(e) => setFilters(prev => ({ ...prev, delta_max: e.target.value }))}
-                className="w-full bg-slate-800 border border-slate-600 rounded px-2 py-1 text-white text-sm"
-              />
-            </div>
-          </div>
-          
-          <div>
-            <label className="block text-xs text-gray-500 mb-1">Theta Min</label>
-            <div className="flex items-center">
-              <span className="text-gray-500 mr-1">Θ</span>
-              <input
-                type="text"
-                value={filters.theta_min}
-                onChange={(e) => setFilters(prev => ({ ...prev, theta_min: e.target.value }))}
-                className="w-full bg-slate-800 border border-slate-600 rounded px-2 py-1 text-white text-sm"
-              />
-            </div>
-          </div>
-          
-          <div>
-            <label className="block text-xs text-gray-500 mb-1">Theta Max</label>
-            <div className="flex items-center">
-              <span className="text-gray-500 mr-1">Θ</span>
-              <input
-                type="text"
-                value={filters.theta_max}
-                onChange={(e) => setFilters(prev => ({ ...prev, theta_max: e.target.value }))}
-                className="w-full bg-slate-800 border border-slate-600 rounded px-2 py-1 text-white text-sm"
-              />
-            </div>
-          </div>
-          
-          <div>
-            <label className="block text-xs text-gray-500 mb-1">Min OI</label>
-            <input
-              type="text"
-              value={filters.min_oi}
-              onChange={(e) => setFilters(prev => ({ ...prev, min_oi: e.target.value }))}
-              className="w-full bg-slate-800 border border-slate-600 rounded px-2 py-1 text-white text-sm"
-            />
-          </div>
-          
-          <div className="flex flex-col space-y-1">
-            <label className="flex items-center text-xs">
-              <input
-                type="checkbox"
-                checked={filters.avoid_earnings}
-                onChange={(e) => setFilters(prev => ({ ...prev, avoid_earnings: e.target.checked }))}
-                className="mr-1 rounded border-slate-600 bg-slate-800 text-emerald-500"
-              />
-              <span className="text-gray-400">Avoid Earnings</span>
-            </label>
-            <label className="flex items-center text-xs">
-              <input
-                type="checkbox"
-                checked={filters.after_earnings}
-                onChange={(e) => setFilters(prev => ({ ...prev, after_earnings: e.target.checked }))}
-                className="mr-1 rounded border-slate-600 bg-slate-800 text-emerald-500"
-              />
-              <span className="text-gray-400">After Earnings</span>
-            </label>
           </div>
         </div>
         
+        <div>
+          <label className="text-xs text-gray-400">Min ROI %</label>
+          <input
+            type="number"
+            value={filters.roi_min}
+            onChange={(e) => handleFilterChange('roi_min', e.target.value)}
+            className="w-full mt-1 px-2 py-1 bg-gray-800 border border-gray-700 rounded text-sm text-white"
+            step="0.1"
+          />
+        </div>
+        
+        <div>
+          <label className="text-xs text-gray-400">Min Open Interest</label>
+          <input
+            type="number"
+            value={filters.min_oi}
+            onChange={(e) => handleFilterChange('min_oi', e.target.value)}
+            className="w-full mt-1 px-2 py-1 bg-gray-800 border border-gray-700 rounded text-sm text-white"
+          />
+        </div>
+      </div>
+
+      {/* Ticker Selection */}
+      <div className="flex items-center gap-3">
+        <label className="text-xs text-gray-400">Tickers:</label>
+        <div className="flex gap-2 flex-wrap">
+          {selectedTickers.map(ticker => (
+            <span key={ticker} className="px-2 py-1 bg-gray-800 rounded text-sm text-white">
+              {ticker}
+              <button
+                onClick={() => setSelectedTickers(prev => prev.filter(t => t !== ticker))}
+                className="ml-1 text-gray-400 hover:text-white"
+              >
+                ×
+              </button>
+            </span>
+          ))}
+          <input
+            type="text"
+            placeholder="Add ticker..."
+            onKeyPress={(e) => {
+              if (e.key === 'Enter') {
+                const input = e.currentTarget
+                const ticker = input.value.toUpperCase()
+                if (ticker && !selectedTickers.includes(ticker)) {
+                  setSelectedTickers(prev => [...prev, ticker])
+                  input.value = ''
+                }
+              }
+            }}
+            className="px-2 py-1 bg-gray-800 border border-gray-700 rounded text-sm text-white"
+          />
+        </div>
+      </div>
+
+      {/* Run Button */}
+      <div className="flex items-center gap-3">
         <button
           onClick={runScreener}
-          className="mt-4 px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded font-semibold transition-colors flex items-center space-x-2"
+          disabled={loading}
+          className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-700 rounded text-sm text-white flex items-center gap-2"
         >
-          <Search className="w-4 h-4" />
-          <span>Search</span>
+          <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+          {loading ? 'Scanning...' : 'Run Screener'}
         </button>
+        
+        <span className="text-xs text-gray-400">
+          {results.length > 0 && `Found ${results.length} opportunities`}
+        </span>
       </div>
-      
+
       {/* Results Table */}
-      <div className="bg-slate-900/50 backdrop-blur-sm border border-slate-700/50 rounded-xl overflow-hidden">
+      {results.length > 0 && (
         <div className="overflow-x-auto">
           <table className="w-full text-xs">
-            <thead>
-              <tr className="bg-slate-800/50 text-gray-400 border-b border-slate-700">
-                <th className="text-left py-2 px-3">Symbol</th>
-                <th className="text-left py-2 px-3">Expiration</th>
-                <th className="text-right py-2 px-3">DTE</th>
-                <th className="text-right py-2 px-3">Strike(s)</th>
-                <th className="text-right py-2 px-3">Premium</th>
-                <th className="text-right py-2 px-3">ROI ↓</th>
-                <th className="text-right py-2 px-3">ROI/Day</th>
-                <th className="text-right py-2 px-3">Stock</th>
-                <th className="text-right py-2 px-3">Distance</th>
-                <th className="text-right py-2 px-3">Cash Req</th>
-                <th className="text-right py-2 px-3">Share Cost</th>
-                <th className="text-center py-2 px-3">Dividend</th>
-                <th className="text-center py-2 px-3">Earnings</th>
-                <th className="text-center py-2 px-3">OI</th>
-                <th className="text-right py-2 px-3">Delta</th>
-                <th className="text-right py-2 px-3">Theta</th>
-                <th className="text-right py-2 px-3">IV</th>
+            <thead className="text-gray-400 border-b border-gray-800">
+              <tr>
+                <th className="text-left py-2 px-2">Symbol</th>
+                <th className="text-left py-2 px-2">Strategy</th>
+                <th className="text-right py-2 px-2">Strike</th>
+                <th className="text-right py-2 px-2">DTE</th>
+                <th className="text-right py-2 px-2">Premium</th>
+                <th className="text-right py-2 px-2">ROI</th>
+                <th className="text-right py-2 px-2">ROI/Day</th>
+                <th className="text-right py-2 px-2">OI</th>
+                <th className="text-right py-2 px-2">Capital</th>
               </tr>
             </thead>
-            <tbody>
-              {loading ? (
-                <tr>
-                  <td colSpan={17} className="text-center py-8 text-gray-400">
-                    <RefreshCw className="w-8 h-8 animate-spin mx-auto mb-2" />
-                    <p>Scanning opportunities...</p>
+            <tbody className="text-gray-300">
+              {results.map((result, idx) => (
+                <tr key={idx} className="border-b border-gray-800/50 hover:bg-gray-800/30">
+                  <td className="py-2 px-2 font-semibold text-white">{result.symbol}</td>
+                  <td className="py-2 px-2">
+                    <span className="px-1 py-0.5 rounded text-xs bg-blue-900/30 text-blue-400">
+                      {result.strategy}
+                    </span>
                   </td>
-                </tr>
-              ) : results.length > 0 ? (
-                results.map((result, index) => (
-                  <tr key={index} className="border-b border-slate-700/50 hover:bg-slate-800/30 transition-colors">
-                    <td className="py-2 px-3">
-                      <div className="flex items-center space-x-2">
-                        <button className="text-gray-400 hover:text-white">
-                          <ChevronDown className="w-3 h-3" />
-                        </button>
-                        <span className="font-semibold text-white">{result.symbol}</span>
-                      </div>
-                    </td>
-                    <td className="py-2 px-3 text-gray-300">{result.expiration}</td>
-                    <td className="py-2 px-3 text-right text-gray-300">{result.dte}</td>
-                    <td className="py-2 px-3 text-right text-gray-300 font-mono">
-                      {result.strike2 ? `${result.strike}/${result.strike2}` : result.strike.toFixed(2)}
-                    </td>
-                    <td className="py-2 px-3 text-right text-gray-300 font-mono">{result.premium.toFixed(2)}</td>
-                    <td className="py-2 px-3 text-right text-emerald-400 font-semibold">{result.roi.toFixed(2)}%</td>
-                    <td className="py-2 px-3 text-right text-gray-300">{result.roi_per_day.toFixed(4)}%</td>
-                    <td className="py-2 px-3 text-right text-gray-300">{result.stock_price.toFixed(2)}</td>
-                    <td className="py-2 px-3 text-right text-gray-300">{result.stock_distance.toFixed(2)}%</td>
-                    <td className="py-2 px-3 text-right text-yellow-400 font-semibold">
-                      ${result.cash_required.toLocaleString()}
-                    </td>
-                    <td className="py-2 px-3 text-right text-orange-400">
-                      ${result.share_cost.toLocaleString()}
-                    </td>
-                    <td className="py-2 px-3 text-center">
-                      {result.dividend ? (
-                        <span className="text-green-400">${result.dividend}</span>
-                      ) : (
-                        <span className="text-gray-500">-</span>
-                      )}
-                    </td>
-                    <td className="py-2 px-3 text-center">
-                      <span className={`text-xs ${
-                        result.earnings === 'After' ? 'text-green-400' : 
-                        result.earnings === 'Passed' ? 'text-blue-400' :
-                        'text-yellow-400'
-                      }`}>
-                        {result.earnings}
-                      </span>
-                    </td>
-                    <td className="py-2 px-3 text-center text-gray-300">{result.oi}</td>
-                    <td className="py-2 px-3 text-right text-gray-300 font-mono">{result.delta.toFixed(3)}</td>
-                    <td className="py-2 px-3 text-right text-gray-300 font-mono">{result.theta.toFixed(3)}</td>
-                    <td className="py-2 px-3 text-right text-gray-300">{(result.iv * 100).toFixed(1)}%</td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan={17} className="text-center py-8 text-gray-400">
-                    No opportunities found. Try adjusting filters or selecting different tickers.
+                  <td className="text-right py-2 px-2">${result.strike}</td>
+                  <td className="text-right py-2 px-2">{result.dte}d</td>
+                  <td className="text-right py-2 px-2">${result.premium.toFixed(2)}</td>
+                  <td className="text-right py-2 px-2 text-emerald-400 font-semibold">
+                    {result.roi.toFixed(2)}%
                   </td>
+                  <td className="text-right py-2 px-2">{result.roi_per_day.toFixed(3)}%</td>
+                  <td className="text-right py-2 px-2">{result.oi}</td>
+                  <td className="text-right py-2 px-2">${result.cash_required.toFixed(0)}</td>
                 </tr>
-              )}
+              ))}
             </tbody>
           </table>
         </div>
-      </div>
+      )}
     </div>
   )
 }
