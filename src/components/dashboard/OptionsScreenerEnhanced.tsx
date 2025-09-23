@@ -32,6 +32,8 @@ interface ScreenerResult {
   // Pricing
   bid: number
   ask: number
+  mid?: number
+  last?: number
   premium: number
   
   // Calculated metrics
@@ -59,17 +61,20 @@ interface ScreenerResult {
 }
 
 const OptionsScreenerEnhanced: React.FC = () => {
+  // Initialize with good liquid tickers
+  const defaultTickers = ['SPY', 'QQQ', 'AAPL', 'TSLA']
+  
   const [filters, setFilters] = useState<ScreenerFilters>({
     strategy: 'Cash Secured Put',
-    tickers: ['SPY', 'QQQ', 'AAPL', 'TSLA'],
+    tickers: defaultTickers,
     dte_min: 0,
     dte_max: 45,
     roi_min: 0,
     roi_max: 100,
-    pop_min: 65,
+    pop_min: 50,  // Lowered from 65 to be less restrictive
     capital_max: 50000,
     min_volume: 0,
-    min_oi: 100
+    min_oi: 10  // Lowered from 100 to be less restrictive
   })
 
   const [results, setResults] = useState<ScreenerResult[]>([])
@@ -96,6 +101,18 @@ const OptionsScreenerEnhanced: React.FC = () => {
     'JPM', 'BAC', 'XLF', 'GS',
     'AMD', 'INTC', 'NFLX', 'DIS'
   ]
+  
+  // Ensure we have at least one ticker on component mount
+  useEffect(() => {
+    if (filters.tickers.length === 0 || 
+        (filters.tickers.length === 2 && filters.tickers.includes('PBR') && filters.tickers.includes('CRWV'))) {
+      // Reset to defaults if we have no tickers or weird tickers
+      setFilters(prev => ({
+        ...prev,
+        tickers: defaultTickers
+      }))
+    }
+  }, []) // Only run once on mount
 
   const runScreener = async () => {
     setLoading(true)
@@ -123,10 +140,13 @@ const OptionsScreenerEnhanced: React.FC = () => {
           
           if (!response.ok) {
             console.error(`Failed to fetch ${ticker}:`, response.status)
+            const errorData = await response.text()
+            console.error('Error details:', errorData)
             continue
           }
           
           const data = await response.json()
+          console.log(`Data for ${ticker}:`, data)
           
           if (data.results && Array.isArray(data.results)) {
             // Filter and map results
@@ -157,7 +177,10 @@ const OptionsScreenerEnhanced: React.FC = () => {
       setResults(sorted.slice(0, 50)) // Limit to top 50
       
       if (allResults.length === 0) {
-        setError('No options found matching your criteria. Try adjusting filters.')
+        setError('No options found matching your criteria. Try adjusting filters or adding more liquid tickers like SPY, QQQ, AAPL.')
+        console.log('No results found. Current filters:', filters)
+      } else {
+        console.log(`Found ${allResults.length} total results`)
       }
     } catch (error) {
       console.error('Screener error:', error)

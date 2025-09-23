@@ -1,32 +1,28 @@
 #!/bin/bash
 
-# Deploy script for Toption Trading App
-
-echo "🚀 Starting deployment process..."
+# Navigate to project directory
+cd /Users/andyhall/virtera/toption-trading-app
 
 # Add all changes
 git add -A
 
-# Commit with message
-git commit -m "feat: Professional terminal UI with AI Watchdog and full futures support
+# Commit with descriptive message
+git commit -m "Fix: Options screener issues - default tickers, filters, and add debugging
 
-- Added professional Bloomberg/ThinkorSwim-style dark terminal interface
-- Implemented collapsible panels with dual workspace views
-- Full futures options support (50+ liquid contracts)
-- AI Watchdog system that learns from user behavior
-- User preferences and customization system
-- Activity tracking for personalized recommendations
-- Market type switching (Equity/Index/Futures)
-- Enhanced Greeks calculations using Black-Scholes
-- Keyboard shortcuts (Ctrl+Shift+T to toggle views)
-- Bulk options analysis for opportunity scanning
-- User-specific alert thresholds and risk settings
-- Smart workspace management with expandable panels"
+- Fixed default tickers from PBR/CRWV to SPY/QQQ/AAPL/TSLA
+- Loosened filters (PoP from 65% to 50%, OI from 100 to 10)
+- Added console logging for debugging API calls
+- Created /api/polygon-test endpoint to verify connectivity
+- Added initialization hook to reset bad ticker state
+- Improved error messages and debugging output"
 
-# Push to main branch
-git push origin main --force
+# Push to trigger deployment
+git push origin main
 
-echo "✅ Deployment complete! Changes pushed to GitHub and will auto-deploy to Vercel."
-echo "🌐 Visit https://www.toptiontrade.com to see the updates"
-echo "📊 Test at https://www.toptiontrade.com/test-polygon-enhanced"
-echo "⌨️ Use Ctrl+Shift+T to toggle between Classic and Professional views"
+echo "Changes pushed! Vercel should start deploying now."
+echo ""
+echo "After deployment, test these URLs:"
+echo "1. https://www.toptiontrade.com/api/polygon-test?symbol=SPY"
+echo "2. https://www.toptiontrade.com/api/polygon/options?symbol=SPY&type=put"
+echo ""
+echo "Then check the screener with browser console open to see debug logs."
