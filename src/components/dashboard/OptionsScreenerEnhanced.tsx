@@ -1,318 +1,530 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { getPolygonClient } from '@/lib/polygon/client'
-import { useEnhancedOptions, MarketType } from '@/hooks/useEnhancedOptions'
 import { 
   Search, Filter, RefreshCw, Download, Plus, ChevronDown, 
-  TrendingUp, Calendar, DollarSign, AlertCircle, Info
+  TrendingUp, Calendar, DollarSign, AlertCircle, Info,
+  ArrowUp, ArrowDown
 } from 'lucide-react'
 
 interface ScreenerFilters {
-  moneyness_from: string
-  moneyness_to: string
-  min_oi: string
-  dte_min: string
-  dte_max: string
-  roi_min: string
-  roi_max: string
-  delta_min: string
-  delta_max: string
-  theta_min: string
-  theta_max: string
-  pop_min: string
-  capital_max: string
-  avoid_earnings: boolean
-  after_earnings: boolean
+  strategy: string
+  tickers: string[]
+  dte_min: number
+  dte_max: number
+  roi_min: number
+  roi_max: number
+  pop_min: number
+  capital_max: number
+  min_volume: number
+  min_oi: number
 }
 
 interface ScreenerResult {
   symbol: string
+  underlying: string
+  strategy: string
+  strike: number
   expiration: string
   dte: number
-  strike: number
-  strike2?: number
+  type: string
+  
+  // Pricing
+  bid: number
+  ask: number
   premium: number
+  
+  // Calculated metrics
   roi: number
-  roi_per_day: number
-  roi_per_year: number
-  stock_price: number
-  stock_distance: number
-  break_even: number
-  earnings: string
-  dividend: number | null
-  '30_day_change': string
-  oi: number
+  roiPerDay: number
+  roiPerYear: number
+  pop: number
+  distance: number
+  breakeven: number
+  capital: number
+  
+  // Greeks
   delta: number
   theta: number
+  gamma: number
+  vega: number
   iv: number
-  cash_required: number
-  share_cost: number
-  last_updated: string
-  strategy: string
+  
+  // Volume
+  volume: number
+  openInterest: number
+  
+  // Stock info
+  stockPrice: number
 }
 
 const OptionsScreenerEnhanced: React.FC = () => {
   const [filters, setFilters] = useState<ScreenerFilters>({
-    moneyness_from: '0',
-    moneyness_to: '25',
-    min_oi: '100',
-    dte_min: '0',
-    dte_max: '45',
-    roi_min: '0',
-    roi_max: '100',
-    delta_min: '-100',
-    delta_max: '100',
-    theta_min: '-0.10',
-    theta_max: '0',
-    pop_min: '65',
-    capital_max: '100000',
-    avoid_earnings: true,
-    after_earnings: false
+    strategy: 'Cash Secured Put',
+    tickers: ['SPY', 'QQQ', 'AAPL', 'TSLA'],
+    dte_min: 0,
+    dte_max: 45,
+    roi_min: 0,
+    roi_max: 100,
+    pop_min: 65,
+    capital_max: 50000,
+    min_volume: 0,
+    min_oi: 100
   })
 
   const [results, setResults] = useState<ScreenerResult[]>([])
   const [loading, setLoading] = useState(false)
-  const [selectedStrategy, setSelectedStrategy] = useState('Cash Secured Put')
-  const [selectedTickers, setSelectedTickers] = useState<string[]>(['SPY', 'QQQ', 'AAPL', 'TSLA'])
+  const [error, setError] = useState<string | null>(null)
+  const [tickerInput, setTickerInput] = useState('')
+  const [sortBy, setSortBy] = useState<keyof ScreenerResult>('roi')
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc')
+  const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set())
   
   const strategyOptions = [
     'Cash Secured Put',
     'Covered Call',
-    'Naked Strangle',
-    'Covered Strangle', 
-    'Naked Straddle',
-    'Covered Straddle',
+    'Put Credit Spread',
+    'Call Credit Spread',
     'Iron Condor',
-    'Butterfly Spread'
+    'Straddle',
+    'Strangle'
   ]
 
-  const getDTE = (expirationDate: string): number => {
-    const expiry = new Date(expirationDate)
-    const today = new Date()
-    const timeDiff = expiry.getTime() - today.getTime()
-    return Math.ceil(timeDiff / (1000 * 3600 * 24))
-  }
+  const popularTickers = [
+    'SPY', 'QQQ', 'IWM', 'DIA',
+    'AAPL', 'MSFT', 'AMZN', 'GOOGL', 'META', 'NVDA', 'TSLA',
+    'JPM', 'BAC', 'XLF', 'GS',
+    'AMD', 'INTC', 'NFLX', 'DIS'
+  ]
 
   const runScreener = async () => {
     setLoading(true)
+    setError(null)
     
     try {
-      const screenResults: ScreenerResult[] = []
+      const allResults: ScreenerResult[] = []
       
-      // Fetch real options data from Polygon API
-      for (const ticker of selectedTickers) {
+      // Fetch options for each ticker
+      for (const ticker of filters.tickers) {
         try {
-          // Fetch options chain from our API route
-          const response = await fetch(`/api/polygon/options?symbol=${ticker}&type=put`)
-          if (!response.ok) continue
+          // Determine option type based on strategy
+          const optionType = filters.strategy.toLowerCase().includes('put') ? 'put' : 
+                           filters.strategy.toLowerCase().includes('call') ? 'call' : 'both'
+          
+          // Build API URL with parameters
+          const params = new URLSearchParams({
+            symbol: ticker,
+            type: optionType,
+            minDTE: filters.dte_min.toString(),
+            maxDTE: filters.dte_max.toString()
+          })
+          
+          const response = await fetch(`/api/polygon/options?${params}`)
+          
+          if (!response.ok) {
+            console.error(`Failed to fetch ${ticker}:`, response.status)
+            continue
+          }
           
           const data = await response.json()
-          const optionsData = data.results || []
           
-          // Process each option contract
-          for (const option of optionsData) {
-            const dte = option.dte || getDTE(option.expiration)
+          if (data.results && Array.isArray(data.results)) {
+            // Filter and map results
+            const tickerResults = data.results
+              .filter((option: any) => {
+                // Apply local filters
+                if (option.roi < filters.roi_min || option.roi > filters.roi_max) return false
+                if (option.pop < filters.pop_min) return false
+                if (option.capital > filters.capital_max) return false
+                if (option.volume < filters.min_volume) return false
+                if (option.openInterest < filters.min_oi) return false
+                return true
+              })
+              .map((option: any) => ({
+                ...option,
+                strategy: filters.strategy
+              }))
             
-            // Apply filters
-            if (dte < parseInt(filters.dte_min) || dte > parseInt(filters.dte_max)) continue
-            if (option.roi && option.roi < parseFloat(filters.roi_min)) continue
-            
-            const result: ScreenerResult = {
-              symbol: ticker,
-              expiration: option.expiration,
-              dte: dte,
-              strike: option.strike,
-              premium: option.premium || 0,
-              roi: option.roi || 0,
-              roi_per_day: option.roiPerDay || 0,
-              roi_per_year: (option.roi || 0) * (365 / dte),
-              stock_price: 0, // Will be fetched separately
-              stock_distance: 0,
-              break_even: option.strike - (option.premium || 0),
-              earnings: 'N/A',
-              dividend: null,
-              '30_day_change': '0%',
-              oi: option.openInterest || 0,
-              delta: 0,
-              theta: 0,
-              iv: 0,
-              cash_required: option.strike * 100,
-              share_cost: option.strike * 100,
-              last_updated: new Date().toISOString(),
-              strategy: selectedStrategy
-            }
-            
-            screenResults.push(result)
+            allResults.push(...tickerResults)
           }
         } catch (error) {
-          console.error(`Error fetching options for ${ticker}:`, error)
+          console.error(`Error fetching ${ticker}:`, error)
         }
       }
       
-      // Sort by ROI descending
-      screenResults.sort((a, b) => b.roi - a.roi)
+      // Sort results
+      const sorted = sortResults(allResults, sortBy, sortDirection)
+      setResults(sorted.slice(0, 50)) // Limit to top 50
       
-      // Limit to top 50 results
-      setResults(screenResults.slice(0, 50))
+      if (allResults.length === 0) {
+        setError('No options found matching your criteria. Try adjusting filters.')
+      }
     } catch (error) {
       console.error('Screener error:', error)
+      setError('Failed to run screener. Please try again.')
     } finally {
       setLoading(false)
     }
   }
 
-  const handleFilterChange = (key: keyof ScreenerFilters, value: string | boolean) => {
-    setFilters(prev => ({ ...prev, [key]: value }))
+  const sortResults = (data: ScreenerResult[], key: keyof ScreenerResult, direction: 'asc' | 'desc') => {
+    return [...data].sort((a, b) => {
+      const aVal = a[key] as number
+      const bVal = b[key] as number
+      return direction === 'asc' ? aVal - bVal : bVal - aVal
+    })
+  }
+
+  const handleSort = (key: keyof ScreenerResult) => {
+    if (sortBy === key) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc')
+    } else {
+      setSortBy(key)
+      setSortDirection('desc')
+    }
+    setResults(sortResults(results, key, sortDirection === 'asc' ? 'desc' : 'asc'))
+  }
+
+  const addTicker = () => {
+    const ticker = tickerInput.toUpperCase().trim()
+    if (ticker && !filters.tickers.includes(ticker) && ticker.length <= 5) {
+      setFilters(prev => ({
+        ...prev,
+        tickers: [...prev.tickers, ticker]
+      }))
+      setTickerInput('')
+    }
+  }
+
+  const removeTicker = (ticker: string) => {
+    setFilters(prev => ({
+      ...prev,
+      tickers: prev.tickers.filter(t => t !== ticker)
+    }))
+  }
+
+  const toggleRowExpansion = (symbol: string) => {
+    const newExpanded = new Set(expandedRows)
+    if (newExpanded.has(symbol)) {
+      newExpanded.delete(symbol)
+    } else {
+      newExpanded.add(symbol)
+    }
+    setExpandedRows(newExpanded)
+  }
+
+  const SortIcon = ({ column }: { column: keyof ScreenerResult }) => {
+    if (sortBy !== column) return null
+    return sortDirection === 'desc' ? 
+      <ArrowDown className="w-3 h-3 inline ml-1" /> : 
+      <ArrowUp className="w-3 h-3 inline ml-1" />
   }
 
   return (
     <div className="space-y-4">
-      {/* Strategy Selection */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
-        <div>
-          <label className="text-xs text-gray-400">Strategy</label>
-          <select
-            value={selectedStrategy}
-            onChange={(e) => setSelectedStrategy(e.target.value)}
-            className="w-full mt-1 px-2 py-1 bg-gray-800 border border-gray-700 rounded text-sm text-white"
-          >
-            {strategyOptions.map(strategy => (
-              <option key={strategy} value={strategy}>{strategy}</option>
-            ))}
-          </select>
+      {/* Filters Section */}
+      <div className="bg-gray-900 rounded-lg p-4 space-y-4">
+        {/* Strategy and Tickers Row */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="text-xs text-gray-400 block mb-1">Strategy</label>
+            <select
+              value={filters.strategy}
+              onChange={(e) => setFilters(prev => ({ ...prev, strategy: e.target.value }))}
+              className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded text-sm text-white"
+            >
+              {strategyOptions.map(strategy => (
+                <option key={strategy} value={strategy}>{strategy}</option>
+              ))}
+            </select>
+          </div>
+          
+          <div>
+            <label className="text-xs text-gray-400 block mb-1">Add Ticker</label>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={tickerInput}
+                onChange={(e) => setTickerInput(e.target.value.toUpperCase())}
+                onKeyPress={(e) => e.key === 'Enter' && addTicker()}
+                placeholder="Enter ticker..."
+                className="flex-1 px-3 py-2 bg-gray-800 border border-gray-700 rounded text-sm text-white"
+              />
+              <button
+                onClick={addTicker}
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded text-sm font-medium"
+              >
+                <Plus className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
         </div>
-        
+
+        {/* Selected Tickers */}
         <div>
-          <label className="text-xs text-gray-400">DTE Range</label>
-          <div className="flex gap-1 mt-1">
+          <label className="text-xs text-gray-400 block mb-1">Tickers ({filters.tickers.length})</label>
+          <div className="flex flex-wrap gap-2">
+            {filters.tickers.map(ticker => (
+              <span key={ticker} className="px-3 py-1 bg-gray-800 rounded-full text-sm flex items-center gap-2">
+                {ticker}
+                <button
+                  onClick={() => removeTicker(ticker)}
+                  className="text-gray-400 hover:text-red-400"
+                >
+                  ×
+                </button>
+              </span>
+            ))}
+            {filters.tickers.length === 0 && (
+              <span className="text-gray-500 text-sm">No tickers selected</span>
+            )}
+          </div>
+        </div>
+
+        {/* Quick Add Popular Tickers */}
+        <div>
+          <label className="text-xs text-gray-400 block mb-1">Quick Add</label>
+          <div className="flex flex-wrap gap-1">
+            {popularTickers.filter(t => !filters.tickers.includes(t)).map(ticker => (
+              <button
+                key={ticker}
+                onClick={() => setFilters(prev => ({ ...prev, tickers: [...prev.tickers, ticker] }))}
+                className="px-2 py-1 bg-gray-800 hover:bg-gray-700 rounded text-xs"
+              >
+                {ticker}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Numeric Filters Grid */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div>
+            <label className="text-xs text-gray-400">DTE Range</label>
+            <div className="flex gap-1 mt-1">
+              <input
+                type="number"
+                value={filters.dte_min}
+                onChange={(e) => setFilters(prev => ({ ...prev, dte_min: parseInt(e.target.value) || 0 }))}
+                className="w-1/2 px-2 py-1 bg-gray-800 border border-gray-700 rounded text-sm"
+                placeholder="Min"
+              />
+              <input
+                type="number"
+                value={filters.dte_max}
+                onChange={(e) => setFilters(prev => ({ ...prev, dte_max: parseInt(e.target.value) || 45 }))}
+                className="w-1/2 px-2 py-1 bg-gray-800 border border-gray-700 rounded text-sm"
+                placeholder="Max"
+              />
+            </div>
+          </div>
+          
+          <div>
+            <label className="text-xs text-gray-400">Min ROI %</label>
             <input
               type="number"
-              value={filters.dte_min}
-              onChange={(e) => handleFilterChange('dte_min', e.target.value)}
-              className="w-1/2 px-2 py-1 bg-gray-800 border border-gray-700 rounded text-sm text-white"
-              placeholder="Min"
+              value={filters.roi_min}
+              onChange={(e) => setFilters(prev => ({ ...prev, roi_min: parseFloat(e.target.value) || 0 }))}
+              className="w-full mt-1 px-2 py-1 bg-gray-800 border border-gray-700 rounded text-sm"
+              step="0.1"
             />
+          </div>
+          
+          <div>
+            <label className="text-xs text-gray-400">Min PoP %</label>
             <input
               type="number"
-              value={filters.dte_max}
-              onChange={(e) => handleFilterChange('dte_max', e.target.value)}
-              className="w-1/2 px-2 py-1 bg-gray-800 border border-gray-700 rounded text-sm text-white"
-              placeholder="Max"
+              value={filters.pop_min}
+              onChange={(e) => setFilters(prev => ({ ...prev, pop_min: parseFloat(e.target.value) || 0 }))}
+              className="w-full mt-1 px-2 py-1 bg-gray-800 border border-gray-700 rounded text-sm"
+            />
+          </div>
+          
+          <div>
+            <label className="text-xs text-gray-400">Min Open Interest</label>
+            <input
+              type="number"
+              value={filters.min_oi}
+              onChange={(e) => setFilters(prev => ({ ...prev, min_oi: parseInt(e.target.value) || 0 }))}
+              className="w-full mt-1 px-2 py-1 bg-gray-800 border border-gray-700 rounded text-sm"
             />
           </div>
         </div>
-        
-        <div>
-          <label className="text-xs text-gray-400">Min ROI %</label>
-          <input
-            type="number"
-            value={filters.roi_min}
-            onChange={(e) => handleFilterChange('roi_min', e.target.value)}
-            className="w-full mt-1 px-2 py-1 bg-gray-800 border border-gray-700 rounded text-sm text-white"
-            step="0.1"
-          />
-        </div>
-        
-        <div>
-          <label className="text-xs text-gray-400">Min Open Interest</label>
-          <input
-            type="number"
-            value={filters.min_oi}
-            onChange={(e) => handleFilterChange('min_oi', e.target.value)}
-            className="w-full mt-1 px-2 py-1 bg-gray-800 border border-gray-700 rounded text-sm text-white"
-          />
-        </div>
-      </div>
 
-      {/* Ticker Selection */}
-      <div className="flex items-center gap-3">
-        <label className="text-xs text-gray-400">Tickers:</label>
-        <div className="flex gap-2 flex-wrap">
-          {selectedTickers.map(ticker => (
-            <span key={ticker} className="px-2 py-1 bg-gray-800 rounded text-sm text-white">
-              {ticker}
-              <button
-                onClick={() => setSelectedTickers(prev => prev.filter(t => t !== ticker))}
-                className="ml-1 text-gray-400 hover:text-white"
-              >
-                ×
-              </button>
-            </span>
-          ))}
-          <input
-            type="text"
-            placeholder="Add ticker..."
-            onKeyPress={(e) => {
-              if (e.key === 'Enter') {
-                const input = e.currentTarget
-                const ticker = input.value.toUpperCase()
-                if (ticker && !selectedTickers.includes(ticker)) {
-                  setSelectedTickers(prev => [...prev, ticker])
-                  input.value = ''
-                }
-              }
-            }}
-            className="px-2 py-1 bg-gray-800 border border-gray-700 rounded text-sm text-white"
-          />
-        </div>
-      </div>
-
-      {/* Run Button */}
-      <div className="flex items-center gap-3">
+        {/* Run Screener Button */}
         <button
           onClick={runScreener}
-          disabled={loading}
-          className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-700 rounded text-sm text-white flex items-center gap-2"
+          disabled={loading || filters.tickers.length === 0}
+          className="w-full py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-700 disabled:cursor-not-allowed rounded font-medium flex items-center justify-center gap-2"
         >
-          <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-          {loading ? 'Scanning...' : 'Run Screener'}
+          {loading ? (
+            <>
+              <RefreshCw className="w-4 h-4 animate-spin" />
+              Scanning Options...
+            </>
+          ) : (
+            <>
+              <Search className="w-4 h-4" />
+              Run Screener
+            </>
+          )}
         </button>
-        
-        <span className="text-xs text-gray-400">
-          {results.length > 0 && `Found ${results.length} opportunities`}
-        </span>
       </div>
+
+      {/* Error Message */}
+      {error && (
+        <div className="bg-red-900/20 border border-red-800 rounded-lg p-3 text-red-400 text-sm">
+          {error}
+        </div>
+      )}
 
       {/* Results Table */}
       {results.length > 0 && (
-        <div className="overflow-x-auto">
-          <table className="w-full text-xs">
-            <thead className="text-gray-400 border-b border-gray-800">
-              <tr>
-                <th className="text-left py-2 px-2">Symbol</th>
-                <th className="text-left py-2 px-2">Strategy</th>
-                <th className="text-right py-2 px-2">Strike</th>
-                <th className="text-right py-2 px-2">DTE</th>
-                <th className="text-right py-2 px-2">Premium</th>
-                <th className="text-right py-2 px-2">ROI</th>
-                <th className="text-right py-2 px-2">ROI/Day</th>
-                <th className="text-right py-2 px-2">OI</th>
-                <th className="text-right py-2 px-2">Capital</th>
-              </tr>
-            </thead>
-            <tbody className="text-gray-300">
-              {results.map((result, idx) => (
-                <tr key={idx} className="border-b border-gray-800/50 hover:bg-gray-800/30">
-                  <td className="py-2 px-2 font-semibold text-white">{result.symbol}</td>
-                  <td className="py-2 px-2">
-                    <span className="px-1 py-0.5 rounded text-xs bg-blue-900/30 text-blue-400">
-                      {result.strategy}
-                    </span>
-                  </td>
-                  <td className="text-right py-2 px-2">${result.strike}</td>
-                  <td className="text-right py-2 px-2">{result.dte}d</td>
-                  <td className="text-right py-2 px-2">${result.premium.toFixed(2)}</td>
-                  <td className="text-right py-2 px-2 text-emerald-400 font-semibold">
-                    {result.roi.toFixed(2)}%
-                  </td>
-                  <td className="text-right py-2 px-2">{result.roi_per_day.toFixed(3)}%</td>
-                  <td className="text-right py-2 px-2">{result.oi}</td>
-                  <td className="text-right py-2 px-2">${result.cash_required.toFixed(0)}</td>
+        <div className="bg-gray-900 rounded-lg overflow-hidden">
+          <div className="px-4 py-3 border-b border-gray-800">
+            <h3 className="text-sm font-semibold text-white">
+              Found {results.length} opportunities
+            </h3>
+          </div>
+          
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs">
+              <thead className="bg-gray-800">
+                <tr>
+                  <th className="text-left py-2 px-3 cursor-pointer hover:bg-gray-700" onClick={() => handleSort('underlying')}>
+                    Symbol <SortIcon column="underlying" />
+                  </th>
+                  <th className="text-left py-2 px-3">Type</th>
+                  <th className="text-right py-2 px-3 cursor-pointer hover:bg-gray-700" onClick={() => handleSort('strike')}>
+                    Strike <SortIcon column="strike" />
+                  </th>
+                  <th className="text-right py-2 px-3 cursor-pointer hover:bg-gray-700" onClick={() => handleSort('dte')}>
+                    DTE <SortIcon column="dte" />
+                  </th>
+                  <th className="text-right py-2 px-3 cursor-pointer hover:bg-gray-700" onClick={() => handleSort('premium')}>
+                    Premium <SortIcon column="premium" />
+                  </th>
+                  <th className="text-right py-2 px-3 cursor-pointer hover:bg-gray-700" onClick={() => handleSort('roi')}>
+                    ROI <SortIcon column="roi" />
+                  </th>
+                  <th className="text-right py-2 px-3 cursor-pointer hover:bg-gray-700" onClick={() => handleSort('roiPerDay')}>
+                    ROI/Day <SortIcon column="roiPerDay" />
+                  </th>
+                  <th className="text-right py-2 px-3 cursor-pointer hover:bg-gray-700" onClick={() => handleSort('pop')}>
+                    PoP <SortIcon column="pop" />
+                  </th>
+                  <th className="text-right py-2 px-3 cursor-pointer hover:bg-gray-700" onClick={() => handleSort('capital')}>
+                    Capital <SortIcon column="capital" />
+                  </th>
+                  <th className="text-right py-2 px-3 cursor-pointer hover:bg-gray-700" onClick={() => handleSort('distance')}>
+                    Distance <SortIcon column="distance" />
+                  </th>
+                  <th className="text-right py-2 px-3 cursor-pointer hover:bg-gray-700" onClick={() => handleSort('iv')}>
+                    IV <SortIcon column="iv" />
+                  </th>
+                  <th className="text-right py-2 px-3 cursor-pointer hover:bg-gray-700" onClick={() => handleSort('volume')}>
+                    Vol <SortIcon column="volume" />
+                  </th>
+                  <th className="text-right py-2 px-3 cursor-pointer hover:bg-gray-700" onClick={() => handleSort('openInterest')}>
+                    OI <SortIcon column="openInterest" />
+                  </th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="text-gray-300">
+                {results.map((result, idx) => (
+                  <React.Fragment key={`${result.symbol}-${idx}`}>
+                    <tr 
+                      className="border-b border-gray-800/50 hover:bg-gray-800/30 cursor-pointer"
+                      onClick={() => toggleRowExpansion(result.symbol)}
+                    >
+                      <td className="py-2 px-3 font-mono font-semibold text-white">
+                        {result.underlying}
+                      </td>
+                      <td className="py-2 px-3">
+                        <span className={`px-1.5 py-0.5 rounded text-xs ${
+                          result.type === 'put' 
+                            ? 'bg-red-900/30 text-red-400' 
+                            : 'bg-green-900/30 text-green-400'
+                        }`}>
+                          {result.type.toUpperCase()}
+                        </span>
+                      </td>
+                      <td className="text-right py-2 px-3">${result.strike.toFixed(2)}</td>
+                      <td className="text-right py-2 px-3">{result.dte}d</td>
+                      <td className="text-right py-2 px-3">${result.premium.toFixed(2)}</td>
+                      <td className="text-right py-2 px-3 font-semibold text-green-400">
+                        {result.roi.toFixed(2)}%
+                      </td>
+                      <td className="text-right py-2 px-3">{result.roiPerDay.toFixed(3)}%</td>
+                      <td className="text-right py-2 px-3">
+                        <span className={result.pop >= 70 ? 'text-green-400' : result.pop >= 50 ? 'text-yellow-400' : 'text-red-400'}>
+                          {result.pop.toFixed(0)}%
+                        </span>
+                      </td>
+                      <td className="text-right py-2 px-3">${(result.capital / 100).toFixed(0)}</td>
+                      <td className="text-right py-2 px-3">{result.distance.toFixed(1)}%</td>
+                      <td className="text-right py-2 px-3">{(result.iv * 100).toFixed(0)}%</td>
+                      <td className="text-right py-2 px-3">{result.volume.toLocaleString()}</td>
+                      <td className="text-right py-2 px-3">{result.openInterest.toLocaleString()}</td>
+                    </tr>
+                    
+                    {/* Expanded Row with Greeks */}
+                    {expandedRows.has(result.symbol) && (
+                      <tr className="bg-gray-800/20 border-b border-gray-800">
+                        <td colSpan={13} className="p-3">
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs">
+                            <div>
+                              <span className="text-gray-500">Delta:</span>
+                              <span className="ml-2 text-white">{result.delta.toFixed(3)}</span>
+                            </div>
+                            <div>
+                              <span className="text-gray-500">Theta:</span>
+                              <span className="ml-2 text-white">{result.theta.toFixed(3)}</span>
+                            </div>
+                            <div>
+                              <span className="text-gray-500">Gamma:</span>
+                              <span className="ml-2 text-white">{result.gamma?.toFixed(4) || 'N/A'}</span>
+                            </div>
+                            <div>
+                              <span className="text-gray-500">Vega:</span>
+                              <span className="ml-2 text-white">{result.vega?.toFixed(3) || 'N/A'}</span>
+                            </div>
+                            <div>
+                              <span className="text-gray-500">Bid/Ask:</span>
+                              <span className="ml-2 text-white">
+                                ${result.bid.toFixed(2)} / ${result.ask.toFixed(2)}
+                              </span>
+                            </div>
+                            <div>
+                              <span className="text-gray-500">Break-even:</span>
+                              <span className="ml-2 text-white">${result.breakeven.toFixed(2)}</span>
+                            </div>
+                            <div>
+                              <span className="text-gray-500">Stock Price:</span>
+                              <span className="ml-2 text-white">${result.stockPrice.toFixed(2)}</span>
+                            </div>
+                            <div>
+                              <span className="text-gray-500">Annualized:</span>
+                              <span className="ml-2 text-white">{result.roiPerYear?.toFixed(1) || 'N/A'}%</span>
+                            </div>
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </React.Fragment>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* No Results */}
+      {!loading && results.length === 0 && filters.tickers.length > 0 && (
+        <div className="bg-gray-900 rounded-lg p-8 text-center">
+          <p className="text-gray-400">
+            Click "Run Screener" to find options opportunities
+          </p>
         </div>
       )}
     </div>
