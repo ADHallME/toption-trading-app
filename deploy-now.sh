@@ -1,28 +1,33 @@
 #!/bin/bash
 
-# Quick deployment script
-echo "🚀 Starting deployment..."
+cd /Users/andyhall/virtera/toption-trading-app
 
-# Add all changes
-git add .
+# Check current git status
+echo "Current git status:"
+git status
 
-# Commit with descriptive message
-git commit -m "fix: Add missing premium tab components
+echo ""
+echo "Adding all changes..."
+git add -A
 
-PRODUCTION FIX:
-✅ Created ResearchModule.tsx - Live options flow + market insights  
-✅ Created AnalyticsModule.tsx - Portfolio performance + risk metrics
-✅ Updated trading/index.ts exports
-✅ Fixed EnhancedOverview.tsx to import and render actual components
-✅ Eliminated placeholder content that was causing production failures
+echo "Committing changes..."
+git commit -m "Fix: Options screener improvements and debugging
 
-COMPONENTS ADDED:
-- ResearchModule: Options flow, unusual activity, market insights
-- AnalyticsModule: Performance metrics, strategy breakdown, risk analysis
+- Fixed default tickers (SPY, QQQ, AAPL, TSLA)
+- Reduced filter restrictions for better results
+- Added polygon-test endpoint for debugging
+- Added console logging to track API calls
+- Fixed ticker state initialization issues"
 
-Ready for immediate production deployment."
-
-# Push to main branch (triggers Vercel deployment)
+echo ""
+echo "Pushing to GitHub (this will trigger Vercel deployment)..."
 git push origin main
 
-echo "✅ Deployment complete! Check Vercel for build status."
+echo ""
+echo "✅ Done! Check deployment progress at:"
+echo "https://vercel.com/andrew-halls-projects-c98040e4/toption-app"
+echo ""
+echo "Once deployed (usually 1-2 minutes), test these:"
+echo "1. API Test: https://toption-app.vercel.app/api/polygon-test?symbol=SPY"
+echo "2. Your app: https://toption-app.vercel.app/dashboard"
+echo "   or: https://www.toptiontrade.com/dashboard"
