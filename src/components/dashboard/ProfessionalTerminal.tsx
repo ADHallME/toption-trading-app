@@ -39,91 +39,15 @@ import {
   PieChart,
   CandlestickChart
 } from 'lucide-react'
-import { useEnhancedOptions, MarketType } from '@/hooks/useEnhancedOptions'
-import { getPolygonEnhancedClient } from '@/lib/polygon/enhanced-client'
-import { searchTickers, getTickerQuote } from '@/lib/polygon/api-client'
+import { MarketType } from '@/hooks/useEnhancedOptions'
+
+// Import live data hooks
+import { usePopularTickers, useMarketTicker, useWatchlistData, useOptionsChain, useTickerSearch } from '@/hooks/useLiveData'
 
 // Import existing components
 import OptionsScreenerEnhanced from './OptionsScreenerEnhanced'
 import EnhancedResearchTab from './EnhancedResearchTab'
 import AnalyticsTab from './AnalyticsTab'
-
-// Popular tickers for search
-const POPULAR_TICKERS = {
-  equity: [
-    { symbol: 'SPY', name: 'SPDR S&P 500 ETF', price: 485.67, type: 'ETF' },
-    { symbol: 'QQQ', name: 'Invesco QQQ Trust', price: 412.34, type: 'ETF' },
-    { symbol: 'AAPL', name: 'Apple Inc.', price: 184.25, type: 'Stock' },
-    { symbol: 'TSLA', name: 'Tesla Inc.', price: 248.73, type: 'Stock' },
-    { symbol: 'NVDA', name: 'NVIDIA Corp.', price: 875.32, type: 'Stock' },
-    { symbol: 'MSFT', name: 'Microsoft Corp.', price: 378.85, type: 'Stock' },
-    { symbol: 'AMZN', name: 'Amazon.com Inc.', price: 178.42, type: 'Stock' },
-    { symbol: 'META', name: 'Meta Platforms', price: 345.67, type: 'Stock' },
-  ],
-  index: [
-    { symbol: 'SPX', name: 'S&P 500 Index', price: 4892.45, type: 'Index' },
-    { symbol: 'NDX', name: 'NASDAQ 100', price: 16234.56, type: 'Index' },
-    { symbol: 'VIX', name: 'Volatility Index', price: 18.42, type: 'Index' },
-  ],
-  futures: [
-    { symbol: 'ES', name: 'E-mini S&P 500', price: 4895.50, type: 'Future' },
-    { symbol: 'CL', name: 'WTI Crude Oil', price: 75.34, type: 'Future' },
-    { symbol: 'GC', name: 'Gold Futures', price: 2034.50, type: 'Future' },
-    { symbol: 'NG', name: 'Natural Gas', price: 2.456, type: 'Future' },
-  ]
-}
-
-// Top ROI opportunities data
-const TOP_ROI_OPPORTUNITIES = [
-  { 
-    symbol: 'OPEN', 
-    expiration: '10/31/25', 
-    dte: 40, 
-    strike: 9.50, 
-    premium: 2.03, 
-    roi: 21.36, 
-    roiPerDay: 0.534, 
-    stockPrice: 9.57, 
-    distance: 0.73, 
-    breakeven: 7.47, 
-    pop: 89,
-    capital: 950,
-    iv: 162,
-    type: 'CSP'
-  },
-  { 
-    symbol: 'LDI', 
-    expiration: '10/31/25', 
-    dte: 40, 
-    strike: 3.50, 
-    premium: 0.60, 
-    roi: 17.14, 
-    roiPerDay: 0.428, 
-    stockPrice: 3.72, 
-    distance: 5.91, 
-    breakeven: 2.90, 
-    pop: 83,
-    capital: 350,
-    iv: 145,
-    type: 'CSP'
-  },
-  { 
-    symbol: 'LUMN', 
-    expiration: '10/31/25', 
-    dte: 40, 
-    strike: 5.50, 
-    premium: 0.57, 
-    roi: 10.36, 
-    roiPerDay: 0.259, 
-    stockPrice: 5.71, 
-    distance: 3.67, 
-    breakeven: 4.93, 
-    pop: 86,
-    capital: 550,
-    iv: 86,
-    type: 'CSP'
-  },
-]
 
 // Simple line chart component  
 const SimpleLineChart = ({ data, height = 200 }: { data: any[], height?: number }) => {
@@ -317,62 +241,36 @@ export default function ProfessionalTerminal() {
   const [showProfile, setShowProfile] = useState(false)
   const [savedOpportunities, setSavedOpportunities] = useState<any[]>([])
   const [chartData, setChartData] = useState(generateChartData(30))
-  const [searchResults, setSearchResults] = useState<any[]>([])
-  const [isSearching, setIsSearching] = useState(false)
   
-  // Watchlist data
-  const [watchlist, setWatchlist] = useState([
-    { symbol: 'SPY', price: 485.67, change: -0.48, iv: 18.2, ivRank: 35, alerts: 2 },
-    { symbol: 'QQQ', price: 412.34, change: 1.23, iv: 22.5, ivRank: 42, alerts: 0 },
-    { symbol: 'AAPL', price: 184.25, change: -1.85, iv: 28.3, ivRank: 65, alerts: 1 },
-    { symbol: 'TSLA', price: 248.73, change: 5.23, iv: 45.2, ivRank: 78, alerts: 3 },
-    { symbol: 'NVDA', price: 875.32, change: -12.45, iv: 52.1, ivRank: 85, alerts: 1 }
-  ])
+  // Live data hooks - replaces all hardcoded data
+  const { tickers: popularTickers, loading: tickersLoading } = usePopularTickers()
+  const { marketData, loading: marketLoading } = useMarketTicker(['SPY', 'QQQ', 'VIX', 'DIA'])
+  const { watchlist, loading: watchlistLoading } = useWatchlistData(['SPY', 'QQQ', 'AAPL', 'TSLA', 'NVDA'])
+  const { results: searchResults, loading: isSearching } = useTickerSearch(searchQuery)
+  const { options: topROIOptions, loading: optionsLoading } = useOptionsChain(selectedTicker, 'put', 60)
   
-  // Market data ticker
-  const marketData = [
-    { symbol: 'SPY', price: 485.67, change: -2.34, changePercent: -0.48 },
-    { symbol: 'QQQ', price: 412.34, change: 5.12, changePercent: 1.26 },
-    { symbol: 'VIX', price: 18.42, change: -0.87, changePercent: -4.51 },
-    { symbol: 'DIA', price: 362.47, change: 1.85, changePercent: 0.51 },
-  ]
-  
-  // Strategy opportunities (would come from Polygon API)
-  const [opportunities] = useState({
-    'CSP': [
-      { ticker: 'SPY', strike: 480, roi: 2.8, dte: 45, premium: 8.75, pop: 87, distance: 1.2 },
-      { ticker: 'QQQ', strike: 405, roi: 2.1, dte: 30, premium: 6.30, pop: 82, distance: 1.8 },
-    ],
-    'covered-call': [
-      { ticker: 'AAPL', strike: 185, roi: 2.3, dte: 30, premium: 3.45, pop: 78, distance: 0.5 },
-      { ticker: 'MSFT', strike: 380, roi: 1.8, dte: 21, premium: 5.20, pop: 75, distance: 0.3 },
-    ],
-    'straddle': [
-      { ticker: 'TSLA', strike: 250, roi: 5.2, dte: 45, premium: 25.50, pop: 65, distance: 0 },
-      { ticker: 'NVDA', strike: 875, roi: 4.8, dte: 30, premium: 45.75, pop: 62, distance: 0 },
-    ],
-    'strangle': [
-      { ticker: 'TSLA', strike: '245/255', roi: 4.2, dte: 45, premium: 12.50, pop: 72, distance: 2.0 },
-      { ticker: 'NVDA', strike: '860/890', roi: 3.8, dte: 30, premium: 18.75, pop: 68, distance: 1.7 },
-    ],
-    'condor': [
-      { ticker: 'QQQ', strike: '400/405/415/420', roi: 1.9, dte: 30, premium: 2.85, pop: 85, distance: 2.5 },
-      { ticker: 'SPY', strike: '475/480/490/495', roi: 1.5, dte: 21, premium: 3.25, pop: 82, distance: 2.1 },
-    ]
-  })
+  // Transform options data to opportunities format
+  const opportunities = {
+    'CSP': topROIOptions.slice(0, 5).map(option => ({
+      ticker: option.underlying,
+      strike: option.strike,
+      roi: option.roi,
+      dte: option.dte,
+      premium: option.premium,
+      pop: option.pop,
+      distance: option.distance
+    })),
+    'covered-call': [], // Would need call options
+    'straddle': [], // Would need both puts and calls
+    'strangle': [], // Would need both puts and calls
+    'condor': [] // Would need multiple strikes
+  }
 
-  // Fetch options data using enhanced Polygon client
-  const { 
-    data: optionsData, 
-    loading: optionsLoading,
-    refresh: refreshOptions
-  } = useEnhancedOptions({
-    underlying: selectedTicker,
-    marketType: selectedMarketType,
-    minDTE: 0,
-    maxDTE: 60,
-    includeGreeks: true
-  })
+  // Refresh function for options data
+  const refreshOptions = () => {
+    // This will trigger a refresh of the options data via the hook
+    window.location.reload() // Simple refresh for now
+  }
 
   const togglePanel = (panelId: string) => {
     setExpandedPanels(prev => {
@@ -400,39 +298,25 @@ export default function ProfessionalTerminal() {
     setChartData(generateChartData(30))
   }
 
-  // Real-time search using Polygon API
-  useEffect(() => {
-    const delayDebounce = setTimeout(async () => {
-      if (chainSearchQuery && chainSearchQuery.length >= 1) {
-        setIsSearching(true)
-        try {
-          const results = await searchTickers(chainSearchQuery)
-          setSearchResults(results.slice(0, 10))
-        } catch (error) {
-          console.error('Search error:', error)
-          // Fallback to static data if API fails
-          const allTickers = [
-            ...POPULAR_TICKERS.equity,
-            ...POPULAR_TICKERS.index,
-            ...POPULAR_TICKERS.futures
-          ]
-          const fallback = allTickers.filter(t => 
-            t.symbol.toLowerCase().includes(chainSearchQuery.toLowerCase())
-          )
-          setSearchResults(fallback)
-        } finally {
-          setIsSearching(false)
-        }
-      } else {
-        setSearchResults([])
-      }
-    }, 300) // 300ms debounce
-    
-    return () => clearTimeout(delayDebounce)
-  }, [chainSearchQuery])
-
+  // Get filtered suggestions from live data
   const getFilteredSuggestions = (query: string) => {
-    return searchResults
+    if (!query) return []
+    
+    // Use live search results if available
+    if (searchResults.length > 0) {
+      return searchResults.slice(0, 8)
+    }
+    
+    // Fallback to popular tickers if no search results
+    const allTickers = [
+      ...popularTickers.equity,
+      ...popularTickers.index,
+      ...popularTickers.futures
+    ]
+    return allTickers.filter(ticker => 
+      ticker.symbol.toLowerCase().includes(query.toLowerCase()) || 
+      ticker.name.toLowerCase().includes(query.toLowerCase())
+    ).slice(0, 8)
   }
 
   return (
@@ -485,15 +369,22 @@ export default function ProfessionalTerminal() {
 
             {/* Market Data Ticker */}
             <div className="flex items-center gap-4 text-xs">
-              {marketData.map(ticker => (
-                <div key={ticker.symbol} className="flex items-center gap-2">
-                  <span className="text-gray-500">{ticker.symbol}</span>
-                  <span className="font-mono text-white">${ticker.price.toFixed(2)}</span>
-                  <span className={`font-mono ${ticker.change >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                    {ticker.change >= 0 ? '+' : ''}{ticker.changePercent.toFixed(2)}%
-                  </span>
+              {marketLoading ? (
+                <div className="flex items-center gap-2 text-gray-500">
+                  <div className="animate-spin rounded-full h-3 w-3 border-b border-gray-400"></div>
+                  <span>Loading market data...</span>
                 </div>
-              ))}
+              ) : (
+                marketData.map(ticker => (
+                  <div key={ticker.symbol} className="flex items-center gap-2">
+                    <span className="text-gray-500">{ticker.symbol}</span>
+                    <span className="font-mono text-white">${ticker.price.toFixed(2)}</span>
+                    <span className={`font-mono ${ticker.change >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                      {ticker.change >= 0 ? '+' : ''}{ticker.changePercent.toFixed(2)}%
+                    </span>
+                  </div>
+                ))
+              )}
             </div>
           </div>
 
@@ -699,29 +590,42 @@ export default function ProfessionalTerminal() {
                 </div>
                 {expandedPanels.has('watchlist') && (
                   <div className="p-4">
-                    <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-3">
-                      {watchlist.map(item => (
-                        <div key={item.symbol} className="bg-gray-800/50 rounded-lg p-3 hover:bg-gray-800 transition-colors">
-                          <div className="flex items-center justify-between mb-2">
-                            <span className="font-semibold text-white">{item.symbol}</span>
-                            <Star className="w-4 h-4 text-yellow-400 cursor-pointer" />
+                    {watchlistLoading ? (
+                      <div className="flex items-center justify-center py-8">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-500"></div>
+                        <span className="ml-3 text-gray-400">Loading watchlist...</span>
+                      </div>
+                    ) : watchlist.length > 0 ? (
+                      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-3">
+                        {watchlist.map(item => (
+                          <div key={item.symbol} className="bg-gray-800/50 rounded-lg p-3 hover:bg-gray-800 transition-colors">
+                            <div className="flex items-center justify-between mb-2">
+                              <span className="font-semibold text-white">{item.symbol}</span>
+                              <Star className="w-4 h-4 text-yellow-400 cursor-pointer" />
+                            </div>
+                            <div className="flex items-center justify-between text-sm">
+                              <span className="text-gray-400">${item.price.toFixed(2)}</span>
+                              <span className={item.change >= 0 ? 'text-green-400' : 'text-red-400'}>
+                                {item.change >= 0 ? '+' : ''}{item.changePercent.toFixed(2)}%
+                              </span>
+                            </div>
+                            <div className="flex items-center justify-between text-xs text-gray-500 mt-1">
+                              <span>Vol: {item.volume.toLocaleString()}</span>
+                              <span>Live Data</span>
+                              {item.alerts > 0 && (
+                                <span className="text-orange-400">{item.alerts} alerts</span>
+                              )}
+                            </div>
                           </div>
-                          <div className="flex items-center justify-between text-sm">
-                            <span className="text-gray-400">${item.price.toFixed(2)}</span>
-                            <span className={item.change >= 0 ? 'text-green-400' : 'text-red-400'}>
-                              {item.change >= 0 ? '+' : ''}{item.change.toFixed(2)}%
-                            </span>
-                          </div>
-                          <div className="flex items-center justify-between text-xs text-gray-500 mt-1">
-                            <span>IV: {item.iv}%</span>
-                            <span>Rank: {item.ivRank}</span>
-                            {item.alerts > 0 && (
-                              <span className="text-orange-400">{item.alerts} alerts</span>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-8 text-gray-500">
+                        <Eye className="w-12 h-12 mx-auto mb-3 text-gray-600" />
+                        <p>No watchlist items</p>
+                        <p className="text-sm">Add symbols to track their performance</p>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -852,27 +756,42 @@ export default function ProfessionalTerminal() {
                           </tr>
                         </thead>
                         <tbody className="text-gray-300">
-                          {TOP_ROI_OPPORTUNITIES.map((opp, idx) => (
-                            <tr key={idx} className="border-b border-gray-800/50 hover:bg-gray-800/30">
-                              <td className="py-2 px-2 font-mono font-semibold text-white">{opp.symbol}</td>
-                              <td className="py-2 px-2">
-                                <span className="px-1 py-0.5 rounded text-xs bg-emerald-900/30 text-emerald-400">
-                                  {opp.type}
-                                </span>
+                          {topROIOptions.length > 0 ? (
+                            topROIOptions.slice(0, 10).map((opp, idx) => (
+                              <tr key={idx} className="border-b border-gray-800/50 hover:bg-gray-800/30">
+                                <td className="py-2 px-2 font-mono font-semibold text-white">{opp.underlying}</td>
+                                <td className="py-2 px-2">
+                                  <span className="px-1 py-0.5 rounded text-xs bg-emerald-900/30 text-emerald-400">
+                                    {opp.type.toUpperCase()}
+                                  </span>
+                                </td>
+                                <td className="text-right py-2 px-2">${opp.strike}</td>
+                                <td className="text-right py-2 px-2">{opp.dte}d</td>
+                                <td className="text-right py-2 px-2">${opp.premium.toFixed(2)}</td>
+                                <td className="text-right py-2 px-2 text-emerald-400 font-semibold">
+                                  {opp.roi.toFixed(2)}%
+                                </td>
+                                <td className="text-right py-2 px-2">{opp.roiPerDay.toFixed(3)}%</td>
+                                <td className="text-right py-2 px-2">{opp.pop}%</td>
+                                <td className="text-right py-2 px-2">${opp.capital}</td>
+                                <td className="text-right py-2 px-2">{opp.distance}%</td>
+                                <td className="text-right py-2 px-2">{opp.iv ? opp.iv.toFixed(1) : 'N/A'}%</td>
+                              </tr>
+                            ))
+                          ) : (
+                            <tr>
+                              <td colSpan={11} className="py-8 text-center text-gray-500">
+                                {optionsLoading ? (
+                                  <div className="flex items-center justify-center gap-2">
+                                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-400"></div>
+                                    <span>Loading options data...</span>
+                                  </div>
+                                ) : (
+                                  'No options data available'
+                                )}
                               </td>
-                              <td className="text-right py-2 px-2">${opp.strike}</td>
-                              <td className="text-right py-2 px-2">{opp.dte}d</td>
-                              <td className="text-right py-2 px-2">${opp.premium.toFixed(2)}</td>
-                              <td className="text-right py-2 px-2 text-emerald-400 font-semibold">
-                                {opp.roi.toFixed(2)}%
-                              </td>
-                              <td className="text-right py-2 px-2">{opp.roiPerDay.toFixed(3)}%</td>
-                              <td className="text-right py-2 px-2">{opp.pop}%</td>
-                              <td className="text-right py-2 px-2">${opp.capital}</td>
-                              <td className="text-right py-2 px-2">{opp.distance}%</td>
-                              <td className="text-right py-2 px-2">{opp.iv}%</td>
                             </tr>
-                          ))}
+                          )}
                         </tbody>
                       </table>
                     </div>

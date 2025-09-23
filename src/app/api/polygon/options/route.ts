@@ -60,8 +60,15 @@ export async function GET(request: Request) {
   const minDTE = parseInt(searchParams.get('minDTE') || '0')
   const maxDTE = parseInt(searchParams.get('maxDTE') || '60')
   
+  console.log('Options API called:', { symbol, type, minDTE, maxDTE, apiKey: POLYGON_API_KEY?.slice(0,10) })
+  
   if (!symbol) {
     return NextResponse.json({ error: 'Symbol required' }, { status: 400 })
+  }
+  
+  if (!POLYGON_API_KEY) {
+    console.error('No Polygon API key found!')
+    return NextResponse.json({ error: 'API key not configured' }, { status: 500 })
   }
 
   try {
