@@ -1,24 +1,32 @@
 #!/bin/bash
 
-echo "🚀 Deploying final build fixes..."
+# Fix ALL build errors including the toption-app subdirectory issue
+echo "🚀 Fixing ALL build errors and deploying to Vercel..."
 
-cd ~/virtera/toption-trading-app
+cd /Users/andyhall/virtera/toption-trading-app
 
-# Add all changes
-git add -A
+# Add all the fixed files
+git add src/components/dashboard/ProfessionalTerminal.tsx
+git add src/app/api/user/activity/route.ts
+git add src/app/api/user/preferences/route.ts
+git add tsconfig.json
 
-# Commit
-git commit -m "fix: Resolve all build errors for successful deployment
+# Commit with clear message
+git commit -m "fix: Exclude toption-app subdirectory from TypeScript compilation
 
-FIXED:
-✓ Changed auth import to currentUser (Clerk v5 syntax)
-✓ Fixed expiration type (undefined instead of null)
-✓ All TypeScript errors resolved
+- Fixed tsconfig.json to only compile src/ directory
+- Excluded toption-app subdirectory which was causing build errors
+- Fixed JSX syntax errors
+- Removed Supabase dependencies from API routes"
 
-Build should complete successfully now"
+# Push to GitHub
+git push origin main
 
-# Push
-git push origin main --force
-
-echo "✅ All build errors fixed!"
-echo "The app should deploy successfully now"
+echo "✅ ALL fixes pushed to GitHub!"
+echo ""
+echo "📊 Vercel will now automatically redeploy"
+echo "🔍 Monitor at: https://vercel.com/dashboard"
+echo ""
+echo "This should finally fix the build by:"
+echo "  - Only compiling the main app in /src"
+echo "  - Ignoring the toption-app subdirectory completely"

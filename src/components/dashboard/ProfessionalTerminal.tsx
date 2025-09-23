@@ -41,6 +41,7 @@ import {
 } from 'lucide-react'
 import { useEnhancedOptions, MarketType } from '@/hooks/useEnhancedOptions'
 import { getPolygonEnhancedClient } from '@/lib/polygon/enhanced-client'
+import { searchTickers, getTickerQuote } from '@/lib/polygon/api-client'
 
 // Import existing components
 import OptionsScreenerEnhanced from './OptionsScreenerEnhanced'
@@ -316,6 +317,8 @@ export default function ProfessionalTerminal() {
   const [showProfile, setShowProfile] = useState(false)
   const [savedOpportunities, setSavedOpportunities] = useState<any[]>([])
   const [chartData, setChartData] = useState(generateChartData(30))
+  const [searchResults, setSearchResults] = useState<any[]>([])
+  const [isSearching, setIsSearching] = useState(false)
   
   // Watchlist data
   const [watchlist, setWatchlist] = useState([
@@ -397,19 +400,39 @@ export default function ProfessionalTerminal() {
     setChartData(generateChartData(30))
   }
 
+  // Real-time search using Polygon API
+  useEffect(() => {
+    const delayDebounce = setTimeout(async () => {
+      if (chainSearchQuery && chainSearchQuery.length >= 1) {
+        setIsSearching(true)
+        try {
+          const results = await searchTickers(chainSearchQuery)
+          setSearchResults(results.slice(0, 10))
+        } catch (error) {
+          console.error('Search error:', error)
+          // Fallback to static data if API fails
+          const allTickers = [
+            ...POPULAR_TICKERS.equity,
+            ...POPULAR_TICKERS.index,
+            ...POPULAR_TICKERS.futures
+          ]
+          const fallback = allTickers.filter(t => 
+            t.symbol.toLowerCase().includes(chainSearchQuery.toLowerCase())
+          )
+          setSearchResults(fallback)
+        } finally {
+          setIsSearching(false)
+        }
+      } else {
+        setSearchResults([])
+      }
+    }, 300) // 300ms debounce
+    
+    return () => clearTimeout(delayDebounce)
+  }, [chainSearchQuery])
+
   const getFilteredSuggestions = (query: string) => {
-    if (!query) return []
-    
-    const allTickers = [
-      ...POPULAR_TICKERS.equity,
-      ...POPULAR_TICKERS.index,
-      ...POPULAR_TICKERS.futures
-    ]
-    
-    return allTickers.filter(ticker => 
-      ticker.symbol.toLowerCase().includes(query.toLowerCase()) ||
-      ticker.name.toLowerCase().includes(query.toLowerCase())
-    ).slice(0, 8)
+    return searchResults
   }
 
   return (
@@ -774,22 +797,32 @@ export default function ProfessionalTerminal() {
                       
                       {showChainSearchSuggestions && chainSearchQuery && (
                         <div className="absolute top-8 left-0 w-64 bg-gray-900 border border-gray-800 rounded-lg shadow-xl z-50 max-h-64 overflow-y-auto">
-                          {getFilteredSuggestions(chainSearchQuery).map(ticker => (
-                            <button
-                              key={ticker.symbol}
-                              onClick={() => handleTickerSelect(ticker.symbol, ticker.price)}
-                              className="w-full px-3 py-2 hover:bg-gray-800 text-left flex items-center justify-between group"
-                            >
-                              <div>
-                                <span className="text-sm font-medium text-white">{ticker.symbol}</span>
-                                <span className="text-xs text-gray-400 ml-2">{ticker.type}</span>
-                              </div>
-                              <div className="text-right">
-                                <div className="text-xs text-gray-300">${ticker.price.toFixed(2)}</div>
-                                <div className="text-xs text-gray-500">{ticker.name.substring(0, 20)}</div>
-                              </div>
-                            </button>
-                          ))}
+                          {isSearching ? (
+                            <div className="p-4 text-center text-gray-400 text-sm">
+                              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-400 mx-auto"></div>
+                              <span className="mt-2 block">Searching...</span>
+                            </div>
+                          ) : searchResults.length > 0 ? (
+                            searchResults.map(ticker => (
+                              <button
+                                key={ticker.symbol}
+                                onClick={() => handleTickerSelect(ticker.symbol, ticker.price || 0)}
+                                className="w-full px-3 py-2 hover:bg-gray-800 text-left flex items-center justify-between group"
+                              >
+                                <div>
+                                  <span className="text-sm font-medium text-white">{ticker.symbol}</span>
+                                  <span className="text-xs text-gray-400 ml-2">{ticker.type || 'Stock'}</span>
+                                </div>
+                                <div className="text-right">
+                                  <div className="text-xs text-gray-500">{ticker.name?.substring(0, 20)}</div>
+                                </div>
+                              </button>
+                            ))
+                          ) : (
+                            <div className="p-4 text-center text-gray-500 text-sm">
+                              No results found
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>
