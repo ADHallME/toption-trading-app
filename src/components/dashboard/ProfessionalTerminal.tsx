@@ -42,12 +42,14 @@ import {
 import { MarketType } from '@/hooks/useEnhancedOptions'
 
 // Import live data hooks
-import { usePopularTickers, useMarketTicker, useWatchlistData, useOptionsChain, useTickerSearch } from '@/hooks/useLiveData'
+import { usePopularTickers, useMarketTicker, useOptionsChain, useTickerSearch } from '@/hooks/useLiveData'
+import { useAIOpportunities } from '@/hooks/useAIOpportunities'
 
 // Import existing components
 import OptionsScreenerEnhanced from './OptionsScreenerEnhanced'
 import EnhancedResearchTab from './EnhancedResearchTab'
 import AnalyticsTab from './AnalyticsTab'
+import AIOpportunityCard from './AIOpportunityCard'
 
 // Simple line chart component  
 const SimpleLineChart = ({ data, height = 200 }: { data: any[], height?: number }) => {
@@ -245,7 +247,7 @@ export default function ProfessionalTerminal() {
   // Live data hooks - replaces all hardcoded data
   const { tickers: popularTickers, loading: tickersLoading } = usePopularTickers()
   const { marketData, loading: marketLoading } = useMarketTicker(['SPY', 'QQQ', 'VIX', 'DIA'])
-  const { watchlist, loading: watchlistLoading } = useWatchlistData(['SPY', 'QQQ', 'AAPL', 'TSLA', 'NVDA'])
+  const { opportunities: aiOpportunities, loading: opportunitiesLoading, lastUpdated } = useAIOpportunities()
   const { results: searchResults, loading: isSearching } = useTickerSearch(searchQuery)
   const { options: topROIOptions, loading: optionsLoading } = useOptionsChain(selectedTicker, 'put', 60)
   
@@ -561,7 +563,7 @@ export default function ProfessionalTerminal() {
         <div className="flex-1 p-4 overflow-auto">
           {activeWorkspace === 'main' ? (
             <div className="space-y-4">
-              {/* Watchlist Panel */}
+              {/* AI Opportunities Panel */}
               <div className={`bg-gray-900 rounded-lg border border-gray-800 ${
                 expandedPanels.has('watchlist') ? '' : 'h-12'
               }`}>
@@ -573,57 +575,56 @@ export default function ProfessionalTerminal() {
                     <ChevronRight className={`w-4 h-4 text-gray-400 transition-transform ${
                       expandedPanels.has('watchlist') ? 'rotate-90' : ''
                     }`} />
-                    <Eye className="w-4 h-4 text-blue-400" />
-                    <h3 className="text-sm font-semibold text-white">Watchlist</h3>
-                    <span className="text-xs text-gray-500">({watchlist.length} symbols)</span>
+                    <Zap className="w-4 h-4 text-purple-400" />
+                    <h3 className="text-sm font-semibold text-white">AI Opportunities</h3>
+                    <span className="text-xs text-purple-400">({aiOpportunities.length} found)</span>
+                    {lastUpdated && (
+                      <span className="text-xs text-gray-500">
+                        Updated {lastUpdated.toLocaleTimeString()}
+                      </span>
+                    )}
                   </div>
                   <div className="flex items-center gap-2">
                     <button 
                       onClick={(e) => {
                         e.stopPropagation()
+                        // Refresh opportunities
+                        window.location.reload()
                       }}
                       className="p-1 hover:bg-gray-800 rounded"
                     >
-                      <Plus className="w-3 h-3 text-gray-400" />
+                      <RefreshCw className={`w-3 h-3 text-gray-400 ${opportunitiesLoading ? 'animate-spin' : ''}`} />
                     </button>
                   </div>
                 </div>
                 {expandedPanels.has('watchlist') && (
                   <div className="p-4">
-                    {watchlistLoading ? (
+                    {opportunitiesLoading ? (
                       <div className="flex items-center justify-center py-8">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-500"></div>
-                        <span className="ml-3 text-gray-400">Loading watchlist...</span>
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500"></div>
+                        <span className="ml-3 text-gray-400">AI is analyzing opportunities...</span>
                       </div>
-                    ) : watchlist.length > 0 ? (
-                      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-3">
-                        {watchlist.map(item => (
-                          <div key={item.symbol} className="bg-gray-800/50 rounded-lg p-3 hover:bg-gray-800 transition-colors">
-                            <div className="flex items-center justify-between mb-2">
-                              <span className="font-semibold text-white">{item.symbol}</span>
-                              <Star className="w-4 h-4 text-yellow-400 cursor-pointer" />
-                            </div>
-                            <div className="flex items-center justify-between text-sm">
-                              <span className="text-gray-400">${item.price.toFixed(2)}</span>
-                              <span className={item.change >= 0 ? 'text-green-400' : 'text-red-400'}>
-                                {item.change >= 0 ? '+' : ''}{item.changePercent.toFixed(2)}%
-                              </span>
-                            </div>
-                            <div className="flex items-center justify-between text-xs text-gray-500 mt-1">
-                              <span>Vol: {item.volume.toLocaleString()}</span>
-                              <span>Live Data</span>
-                              {item.alerts > 0 && (
-                                <span className="text-orange-400">{item.alerts} alerts</span>
-                              )}
-                            </div>
-                          </div>
+                    ) : aiOpportunities.length > 0 ? (
+                      <div className="space-y-4">
+                        {aiOpportunities.map(opportunity => (
+                          <AIOpportunityCard
+                            key={opportunity.id}
+                            opportunity={opportunity}
+                            onSave={(opp) => {
+                              setSavedOpportunities(prev => [...prev, opp])
+                            }}
+                            onDismiss={(opp) => {
+                              // Remove from opportunities
+                              console.log('Dismissed opportunity:', opp.symbol)
+                            }}
+                          />
                         ))}
                       </div>
                     ) : (
                       <div className="text-center py-8 text-gray-500">
-                        <Eye className="w-12 h-12 mx-auto mb-3 text-gray-600" />
-                        <p>No watchlist items</p>
-                        <p className="text-sm">Add symbols to track their performance</p>
+                        <Zap className="w-12 h-12 mx-auto mb-3 text-gray-600" />
+                        <p>No opportunities found</p>
+                        <p className="text-sm">AI is scanning the market for the best options plays</p>
                       </div>
                     )}
                   </div>

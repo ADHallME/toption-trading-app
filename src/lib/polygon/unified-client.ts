@@ -12,6 +12,7 @@ export interface StockQuote {
   changePercent: number
   volume: number
   timestamp: string
+  source: string
 }
 
 export interface OptionContract {
