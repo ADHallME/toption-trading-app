@@ -237,7 +237,7 @@ class UnifiedPolygonClient {
       }) || []
       
       // Sort by ROI descending
-      return options.sort((a, b) => b.roi - a.roi)
+      return options.sort((a: OptionContract, b: OptionContract) => b.roi - a.roi)
       
     } catch (error) {
       console.error('Options chain error:', error)
