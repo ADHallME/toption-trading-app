@@ -103,6 +103,7 @@ export async function GET(request: Request) {
     
     if (!data.results || data.results.length === 0) {
       console.log('No results from snapshot, trying contracts endpoint')
+      console.log('Snapshot response:', JSON.stringify(data, null, 2))
       return fetchContractsEndpoint(symbol, type, currentStockPrice)
     }
 
@@ -252,6 +253,7 @@ async function fetchContractsEndpoint(
   currentStockPrice: number
 ): Promise<NextResponse> {
   try {
+    console.log(`Fetching contracts for ${symbol}, type: ${type}`)
     // This endpoint gives us contracts but NO pricing
     let url = `https://api.polygon.io/v3/reference/options/contracts?underlying_ticker=${symbol}&limit=100`
     
