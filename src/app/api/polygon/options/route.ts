@@ -86,7 +86,17 @@ export async function GET(request: Request) {
 
     // Use contracts endpoint as primary method since it's more reliable
     console.log('Using contracts endpoint for options data')
-    return fetchContractsEndpoint(symbol, type, currentStockPrice)
+    try {
+      const result = await fetchContractsEndpoint(symbol, type, currentStockPrice)
+      console.log('Contracts endpoint result:', result)
+      return result
+    } catch (error) {
+      console.error('Contracts endpoint error:', error)
+      return NextResponse.json({ 
+        error: 'Failed to fetch from contracts endpoint',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      }, { status: 500 })
+    }
   } catch (error) {
     console.error('Options chain error:', error)
     return NextResponse.json({ 
