@@ -220,14 +220,14 @@ const OptionsScreenerEnhanced: React.FC<{ marketType?: 'equity' | 'index' | 'fut
       // Also search via API
       const searchTicker = async () => {
         try {
-          const response = await fetch(`/api/trades?ticker=${encodeURIComponent(searchQuery)}`)
+          const response = await fetch(`/api/ticker-search?ticker=${encodeURIComponent(searchQuery)}`)
           if (response.ok) {
             const data = await response.json()
             const apiResults = data.results?.slice(0, 5).map((ticker: any) => ({
-              symbol: ticker.T || ticker.ticker,
-              name: ticker.name || `${ticker.T || ticker.ticker} Stock`,
-              price: ticker.c || ticker.last || 0,
-              type: 'Stock'
+              symbol: ticker.symbol,
+              name: ticker.name,
+              price: 0, // We don't have price in ticker search, will be fetched later
+              type: ticker.type || 'Stock'
             })) || []
             
             // Combine and deduplicate results
