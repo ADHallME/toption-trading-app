@@ -391,7 +391,7 @@ export default function ProfessionalTerminal() {
         maxLoss: option.strike * 100,
         breakeven: option.strike - option.premium,
         contractSize: 100,
-        underlyingPrice: option.underlyingPrice || 485.67,
+        underlyingPrice: option.stockPrice || 485.67,
         volume: option.volume || 1250,
         openInterest: option.openInterest || 3400,
         bid: option.bid || option.premium * 0.95,
