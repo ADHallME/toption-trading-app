@@ -18,6 +18,40 @@ interface ScreenerFilters {
   capital_max: number
   min_volume: number
   min_oi: number
+  // Greeks filters
+  delta_min: number
+  delta_max: number
+  gamma_min: number
+  gamma_max: number
+  theta_min: number
+  theta_max: number
+  vega_min: number
+  vega_max: number
+  // IV and pricing filters
+  iv_min: number
+  iv_max: number
+  strike_min: number
+  strike_max: number
+  premium_min: number
+  premium_max: number
+  // Spread-specific filters
+  spread_width_min: number
+  spread_width_max: number
+  wing_width_min: number
+  wing_width_max: number
+  // Stock filters
+  stock_price_min: number
+  stock_price_max: number
+  volume_min: number
+  market_cap_min: number
+  sector: string
+  // Technical filters
+  rsi_min: number
+  rsi_max: number
+  ma20_position: string
+  ma50_position: string
+  // Earnings filters
+  earnings_filter: string
 }
 
 interface ScreenerResult {
@@ -71,10 +105,44 @@ const OptionsScreenerEnhanced: React.FC = () => {
     dte_max: 45,
     roi_min: 0,
     roi_max: 100,
-    pop_min: 50,  // Lowered from 65 to be less restrictive
+    pop_min: 50,
     capital_max: 50000,
     min_volume: 0,
-    min_oi: 10  // Lowered from 100 to be less restrictive
+    min_oi: 10,
+    // Greeks filters
+    delta_min: -1,
+    delta_max: 1,
+    gamma_min: 0,
+    gamma_max: 1,
+    theta_min: -1,
+    theta_max: 1,
+    vega_min: 0,
+    vega_max: 1,
+    // IV and pricing filters
+    iv_min: 0,
+    iv_max: 200,
+    strike_min: 0,
+    strike_max: 10000,
+    premium_min: 0,
+    premium_max: 1000,
+    // Spread-specific filters
+    spread_width_min: 0,
+    spread_width_max: 50,
+    wing_width_min: 0,
+    wing_width_max: 50,
+    // Stock filters
+    stock_price_min: 0,
+    stock_price_max: 10000,
+    volume_min: 0,
+    market_cap_min: 0,
+    sector: '',
+    // Technical filters
+    rsi_min: 0,
+    rsi_max: 100,
+    ma20_position: '',
+    ma50_position: '',
+    // Earnings filters
+    earnings_filter: ''
   })
 
   const [results, setResults] = useState<ScreenerResult[]>([])
@@ -84,6 +152,8 @@ const OptionsScreenerEnhanced: React.FC = () => {
   const [sortBy, setSortBy] = useState<keyof ScreenerResult>('roi')
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc')
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set())
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false)
+  const [screenedWatchlist, setScreenedWatchlist] = useState<ScreenerResult[]>([])
   
   const strategyOptions = [
     'Cash Secured Put',
@@ -91,8 +161,13 @@ const OptionsScreenerEnhanced: React.FC = () => {
     'Put Credit Spread',
     'Call Credit Spread',
     'Iron Condor',
+    'Iron Butterfly',
     'Straddle',
-    'Strangle'
+    'Strangle',
+    'Butterfly',
+    'Calendar Spread',
+    'Diagonal Spread',
+    'Ratio Spread'
   ]
 
   const popularTickers = [
@@ -152,12 +227,28 @@ const OptionsScreenerEnhanced: React.FC = () => {
             // Filter and map results
             const tickerResults = data.results
               .filter((option: any) => {
-                // Apply local filters
+                // Apply basic filters
                 if (option.roi < filters.roi_min || option.roi > filters.roi_max) return false
                 if (option.pop < filters.pop_min) return false
                 if (option.capital > filters.capital_max) return false
                 if (option.volume < filters.min_volume) return false
                 if (option.openInterest < filters.min_oi) return false
+                
+                // Apply Greeks filters
+                if (option.delta < filters.delta_min || option.delta > filters.delta_max) return false
+                if (option.gamma < filters.gamma_min || option.gamma > filters.gamma_max) return false
+                if (option.theta < filters.theta_min || option.theta > filters.theta_max) return false
+                if (option.vega < filters.vega_min || option.vega > filters.vega_max) return false
+                
+                // Apply IV and pricing filters
+                if (option.iv < filters.iv_min || option.iv > filters.iv_max) return false
+                if (option.strike < filters.strike_min || option.strike > filters.strike_max) return false
+                if (option.premium < filters.premium_min || option.premium > filters.premium_max) return false
+                
+                // Apply stock filters
+                if (option.stockPrice < filters.stock_price_min || option.stockPrice > filters.stock_price_max) return false
+                if (option.volume < filters.volume_min) return false
+                
                 return true
               })
               .map((option: any) => ({
@@ -234,6 +325,20 @@ const OptionsScreenerEnhanced: React.FC = () => {
       newExpanded.add(symbol)
     }
     setExpandedRows(newExpanded)
+  }
+
+  const addToScreenedWatchlist = (result: ScreenerResult) => {
+    if (!screenedWatchlist.find(item => item.symbol === result.symbol)) {
+      setScreenedWatchlist(prev => [...prev, result])
+    }
+  }
+
+  const removeFromScreenedWatchlist = (symbol: string) => {
+    setScreenedWatchlist(prev => prev.filter(item => item.symbol !== symbol))
+  }
+
+  const isInScreenedWatchlist = (symbol: string) => {
+    return screenedWatchlist.some(item => item.symbol === symbol)
   }
 
   const SortIcon = ({ column }: { column: keyof ScreenerResult }) => {
@@ -451,6 +556,7 @@ const OptionsScreenerEnhanced: React.FC = () => {
                   <th className="text-right py-2 px-3 cursor-pointer hover:bg-gray-700" onClick={() => handleSort('openInterest')}>
                     OI <SortIcon column="openInterest" />
                   </th>
+                  <th className="text-center py-2 px-3">Actions</th>
                 </tr>
               </thead>
               <tbody className="text-gray-300">
@@ -489,6 +595,22 @@ const OptionsScreenerEnhanced: React.FC = () => {
                       <td className="text-right py-2 px-3">{(result.iv * 100).toFixed(0)}%</td>
                       <td className="text-right py-2 px-3">{result.volume.toLocaleString()}</td>
                       <td className="text-right py-2 px-3">{result.openInterest.toLocaleString()}</td>
+                      <td className="text-center py-2 px-3">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            addToScreenedWatchlist(result)
+                          }}
+                          disabled={isInScreenedWatchlist(result.symbol)}
+                          className={`px-2 py-1 rounded text-xs transition-colors ${
+                            isInScreenedWatchlist(result.symbol)
+                              ? 'bg-gray-700 text-gray-400 cursor-not-allowed'
+                              : 'bg-blue-600 hover:bg-blue-700 text-white'
+                          }`}
+                        >
+                          {isInScreenedWatchlist(result.symbol) ? 'Added' : 'Add to Watchlist'}
+                        </button>
+                      </td>
                     </tr>
                     
                     {/* Expanded Row with Greeks */}
@@ -535,6 +657,69 @@ const OptionsScreenerEnhanced: React.FC = () => {
                       </tr>
                     )}
                   </React.Fragment>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* Screened Watchlist */}
+      {screenedWatchlist.length > 0 && (
+        <div className="bg-gray-900 rounded-lg overflow-hidden">
+          <div className="px-4 py-3 border-b border-gray-800">
+            <h3 className="text-sm font-semibold text-white">
+              Screened Watchlist ({screenedWatchlist.length})
+            </h3>
+          </div>
+          
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs">
+              <thead className="bg-gray-800">
+                <tr>
+                  <th className="text-left py-2 px-3">Symbol</th>
+                  <th className="text-left py-2 px-3">Strategy</th>
+                  <th className="text-right py-2 px-3">Strike</th>
+                  <th className="text-right py-2 px-3">DTE</th>
+                  <th className="text-right py-2 px-3">Premium</th>
+                  <th className="text-right py-2 px-3">ROI</th>
+                  <th className="text-right py-2 px-3">PoP</th>
+                  <th className="text-right py-2 px-3">Capital</th>
+                  <th className="text-center py-2 px-3">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="text-gray-300">
+                {screenedWatchlist.map((item, idx) => (
+                  <tr key={`watchlist-${item.symbol}-${idx}`} className="border-b border-gray-800/50 hover:bg-gray-800/30">
+                    <td className="py-2 px-3 font-mono font-semibold text-white">
+                      {item.underlying}
+                    </td>
+                    <td className="py-2 px-3">
+                      <span className="px-1.5 py-0.5 rounded text-xs bg-blue-900/30 text-blue-400">
+                        {item.strategy}
+                      </span>
+                    </td>
+                    <td className="text-right py-2 px-3">${item.strike.toFixed(2)}</td>
+                    <td className="text-right py-2 px-3">{item.dte}d</td>
+                    <td className="text-right py-2 px-3">${item.premium.toFixed(2)}</td>
+                    <td className="text-right py-2 px-3 font-semibold text-green-400">
+                      {item.roi.toFixed(2)}%
+                    </td>
+                    <td className="text-right py-2 px-3">
+                      <span className={item.pop >= 70 ? 'text-green-400' : item.pop >= 50 ? 'text-yellow-400' : 'text-red-400'}>
+                        {item.pop.toFixed(0)}%
+                      </span>
+                    </td>
+                    <td className="text-right py-2 px-3">${(item.capital / 100).toFixed(0)}</td>
+                    <td className="text-center py-2 px-3">
+                      <button
+                        onClick={() => removeFromScreenedWatchlist(item.symbol)}
+                        className="text-red-400 hover:text-red-300 text-xs"
+                      >
+                        Remove
+                      </button>
+                    </td>
+                  </tr>
                 ))}
               </tbody>
             </table>
