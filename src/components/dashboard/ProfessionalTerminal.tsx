@@ -154,8 +154,10 @@ const generateChartData = (days: number) => {
   return data
 }
 
-// Strategy opportunity card
+// Strategy opportunity card with expandable details
 const StrategyCard = ({ strategy, opportunities }: { strategy: string; opportunities: any[] }) => {
+  const [expandedCards, setExpandedCards] = useState<Set<number>>(new Set())
+  
   const getStrategyColor = (strat: string) => {
     switch(strat) {
       case 'CSP': return 'emerald'
@@ -167,6 +169,18 @@ const StrategyCard = ({ strategy, opportunities }: { strategy: string; opportuni
       case 'weekly': return 'orange'
       default: return 'gray'
     }
+  }
+  
+  const toggleCard = (idx: number) => {
+    setExpandedCards(prev => {
+      const next = new Set(prev)
+      if (next.has(idx)) {
+        next.delete(idx)
+      } else {
+        next.add(idx)
+      }
+      return next
+    })
   }
   
   const color = getStrategyColor(strategy)
@@ -187,33 +201,119 @@ const StrategyCard = ({ strategy, opportunities }: { strategy: string; opportuni
       </div>
       <div className="p-3 space-y-2 max-h-64 overflow-y-auto">
         {opportunities.slice(0, 5).map((opp, idx) => (
-          <div key={idx} className="p-2 bg-gray-800/50 hover:bg-gray-800 rounded cursor-pointer transition-colors">
-            <div className="flex justify-between items-center mb-1">
-              <div>
-                <span className="font-semibold text-white text-sm">{opp.ticker}</span>
-                <span className="text-xs text-gray-500 ml-2">${opp.strike}</span>
+          <div key={idx} className="bg-gray-800/50 hover:bg-gray-800 rounded transition-colors">
+            {/* Compact View */}
+            <div 
+              className="p-2 cursor-pointer"
+              onClick={() => toggleCard(idx)}
+            >
+              <div className="flex justify-between items-center mb-1">
+                <div>
+                  <span className="font-semibold text-white text-sm">{opp.ticker}</span>
+                  <span className="text-xs text-gray-500 ml-2">${opp.strike}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className={`text-${color}-400 font-semibold text-sm`}>
+                    {opp.roi}% ROI
+                  </div>
+                  <ChevronDown className={`w-3 h-3 text-gray-400 transition-transform ${expandedCards.has(idx) ? 'rotate-180' : ''}`} />
+                </div>
               </div>
-              <div className={`text-${color}-400 font-semibold text-sm`}>
-                {opp.roi}% ROI
+              <div className="grid grid-cols-3 gap-2 text-xs text-gray-400">
+                <div>
+                  <span className="text-gray-500">Premium:</span>
+                  <span className="ml-1 text-gray-300">${opp.premium}</span>
+                </div>
+                <div>
+                  <span className="text-gray-500">PoP:</span>
+                  <span className="ml-1 text-gray-300">{opp.pop || 85}%</span>
+                </div>
+                <div>
+                  <span className="text-gray-500">DTE:</span>
+                  <span className="ml-1 text-gray-300">{opp.dte}</span>
+                </div>
               </div>
+              {opp.distance && (
+                <div className="text-xs text-gray-500 mt-1">
+                  Distance from strike: {opp.distance}%
+                </div>
+              )}
             </div>
-            <div className="grid grid-cols-3 gap-2 text-xs text-gray-400">
-              <div>
-                <span className="text-gray-500">Premium:</span>
-                <span className="ml-1 text-gray-300">${opp.premium}</span>
-              </div>
-              <div>
-                <span className="text-gray-500">PoP:</span>
-                <span className="ml-1 text-gray-300">{opp.pop || 85}%</span>
-              </div>
-              <div>
-                <span className="text-gray-500">DTE:</span>
-                <span className="ml-1 text-gray-300">{opp.dte}</span>
-              </div>
-            </div>
-            {opp.distance && (
-              <div className="text-xs text-gray-500 mt-1">
-                Distance from strike: {opp.distance}%
+            
+            {/* Expanded View */}
+            {expandedCards.has(idx) && (
+              <div className="px-2 pb-2 border-t border-gray-700/50 pt-2">
+                <div className="text-xs text-gray-400 mb-2 font-medium">{opp.description}</div>
+                
+                {/* Greeks */}
+                <div className="grid grid-cols-2 gap-2 mb-2 text-xs">
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Delta:</span>
+                    <span className="text-gray-300">{opp.delta?.toFixed(3) || 'N/A'}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Gamma:</span>
+                    <span className="text-gray-300">{opp.gamma?.toFixed(4) || 'N/A'}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Theta:</span>
+                    <span className="text-gray-300">{opp.theta?.toFixed(3) || 'N/A'}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Vega:</span>
+                    <span className="text-gray-300">{opp.vega?.toFixed(3) || 'N/A'}</span>
+                  </div>
+                </div>
+                
+                {/* Financial Details */}
+                <div className="grid grid-cols-2 gap-2 mb-2 text-xs">
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Capital:</span>
+                    <span className="text-gray-300">${opp.capital?.toLocaleString() || 'N/A'}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Max Gain:</span>
+                    <span className="text-green-400">${opp.maxGain?.toLocaleString() || 'N/A'}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Max Loss:</span>
+                    <span className="text-red-400">${opp.maxLoss?.toLocaleString() || 'N/A'}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Breakeven:</span>
+                    <span className="text-gray-300">${opp.breakeven || 'N/A'}</span>
+                  </div>
+                </div>
+                
+                {/* Market Data */}
+                <div className="grid grid-cols-2 gap-2 mb-2 text-xs">
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">IV:</span>
+                    <span className="text-gray-300">{opp.iv?.toFixed(1) || 'N/A'}%</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Volume:</span>
+                    <span className="text-gray-300">{opp.volume?.toLocaleString() || 'N/A'}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">OI:</span>
+                    <span className="text-gray-300">{opp.openInterest?.toLocaleString() || 'N/A'}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Bid/Ask:</span>
+                    <span className="text-gray-300">${opp.bid?.toFixed(2) || 'N/A'}/${opp.ask?.toFixed(2) || 'N/A'}</span>
+                  </div>
+                </div>
+                
+                {/* Action Buttons */}
+                <div className="flex gap-2 mt-2">
+                  <button className="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-xs py-1 px-2 rounded transition-colors">
+                    Add to Watchlist
+                  </button>
+                  <button className="flex-1 bg-gray-600 hover:bg-gray-700 text-white text-xs py-1 px-2 rounded transition-colors">
+                    View Details
+                  </button>
+                </div>
               </div>
             )}
           </div>
@@ -268,7 +368,7 @@ export default function ProfessionalTerminal() {
   
   const currentMarketData = getCurrentMarketData()
   
-  // Transform options data to opportunities format
+  // Transform options data to opportunities format with comprehensive data
   const opportunities = {
     'CSP': topROIOptions.slice(0, 5).map(option => ({
       ticker: option.underlying,
@@ -277,12 +377,142 @@ export default function ProfessionalTerminal() {
       dte: option.dte,
       premium: option.premium,
       pop: option.pop,
-      distance: option.distance
+      distance: option.distance,
+      delta: option.delta || -0.25,
+      gamma: option.gamma || 0.002,
+      theta: option.theta || -0.15,
+      vega: option.vega || 0.12,
+      iv: option.iv || 18.5,
+      capital: option.strike * 100,
+      maxGain: option.premium * 100,
+      maxLoss: option.strike * 100,
+      breakeven: option.strike - option.premium,
+      contractSize: 100,
+      underlyingPrice: option.underlyingPrice || 485.67,
+      volume: option.volume || 1250,
+      openInterest: option.openInterest || 3400,
+      bid: option.bid || option.premium * 0.95,
+      ask: option.ask || option.premium * 1.05,
+      lastTrade: new Date().toISOString(),
+      strategy: 'CSP',
+      description: 'Cash Secured Put - Sell put option, collect premium, obligated to buy stock at strike if assigned'
     })),
-    'covered-call': [], // Would need call options
-    'straddle': [], // Would need both puts and calls
-    'strangle': [], // Would need both puts and calls
-    'condor': [] // Would need multiple strikes
+    'covered-call': [
+      {
+        ticker: 'AAPL',
+        strike: 185,
+        roi: 2.3,
+        dte: 30,
+        premium: 3.45,
+        pop: 78,
+        distance: 0.5,
+        delta: 0.28,
+        gamma: 0.004,
+        theta: -0.12,
+        vega: 0.08,
+        iv: 25.1,
+        capital: 18500,
+        maxGain: 345,
+        maxLoss: 18500,
+        breakeven: 188.45,
+        contractSize: 100,
+        underlyingPrice: 184.25,
+        volume: 2100,
+        openInterest: 5600,
+        bid: 3.20,
+        ask: 3.70,
+        lastTrade: new Date().toISOString(),
+        strategy: 'Covered Call',
+        description: 'Covered Call - Own stock, sell call option, collect premium, obligated to sell stock at strike if assigned'
+      }
+    ],
+    'straddle': [
+      {
+        ticker: 'TSLA',
+        strike: 250,
+        roi: 5.2,
+        dte: 45,
+        premium: 25.50,
+        pop: 65,
+        distance: 0,
+        delta: 0.02,
+        gamma: 0.008,
+        theta: -0.45,
+        vega: 0.35,
+        iv: 45.2,
+        capital: 50000,
+        maxGain: 2550,
+        maxLoss: 50000,
+        breakeven: '224.50 / 275.50',
+        contractSize: 100,
+        underlyingPrice: 248.73,
+        volume: 450,
+        openInterest: 1200,
+        bid: 24.80,
+        ask: 26.20,
+        lastTrade: new Date().toISOString(),
+        strategy: 'Straddle',
+        description: 'Straddle - Buy both put and call at same strike, profit from large moves in either direction'
+      }
+    ],
+    'strangle': [
+      {
+        ticker: 'TSLA',
+        strike: '245/255',
+        roi: 4.2,
+        dte: 45,
+        premium: 12.50,
+        pop: 72,
+        distance: 2.0,
+        delta: 0.05,
+        gamma: 0.006,
+        theta: -0.25,
+        vega: 0.20,
+        iv: 42.8,
+        capital: 50000,
+        maxGain: 1250,
+        maxLoss: 50000,
+        breakeven: '232.50 / 267.50',
+        contractSize: 100,
+        underlyingPrice: 248.73,
+        volume: 280,
+        openInterest: 750,
+        bid: 11.80,
+        ask: 13.20,
+        lastTrade: new Date().toISOString(),
+        strategy: 'Strangle',
+        description: 'Strangle - Buy put and call at different strikes, profit from large moves in either direction'
+      }
+    ],
+    'condor': [
+      {
+        ticker: 'QQQ',
+        strike: '400/405/415/420',
+        roi: 1.9,
+        dte: 30,
+        premium: 2.85,
+        pop: 85,
+        distance: 2.5,
+        delta: 0.08,
+        gamma: 0.001,
+        theta: -0.08,
+        vega: 0.05,
+        iv: 18.2,
+        capital: 5000,
+        maxGain: 285,
+        maxLoss: 5000,
+        breakeven: '402.15 / 417.85',
+        contractSize: 100,
+        underlyingPrice: 412.34,
+        volume: 120,
+        openInterest: 340,
+        bid: 2.60,
+        ask: 3.10,
+        lastTrade: new Date().toISOString(),
+        strategy: 'Iron Condor',
+        description: 'Iron Condor - Sell put spread and call spread, profit from low volatility, limited risk'
+      }
+    ]
   }
 
   // Refresh function for options data
@@ -520,19 +750,19 @@ export default function ProfessionalTerminal() {
       <div className="flex-1 flex">
         {/* Settings Panel (Slide-out) */}
         {showSettings && (
-          <div className="w-80 bg-gray-900 border-r border-gray-800 p-4 overflow-y-auto">
+          <div className="w-96 bg-gray-900 border-r border-gray-800 p-4 overflow-y-auto max-h-screen">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-semibold text-white">Settings & Filters</h3>
+              <h3 className="text-sm font-semibold text-white">AI Calibration Settings</h3>
               <button onClick={() => setShowSettings(false)}>
                 <X className="w-4 h-4 text-gray-400 hover:text-white" />
               </button>
             </div>
-            
+
             {/* Strategy Filters */}
             <div className="mb-6">
               <h4 className="text-xs font-medium text-gray-400 mb-3">Strategy Preferences</h4>
-              <div className="space-y-2">
-                {['CSP', 'Covered Calls', 'Straddles', 'Strangles', 'Iron Condors', 'Weeklies'].map(strategy => (
+              <div className="grid grid-cols-2 gap-2">
+                {['CSP', 'Covered Calls', 'Straddles', 'Strangles', 'Iron Condors', 'Butterflies', 'Weeklies', 'Monthlies'].map(strategy => (
                   <label key={strategy} className="flex items-center gap-2">
                     <input type="checkbox" defaultChecked className="rounded" />
                     <span className="text-xs text-gray-300">{strategy}</span>
@@ -541,37 +771,233 @@ export default function ProfessionalTerminal() {
               </div>
             </div>
 
+            {/* Greeks Filters */}
+            <div className="mb-6">
+              <h4 className="text-xs font-medium text-gray-400 mb-3">Greeks Filters</h4>
+              <div className="space-y-3">
+                <div>
+                  <label className="text-xs text-gray-500">Delta Range</label>
+                  <div className="flex gap-2 mt-1">
+                    <input type="number" step="0.01" defaultValue="-0.5" className="w-20 px-2 py-1 bg-gray-800 border border-gray-700 rounded text-xs" placeholder="Min" />
+                    <span className="text-gray-500">to</span>
+                    <input type="number" step="0.01" defaultValue="0.5" className="w-20 px-2 py-1 bg-gray-800 border border-gray-700 rounded text-xs" placeholder="Max" />
+                  </div>
+                </div>
+                <div>
+                  <label className="text-xs text-gray-500">Gamma Range</label>
+                  <div className="flex gap-2 mt-1">
+                    <input type="number" step="0.001" defaultValue="0" className="w-20 px-2 py-1 bg-gray-800 border border-gray-700 rounded text-xs" placeholder="Min" />
+                    <span className="text-gray-500">to</span>
+                    <input type="number" step="0.001" defaultValue="0.1" className="w-20 px-2 py-1 bg-gray-800 border border-gray-700 rounded text-xs" placeholder="Max" />
+                  </div>
+                </div>
+                <div>
+                  <label className="text-xs text-gray-500">Theta Range</label>
+                  <div className="flex gap-2 mt-1">
+                    <input type="number" step="0.01" defaultValue="-1" className="w-20 px-2 py-1 bg-gray-800 border border-gray-700 rounded text-xs" placeholder="Min" />
+                    <span className="text-gray-500">to</span>
+                    <input type="number" step="0.01" defaultValue="0" className="w-20 px-2 py-1 bg-gray-800 border border-gray-700 rounded text-xs" placeholder="Max" />
+                  </div>
+                </div>
+                <div>
+                  <label className="text-xs text-gray-500">Vega Range</label>
+                  <div className="flex gap-2 mt-1">
+                    <input type="number" step="0.01" defaultValue="0" className="w-20 px-2 py-1 bg-gray-800 border border-gray-700 rounded text-xs" placeholder="Min" />
+                    <span className="text-gray-500">to</span>
+                    <input type="number" step="0.01" defaultValue="1" className="w-20 px-2 py-1 bg-gray-800 border border-gray-700 rounded text-xs" placeholder="Max" />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Strike & Premium Filters */}
+            <div className="mb-6">
+              <h4 className="text-xs font-medium text-gray-400 mb-3">Strike & Premium</h4>
+              <div className="space-y-3">
+                <div>
+                  <label className="text-xs text-gray-500">Strike Range (% from current)</label>
+                  <div className="flex gap-2 mt-1">
+                    <input type="number" step="1" defaultValue="-20" className="w-20 px-2 py-1 bg-gray-800 border border-gray-700 rounded text-xs" placeholder="Min %" />
+                    <span className="text-gray-500">to</span>
+                    <input type="number" step="1" defaultValue="20" className="w-20 px-2 py-1 bg-gray-800 border border-gray-700 rounded text-xs" placeholder="Max %" />
+                  </div>
+                </div>
+                <div>
+                  <label className="text-xs text-gray-500">Premium Range ($)</label>
+                  <div className="flex gap-2 mt-1">
+                    <input type="number" step="0.01" defaultValue="0.5" className="w-20 px-2 py-1 bg-gray-800 border border-gray-700 rounded text-xs" placeholder="Min $" />
+                    <span className="text-gray-500">to</span>
+                    <input type="number" step="0.01" defaultValue="50" className="w-20 px-2 py-1 bg-gray-800 border border-gray-700 rounded text-xs" placeholder="Max $" />
+                  </div>
+                </div>
+                <div>
+                  <label className="text-xs text-gray-500">Capital Required ($)</label>
+                  <div className="flex gap-2 mt-1">
+                    <input type="number" step="100" defaultValue="1000" className="w-20 px-2 py-1 bg-gray-800 border border-gray-700 rounded text-xs" placeholder="Min $" />
+                    <span className="text-gray-500">to</span>
+                    <input type="number" step="100" defaultValue="100000" className="w-20 px-2 py-1 bg-gray-800 border border-gray-700 rounded text-xs" placeholder="Max $" />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* IV & Probability Filters */}
+            <div className="mb-6">
+              <h4 className="text-xs font-medium text-gray-400 mb-3">IV & Probability</h4>
+              <div className="space-y-3">
+                <div>
+                  <label className="text-xs text-gray-500">IV Range (%)</label>
+                  <div className="flex gap-2 mt-1">
+                    <input type="number" step="1" defaultValue="10" className="w-20 px-2 py-1 bg-gray-800 border border-gray-700 rounded text-xs" placeholder="Min %" />
+                    <span className="text-gray-500">to</span>
+                    <input type="number" step="1" defaultValue="100" className="w-20 px-2 py-1 bg-gray-800 border border-gray-700 rounded text-xs" placeholder="Max %" />
+                  </div>
+                </div>
+                <div>
+                  <label className="text-xs text-gray-500">IV Rank Range (%)</label>
+                  <div className="flex gap-2 mt-1">
+                    <input type="number" step="1" defaultValue="20" className="w-20 px-2 py-1 bg-gray-800 border border-gray-700 rounded text-xs" placeholder="Min %" />
+                    <span className="text-gray-500">to</span>
+                    <input type="number" step="1" defaultValue="80" className="w-20 px-2 py-1 bg-gray-800 border border-gray-700 rounded text-xs" placeholder="Max %" />
+                  </div>
+                </div>
+                <div>
+                  <label className="text-xs text-gray-500">Probability of Profit (%)</label>
+                  <div className="flex gap-2 mt-1">
+                    <input type="number" step="1" defaultValue="60" className="w-20 px-2 py-1 bg-gray-800 border border-gray-700 rounded text-xs" placeholder="Min %" />
+                    <span className="text-gray-500">to</span>
+                    <input type="number" step="1" defaultValue="95" className="w-20 px-2 py-1 bg-gray-800 border border-gray-700 rounded text-xs" placeholder="Max %" />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Time & Expiration Filters */}
+            <div className="mb-6">
+              <h4 className="text-xs font-medium text-gray-400 mb-3">Time & Expiration</h4>
+              <div className="space-y-3">
+                <div>
+                  <label className="text-xs text-gray-500">DTE Range (days)</label>
+                  <div className="flex gap-2 mt-1">
+                    <input type="number" defaultValue="7" className="w-20 px-2 py-1 bg-gray-800 border border-gray-700 rounded text-xs" placeholder="Min" />
+                    <span className="text-gray-500">to</span>
+                    <input type="number" defaultValue="60" className="w-20 px-2 py-1 bg-gray-800 border border-gray-700 rounded text-xs" placeholder="Max" />
+                  </div>
+                </div>
+                <div>
+                  <label className="text-xs text-gray-500">Expiration Days</label>
+                  <div className="space-y-1">
+                    {['Weeklies', 'Monthlies', 'Quarterlies'].map(exp => (
+                      <label key={exp} className="flex items-center gap-2">
+                        <input type="checkbox" defaultChecked className="rounded" />
+                        <span className="text-xs text-gray-300">{exp}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Stock Filters */}
+            <div className="mb-6">
+              <h4 className="text-xs font-medium text-gray-400 mb-3">Stock Filters</h4>
+              <div className="space-y-3">
+                <div>
+                  <label className="text-xs text-gray-500">Price Range ($)</label>
+                  <div className="flex gap-2 mt-1">
+                    <input type="number" step="1" defaultValue="10" className="w-20 px-2 py-1 bg-gray-800 border border-gray-700 rounded text-xs" placeholder="Min $" />
+                    <span className="text-gray-500">to</span>
+                    <input type="number" step="1" defaultValue="500" className="w-20 px-2 py-1 bg-gray-800 border border-gray-700 rounded text-xs" placeholder="Max $" />
+                  </div>
+                </div>
+                <div>
+                  <label className="text-xs text-gray-500">Daily Volume (M)</label>
+                  <div className="flex gap-2 mt-1">
+                    <input type="number" step="0.1" defaultValue="1" className="w-20 px-2 py-1 bg-gray-800 border border-gray-700 rounded text-xs" placeholder="Min M" />
+                    <span className="text-gray-500">to</span>
+                    <input type="number" step="0.1" defaultValue="100" className="w-20 px-2 py-1 bg-gray-800 border border-gray-700 rounded text-xs" placeholder="Max M" />
+                  </div>
+                </div>
+                <div>
+                  <label className="text-xs text-gray-500">Market Cap (B)</label>
+                  <div className="flex gap-2 mt-1">
+                    <input type="number" step="0.1" defaultValue="1" className="w-20 px-2 py-1 bg-gray-800 border border-gray-700 rounded text-xs" placeholder="Min B" />
+                    <span className="text-gray-500">to</span>
+                    <input type="number" step="0.1" defaultValue="1000" className="w-20 px-2 py-1 bg-gray-800 border border-gray-700 rounded text-xs" placeholder="Max B" />
+                  </div>
+                </div>
+                <div>
+                  <label className="text-xs text-gray-500">Sector</label>
+                  <select className="w-full px-2 py-1 bg-gray-800 border border-gray-700 rounded text-xs">
+                    <option value="">All Sectors</option>
+                    <option value="technology">Technology</option>
+                    <option value="healthcare">Healthcare</option>
+                    <option value="financial">Financial</option>
+                    <option value="energy">Energy</option>
+                    <option value="consumer">Consumer</option>
+                    <option value="industrial">Industrial</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            {/* Moving Average Filters */}
+            <div className="mb-6">
+              <h4 className="text-xs font-medium text-gray-400 mb-3">Technical Analysis</h4>
+              <div className="space-y-3">
+                <div>
+                  <label className="text-xs text-gray-500">Price vs MA20</label>
+                  <select className="w-full px-2 py-1 bg-gray-800 border border-gray-700 rounded text-xs">
+                    <option value="">Any</option>
+                    <option value="above">Above MA20</option>
+                    <option value="below">Below MA20</option>
+                    <option value="near">Near MA20 (±2%)</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="text-xs text-gray-500">Price vs MA50</label>
+                  <select className="w-full px-2 py-1 bg-gray-800 border border-gray-700 rounded text-xs">
+                    <option value="">Any</option>
+                    <option value="above">Above MA50</option>
+                    <option value="below">Below MA50</option>
+                    <option value="near">Near MA50 (±2%)</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="text-xs text-gray-500">RSI Range</label>
+                  <div className="flex gap-2 mt-1">
+                    <input type="number" step="1" defaultValue="30" className="w-20 px-2 py-1 bg-gray-800 border border-gray-700 rounded text-xs" placeholder="Min" />
+                    <span className="text-gray-500">to</span>
+                    <input type="number" step="1" defaultValue="70" className="w-20 px-2 py-1 bg-gray-800 border border-gray-700 rounded text-xs" placeholder="Max" />
+                  </div>
+                </div>
+              </div>
+            </div>
+
             {/* Earnings Filter */}
             <div className="mb-6">
               <h4 className="text-xs font-medium text-gray-400 mb-3">Earnings</h4>
-              <label className="flex items-center gap-2">
-                <input type="checkbox" className="rounded" />
-                <span className="text-xs text-gray-300">Before Earnings Only</span>
-              </label>
-              <label className="flex items-center gap-2 mt-2">
-                <input type="checkbox" className="rounded" />
-                <span className="text-xs text-gray-300">Avoid Earnings (7 days)</span>
-              </label>
+              <div className="space-y-2">
+                <label className="flex items-center gap-2">
+                  <input type="checkbox" className="rounded" />
+                  <span className="text-xs text-gray-300">Before Earnings Only</span>
+                </label>
+                <label className="flex items-center gap-2">
+                  <input type="checkbox" className="rounded" />
+                  <span className="text-xs text-gray-300">Avoid Earnings (7 days)</span>
+                </label>
+                <label className="flex items-center gap-2">
+                  <input type="checkbox" className="rounded" />
+                  <span className="text-xs text-gray-300">Earnings This Week</span>
+                </label>
+              </div>
             </div>
 
-            {/* DTE Range */}
-            <div className="mb-6">
-              <h4 className="text-xs font-medium text-gray-400 mb-3">DTE Range</h4>
-              <div className="flex gap-2">
-                <input 
-                  type="number" 
-                  defaultValue="0" 
-                  className="w-20 px-2 py-1 bg-gray-800 border border-gray-700 rounded text-xs"
-                  placeholder="Min"
-                />
-                <span className="text-gray-500">to</span>
-                <input 
-                  type="number" 
-                  defaultValue="60" 
-                  className="w-20 px-2 py-1 bg-gray-800 border border-gray-700 rounded text-xs"
-                  placeholder="Max"
-                />
-              </div>
+            {/* Save Settings */}
+            <div className="pt-4 border-t border-gray-800">
+              <button className="w-full bg-blue-600 hover:bg-blue-700 text-white text-xs py-2 px-4 rounded transition-colors">
+                Save AI Calibration
+              </button>
             </div>
           </div>
         )}
@@ -593,7 +1019,7 @@ export default function ProfessionalTerminal() {
                       expandedPanels.has('watchlist') ? 'rotate-90' : ''
                     }`} />
                     <Zap className="w-4 h-4 text-purple-400" />
-                    <h3 className="text-sm font-semibold text-white">AI Opportunities</h3>
+                    <h3 className="text-sm font-semibold text-white">Opportunities (Powered by AI)</h3>
                     <span className="text-xs text-purple-400">({aiOpportunities.length} found)</span>
                     {lastUpdated && (
                       <span className="text-xs text-gray-500">
