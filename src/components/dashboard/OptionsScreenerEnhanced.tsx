@@ -263,95 +263,70 @@ const OptionsScreenerEnhanced: React.FC<{ marketType?: 'equity' | 'index' | 'fut
           
           if (!response.ok) {
             console.error(`Failed to fetch ${ticker} from main API:`, response.status)
-            
-            // Try fallback to debug-screener API
-            try {
-              console.log(`Trying fallback API for ${ticker}`)
-              const fallbackResponse = await fetch(`/api/debug-screener?symbol=${ticker}`)
-              
-              if (fallbackResponse.ok) {
-                const fallbackData = await fallbackResponse.json()
-                console.log(`Fallback API returned data for ${ticker}:`, fallbackData)
-                
-                // Process the fallback data
-                if (fallbackData.optionsTest?.data?.results?.length > 0) {
-                  const fallbackResults = fallbackData.optionsTest.data.results.slice(0, 5).map((option: any) => {
-                    const strike = option.strike_price
-                    const dte = Math.max(1, Math.ceil((new Date(option.expiration_date).getTime() - new Date().getTime()) / (1000 * 3600 * 24)))
-                    const optionType = option.contract_type
-                    
-                    // Use estimated pricing
-                    const estimatedPremium = Math.max(0.01, Math.abs(100 - strike) * 0.1) // Use 100 as default stock price
-                    const roi = (estimatedPremium / strike) * 100
-                    const distance = Math.abs((100 - strike) / 100) * 100
-                    
-                    return {
-                      symbol: option.ticker,
-                      underlying: ticker,
-                      strike: strike,
-                      expiration: option.expiration_date,
-                      dte: dte,
-                      type: optionType,
-                      bid: estimatedPremium,
-                      ask: estimatedPremium * 1.1,
-                      premium: estimatedPremium,
-                      roi: parseFloat(roi.toFixed(2)),
-                      roiPerDay: parseFloat((roi / dte).toFixed(3)),
-                      pop: parseFloat((Math.max(20, 100 - distance)).toFixed(1)),
-                      distance: parseFloat(distance.toFixed(2)),
-                      capital: optionType === 'put' ? strike * 100 : 0,
-                      stockPrice: 100, // Default stock price
-                      delta: 0,
-                      gamma: 0,
-                      theta: 0,
-                      vega: 0,
-                      iv: 0,
-                      volume: 0,
-                      openInterest: 0,
-                      strategy: filters.strategy,
-                      source: 'fallback'
-                    }
-                  })
-                  
-                  allResults.push(...fallbackResults)
-                  continue
-                }
-              }
-            } catch (fallbackError) {
-              console.error(`Fallback API also failed for ${ticker}:`, fallbackError)
-            }
-            
-            // If both APIs fail, add error result
-            allResults.push({
-              symbol: ticker,
-              underlying: ticker,
-              strike: 0,
-              expiration: 'N/A',
-              dte: 0,
-              type: 'error',
-              bid: 0,
-              ask: 0,
-              premium: 0,
-              roi: 0,
-              roiPerDay: 0,
-              roiPerYear: 0,
-              pop: 0,
-              distance: 0,
-              breakeven: 0,
-              capital: 0,
-              stockPrice: 0,
-              delta: 0,
-              gamma: 0,
-              theta: 0,
-              vega: 0,
-              iv: 0,
-              volume: 0,
-              openInterest: 0,
-              strategy: filters.strategy,
-              error: `API Error: ${response.status}`
-            })
-            continue
           }
+          
+          // Always try fallback to debug-screener API
+          try {
+            console.log(`Trying fallback API for ${ticker}`)
+            const fallbackResponse = await fetch(`/api/debug-screener?symbol=${ticker}`)
+            
+            if (fallbackResponse.ok) {
+              const fallbackData = await fallbackResponse.json()
+              console.log(`Fallback API returned data for ${ticker}:`, fallbackData)
+              
+              // Process the fallback data
+              if (fallbackData.optionsTest?.data?.results?.length > 0) {
+                const fallbackResults = fallbackData.optionsTest.data.results.slice(0, 5).map((option: any) => {
+                  const strike = option.strike_price
+                  const dte = Math.max(1, Math.ceil((new Date(option.expiration_date).getTime() - new Date().getTime()) / (1000 * 3600 * 24)))
+                  const optionType = option.contract_type
+                  
+                  // Use estimated pricing
+                  const estimatedPremium = Math.max(0.01, Math.abs(100 - strike) * 0.1) // Use 100 as default stock price
+                  const roi = (estimatedPremium / strike) * 100
+                  const distance = Math.abs((100 - strike) / 100) * 100
+                  
+                  return {
+                    symbol: option.ticker,
+                    underlying: ticker,
+                    strike: strike,
+                    expiration: option.expiration_date,
+                    dte: dte,
+                    type: optionType,
+                    bid: estimatedPremium,
+                    ask: estimatedPremium * 1.1,
+                    premium: estimatedPremium,
+                    roi: parseFloat(roi.toFixed(2)),
+                    roiPerDay: parseFloat((roi / dte).toFixed(3)),
+                    roiPerYear: parseFloat((roi * 365 / dte).toFixed(2)),
+                    pop: parseFloat((Math.max(20, 100 - distance)).toFixed(1)),
+                    distance: parseFloat(distance.toFixed(2)),
+                    breakeven: optionType === 'put' ? strike - estimatedPremium : strike + estimatedPremium,
+                    capital: optionType === 'put' ? strike * 100 : 0,
+                    stockPrice: 100, // Default stock price
+                    delta: 0,
+                    gamma: 0,
+                    theta: 0,
+                    vega: 0,
+                    iv: 0,
+                    volume: 0,
+                    openInterest: 0,
+                    strategy: filters.strategy,
+                    source: 'fallback'
+                  }
+                })
+                
+                allResults.push(...fallbackResults)
+                continue
+              }
+            }
+          } catch (fallbackError) {
+            console.error(`Fallback API also failed for ${ticker}:`, fallbackError)
+          }
+          
+          // If we get here, both APIs failed
+          console.error(`Both APIs failed for ${ticker}`)
+          continue
           
           const data = await response.json()
           console.log(`Data for ${ticker}:`, data)
