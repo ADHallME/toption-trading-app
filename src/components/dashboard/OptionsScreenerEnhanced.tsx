@@ -211,11 +211,41 @@ const OptionsScreenerEnhanced: React.FC<{ marketType?: 'equity' | 'index' | 'fut
   
   const popularTickers = getMarketTickers()
   
-  // Fuzzy search effect
+  // Fuzzy search effect - now calls API for real ticker search
   useEffect(() => {
-    if (searchQuery) {
-      const results = fuzzySearch(searchQuery, popularTickers)
-      setSearchResults(results)
+    if (searchQuery && searchQuery.length >= 2) {
+      // Search both local popular tickers and API
+      const localResults = fuzzySearch(searchQuery, popularTickers)
+      
+      // Also search via API
+      const searchTicker = async () => {
+        try {
+          const response = await fetch(`/api/trades?ticker=${encodeURIComponent(searchQuery)}`)
+          if (response.ok) {
+            const data = await response.json()
+            const apiResults = data.results?.slice(0, 5).map((ticker: any) => ({
+              symbol: ticker.T || ticker.ticker,
+              name: ticker.name || `${ticker.T || ticker.ticker} Stock`,
+              price: ticker.c || ticker.last || 0,
+              type: 'Stock'
+            })) || []
+            
+            // Combine and deduplicate results
+            const allResults = [...localResults, ...apiResults]
+            const uniqueResults = allResults.filter((result, index, self) => 
+              index === self.findIndex(r => r.symbol === result.symbol)
+            )
+            setSearchResults(uniqueResults.slice(0, 8))
+          } else {
+            setSearchResults(localResults)
+          }
+        } catch (error) {
+          console.error('Ticker search error:', error)
+          setSearchResults(localResults)
+        }
+      }
+      
+      searchTicker()
     } else {
       setSearchResults([])
     }
@@ -261,6 +291,33 @@ const OptionsScreenerEnhanced: React.FC<{ marketType?: 'equity' | 'index' | 'fut
             console.error(`Failed to fetch ${ticker}:`, response.status)
             const errorData = await response.text()
             console.error('Error details:', errorData)
+            // Add a fallback result to show the error
+            allResults.push({
+              symbol: ticker,
+              underlying: ticker,
+              strike: 0,
+              expiration: 'N/A',
+              dte: 0,
+              type: 'error',
+              bid: 0,
+              ask: 0,
+              premium: 0,
+              roi: 0,
+              roiPerDay: 0,
+              pop: 0,
+              distance: 0,
+              capital: 0,
+              stockPrice: 0,
+              delta: 0,
+              gamma: 0,
+              theta: 0,
+              vega: 0,
+              iv: 0,
+              volume: 0,
+              openInterest: 0,
+              strategy: filters.strategy,
+              error: `API Error: ${response.status} - ${errorData}`
+            })
             continue
           }
           
@@ -268,30 +325,32 @@ const OptionsScreenerEnhanced: React.FC<{ marketType?: 'equity' | 'index' | 'fut
           console.log(`Data for ${ticker}:`, data)
           
           if (data.results && Array.isArray(data.results)) {
+            console.log(`Processing ${data.results.length} options for ${ticker}`)
+            
             // Filter and map results
             const tickerResults = data.results
               .filter((option: any) => {
-                // Apply basic filters
-                if (option.roi < filters.roi_min || option.roi > filters.roi_max) return false
-                if (option.pop < filters.pop_min) return false
-                if (option.capital > filters.capital_max) return false
-                if (option.volume < filters.min_volume) return false
-                if (option.openInterest < filters.min_oi) return false
+                // Apply basic filters - check if properties exist first
+                if (option.roi !== undefined && (option.roi < filters.roi_min || option.roi > filters.roi_max)) return false
+                if (option.pop !== undefined && option.pop < filters.pop_min) return false
+                if (option.capital !== undefined && option.capital > filters.capital_max) return false
+                if (option.volume !== undefined && option.volume < filters.min_volume) return false
+                if (option.openInterest !== undefined && option.openInterest < filters.min_oi) return false
                 
-                // Apply Greeks filters
-                if (option.delta < filters.delta_min || option.delta > filters.delta_max) return false
-                if (option.gamma < filters.gamma_min || option.gamma > filters.gamma_max) return false
-                if (option.theta < filters.theta_min || option.theta > filters.theta_max) return false
-                if (option.vega < filters.vega_min || option.vega > filters.vega_max) return false
+                // Apply Greeks filters - check if properties exist first
+                if (option.delta !== undefined && (option.delta < filters.delta_min || option.delta > filters.delta_max)) return false
+                if (option.gamma !== undefined && (option.gamma < filters.gamma_min || option.gamma > filters.gamma_max)) return false
+                if (option.theta !== undefined && (option.theta < filters.theta_min || option.theta > filters.theta_max)) return false
+                if (option.vega !== undefined && (option.vega < filters.vega_min || option.vega > filters.vega_max)) return false
                 
-                // Apply IV and pricing filters
-                if (option.iv < filters.iv_min || option.iv > filters.iv_max) return false
-                if (option.strike < filters.strike_min || option.strike > filters.strike_max) return false
-                if (option.premium < filters.premium_min || option.premium > filters.premium_max) return false
+                // Apply IV and pricing filters - check if properties exist first
+                if (option.iv !== undefined && (option.iv < filters.iv_min || option.iv > filters.iv_max)) return false
+                if (option.strike !== undefined && (option.strike < filters.strike_min || option.strike > filters.strike_max)) return false
+                if (option.premium !== undefined && (option.premium < filters.premium_min || option.premium > filters.premium_max)) return false
                 
-                // Apply stock filters
-                if (option.stockPrice < filters.stock_price_min || option.stockPrice > filters.stock_price_max) return false
-                if (option.volume < filters.volume_min) return false
+                // Apply stock filters - check if properties exist first
+                if (option.stockPrice !== undefined && (option.stockPrice < filters.stock_price_min || option.stockPrice > filters.stock_price_max)) return false
+                if (option.volume !== undefined && option.volume < filters.volume_min) return false
                 
                 return true
               })
