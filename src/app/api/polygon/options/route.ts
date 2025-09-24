@@ -165,7 +165,7 @@ async function fetchContractsEndpoint(
     })
     
     // Filter by DTE and type
-    const validOptions = processedOptions.filter(opt => {
+    const validOptions = processedOptions.filter((opt: any) => {
       if (type !== 'both' && opt.type !== type) return false
       if (opt.dte < 0 || opt.dte > 365) return false
       return true
