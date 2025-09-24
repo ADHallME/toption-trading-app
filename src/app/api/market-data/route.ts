@@ -111,7 +111,7 @@ export async function GET(request: Request) {
   const marketType = searchParams.get('type') || 'equity'
   
   try {
-    let data = []
+    let data: any = []
     
     if (marketType === 'all') {
       // Return all market types
