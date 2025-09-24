@@ -94,6 +94,10 @@ interface ScreenerResult {
   
   // Stock info
   stockPrice: number
+  
+  // Optional error field
+  error?: string
+  source?: string
 }
 
 // Fuzzy search function
@@ -330,8 +334,10 @@ const OptionsScreenerEnhanced: React.FC<{ marketType?: 'equity' | 'index' | 'fut
               premium: 0,
               roi: 0,
               roiPerDay: 0,
+              roiPerYear: 0,
               pop: 0,
               distance: 0,
+              breakeven: 0,
               capital: 0,
               stockPrice: 0,
               delta: 0,
