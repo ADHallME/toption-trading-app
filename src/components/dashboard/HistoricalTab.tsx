@@ -16,8 +16,13 @@ import {
   EyeOff
 } from 'lucide-react'
 
+interface HistoricalOpportunity extends AIOpportunity {
+  starredAt?: string
+  expiredAt?: string
+}
+
 interface HistoricalTabProps {
-  historical: AIOpportunity[]
+  historical: HistoricalOpportunity[]
   onRemoveFromHistorical?: (opportunityId: string) => void
 }
 

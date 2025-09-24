@@ -376,7 +376,7 @@ export default function ProfessionalTerminal() {
   
   // Watchlist system
   const [watchlist, setWatchlist] = useState<AIOpportunity[]>([])
-  const [historical, setHistorical] = useState<AIOpportunity[]>([])
+  const [historical, setHistorical] = useState<(AIOpportunity & { starredAt?: string; expiredAt?: string })[]>([])
   
   // Live data hooks - replaces all hardcoded data
   const { tickers: popularTickers, loading: tickersLoading } = usePopularTickers()
