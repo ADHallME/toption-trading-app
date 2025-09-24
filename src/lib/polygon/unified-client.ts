@@ -57,6 +57,8 @@ export interface MarketTicker {
 class UnifiedPolygonClient {
   private apiKey: string
   private baseUrl = 'https://api.polygon.io'
+  private lastRequestTime = 0
+  private minRequestInterval = 200 // 200ms between requests
 
   constructor() {
     this.apiKey = process.env.POLYGON_API_KEY || ''
@@ -65,12 +67,23 @@ class UnifiedPolygonClient {
     }
   }
 
+  private async rateLimit() {
+    const now = Date.now()
+    const timeSinceLastRequest = now - this.lastRequestTime
+    if (timeSinceLastRequest < this.minRequestInterval) {
+      await new Promise(resolve => setTimeout(resolve, this.minRequestInterval - timeSinceLastRequest))
+    }
+    this.lastRequestTime = Date.now()
+  }
+
   // Get real-time stock quotes
   async getStockQuotes(symbols: string[]): Promise<StockQuote[]> {
     const quotes: StockQuote[] = []
     
     for (const symbol of symbols) {
       try {
+        await this.rateLimit() // Rate limit before each request
+        
         // Get last trade (real-time)
         const lastTradeUrl = `${this.baseUrl}/v2/last/trade/${symbol}?apiKey=${this.apiKey}`
         const lastTradeResponse = await fetch(lastTradeUrl)
@@ -89,6 +102,7 @@ class UnifiedPolygonClient {
         }
         
         // Get previous day data for change calculations
+        await this.rateLimit() // Rate limit before each request
         const prevDayUrl = `${this.baseUrl}/v2/aggs/ticker/${symbol}/prev?adjusted=true&apiKey=${this.apiKey}`
         const prevDayResponse = await fetch(prevDayUrl)
         
@@ -153,6 +167,7 @@ class UnifiedPolygonClient {
       
       const contractsUrl = `${this.baseUrl}/v3/reference/options/contracts?underlying_ticker=${underlying}&contract_type=${type}&expiration_date.gte=${today.toISOString().split('T')[0]}&expiration_date.lte=${futureDate.toISOString().split('T')[0]}&limit=100&apiKey=${this.apiKey}`
       
+      await this.rateLimit() // Rate limit before each request
       const contractsResponse = await fetch(contractsUrl)
       if (!contractsResponse.ok) {
         throw new Error(`Failed to fetch contracts: ${contractsResponse.status}`)
@@ -161,6 +176,7 @@ class UnifiedPolygonClient {
       const contractsData = await contractsResponse.json()
       
       // Get snapshot data for real-time quotes
+      await this.rateLimit() // Rate limit before each request
       const snapshotUrl = `${this.baseUrl}/v3/snapshot/options/${underlying}?apiKey=${this.apiKey}`
       const snapshotResponse = await fetch(snapshotUrl)
       

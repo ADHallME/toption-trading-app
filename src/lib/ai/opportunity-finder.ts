@@ -23,17 +23,21 @@ export interface AIOpportunity {
 
 class AIOpportunityFinder {
   private popularSymbols = [
-    'SPY', 'QQQ', 'AAPL', 'TSLA', 'NVDA', 'MSFT', 'AMZN', 'META', 'GOOGL', 'NFLX',
-    'AMD', 'INTC', 'CRM', 'ADBE', 'PYPL', 'UBER', 'LYFT', 'ROKU', 'SQ', 'SHOP'
+    'SPY', 'QQQ', 'AAPL', 'TSLA', 'NVDA', 'MSFT'
   ]
 
   async findBestOpportunities(limit: number = 6): Promise<AIOpportunity[]> {
     const opportunities: AIOpportunity[] = []
     
     try {
-      // Get options data for popular symbols
-      for (const symbol of this.popularSymbols.slice(0, 10)) { // Limit to 10 for performance
+      // Process symbols one at a time to avoid rate limits
+      for (const symbol of this.popularSymbols) {
         try {
+          // Add delay between requests to avoid rate limits
+          if (opportunities.length > 0) {
+            await new Promise(resolve => setTimeout(resolve, 2000)) // 2 second delay
+          }
+          
           const options = await unifiedPolygonClient.getOptionsChain(symbol, 'put', 45)
           const stockQuote = await unifiedPolygonClient.getStockQuotes([symbol])
           
@@ -44,26 +48,49 @@ class AIOpportunityFinder {
             const bestOption = this.findBestOptionForSymbol(options, stock)
             if (bestOption) {
               const aiOpportunity = this.analyzeOpportunity(bestOption, stock)
-              if (aiOpportunity.aiScore >= 70) { // Only include high-scoring opportunities
+              if (aiOpportunity.aiScore >= 60) { // Lower threshold to get more results
                 opportunities.push(aiOpportunity)
               }
             }
           }
         } catch (error) {
           console.error(`Failed to analyze ${symbol}:`, error)
+          // If we hit rate limits, try fallback
+          if (error instanceof Error && (error.message.includes('429') || error.message.includes('rate limit'))) {
+            console.log('Rate limit hit, trying fallback data')
+            return await this.getFallbackOpportunities()
+          }
           continue
         }
       }
       
-      // Sort by AI score and return top opportunities
-      return opportunities
-        .sort((a, b) => b.aiScore - a.aiScore)
-        .slice(0, limit)
+      // If we have some results, return them
+      if (opportunities.length > 0) {
+        return opportunities
+          .sort((a, b) => b.aiScore - a.aiScore)
+          .slice(0, limit)
+      }
+      
+      // If no results, try fallback
+      return await this.getFallbackOpportunities()
         
     } catch (error) {
       console.error('AI opportunity finder error:', error)
-      return []
+      return await this.getFallbackOpportunities()
     }
+  }
+
+  private async getFallbackOpportunities(): Promise<AIOpportunity[]> {
+    try {
+      const response = await fetch('/api/fallback-opportunities')
+      if (response.ok) {
+        const data = await response.json()
+        return data.opportunities || []
+      }
+    } catch (error) {
+      console.error('Fallback opportunities error:', error)
+    }
+    return []
   }
 
   private findBestOptionForSymbol(options: OptionContract[], stock: any): OptionContract | null {
