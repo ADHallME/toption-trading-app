@@ -80,12 +80,12 @@ export default function AIOpportunityCard({
         </div>
         <div className="flex items-center space-x-2">
           <button
-            onClick={handleSave}
+            onClick={handleStar}
             className={`p-1 rounded transition-colors ${
-              saved ? 'text-yellow-400' : 'text-gray-400 hover:text-yellow-400'
+              isStarred ? 'text-yellow-400' : 'text-gray-400 hover:text-yellow-400'
             }`}
           >
-            <Star className={`w-4 h-4 ${saved ? 'fill-current' : ''}`} />
+            <Star className={`w-4 h-4 ${isStarred ? 'fill-current' : ''}`} />
           </button>
           <button
             onClick={handleDismiss}
