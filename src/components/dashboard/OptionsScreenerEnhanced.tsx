@@ -199,53 +199,23 @@ const OptionsScreenerEnhanced: React.FC<{ marketType?: 'equity' | 'index' | 'fut
   const getMarketTickers = () => {
     switch (marketType) {
       case 'equity':
-        return ['SPY', 'QQQ', 'AAPL', 'MSFT', 'AMZN', 'GOOGL', 'META', 'NVDA', 'TSLA', 'JPM', 'BAC', 'XLF', 'GS', 'AMD', 'INTC', 'NFLX', 'DIS']
+        return ['SPY', 'QQQ', 'AAPL', 'MSFT', 'AMZN', 'GOOGL', 'META', 'NVDA', 'TSLA', 'JPM', 'BAC', 'XLF', 'GS', 'AMD', 'INTC', 'NFLX', 'DIS', 'PBR', 'XOM', 'CVX']
       case 'index':
         return ['SPX', 'NDX', 'VIX', 'DJX', 'RUT', 'IWM', 'DIA', 'XLF', 'XLK', 'XLE', 'XLV', 'XLI', 'XLY', 'XLU', 'XLP']
       case 'futures':
         return ['ES', 'NQ', 'YM', 'RTY', 'CL', 'GC', 'NG', 'SI', 'ZC', 'ZS', 'ZW', 'KC', 'CC', 'SB', 'CT']
       default:
-        return ['SPY', 'QQQ', 'AAPL', 'MSFT', 'AMZN', 'GOOGL', 'META', 'NVDA', 'TSLA']
+        return ['SPY', 'QQQ', 'AAPL', 'MSFT', 'AMZN', 'GOOGL', 'META', 'NVDA', 'TSLA', 'PBR']
     }
   }
   
   const popularTickers = getMarketTickers()
   
-  // Fuzzy search effect - now calls API for real ticker search
+  // Fuzzy search effect - using local search for now
   useEffect(() => {
     if (searchQuery && searchQuery.length >= 2) {
-      // Search both local popular tickers and API
-      const localResults = fuzzySearch(searchQuery, popularTickers)
-      
-      // Also search via API
-      const searchTicker = async () => {
-        try {
-          const response = await fetch(`/api/ticker-search?ticker=${encodeURIComponent(searchQuery)}`)
-          if (response.ok) {
-            const data = await response.json()
-            const apiResults = data.results?.slice(0, 5).map((ticker: any) => ({
-              symbol: ticker.symbol,
-              name: ticker.name,
-              price: 0, // We don't have price in ticker search, will be fetched later
-              type: ticker.type || 'Stock'
-            })) || []
-            
-            // Combine and deduplicate results
-            const allResults = [...localResults, ...apiResults]
-            const uniqueResults = allResults.filter((result, index, self) => 
-              index === self.findIndex(r => r.symbol === result.symbol)
-            )
-            setSearchResults(uniqueResults.slice(0, 8))
-          } else {
-            setSearchResults(localResults)
-          }
-        } catch (error) {
-          console.error('Ticker search error:', error)
-          setSearchResults(localResults)
-        }
-      }
-      
-      searchTicker()
+      const results = fuzzySearch(searchQuery, popularTickers)
+      setSearchResults(results)
     } else {
       setSearchResults([])
     }
