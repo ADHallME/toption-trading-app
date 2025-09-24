@@ -1277,12 +1277,12 @@ export default function ProfessionalTerminal() {
                                 <td className="text-right py-2 px-2">{opp.distance}%</td>
                                 <td className="text-right py-2 px-2">{opp.iv ? opp.iv.toFixed(1) : 'N/A'}%</td>
                                 <td className="text-right py-2 px-2">
-                                  <span className={opp.theta < 0 ? 'text-red-400' : 'text-green-400'}>
+                                  <span className={opp.theta && opp.theta < 0 ? 'text-red-400' : 'text-green-400'}>
                                     {opp.theta ? opp.theta.toFixed(3) : 'N/A'}
                                   </span>
                                 </td>
                                 <td className="text-right py-2 px-2">
-                                  <span className={opp.vega > 0.1 ? 'text-orange-400' : 'text-gray-400'}>
+                                  <span className={opp.vega && opp.vega > 0.1 ? 'text-orange-400' : 'text-gray-400'}>
                                     {opp.vega ? opp.vega.toFixed(3) : 'N/A'}
                                   </span>
                                 </td>
