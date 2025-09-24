@@ -108,31 +108,46 @@ export async function GET(request: Request) {
     }
 
     // Process the REAL options data with actual prices
+    console.log(`Processing ${data.results.length} options from snapshot`)
     const processedOptions = data.results
       .filter((option: any) => {
+        console.log(`Checking option: ${option.details.ticker}, type: ${option.details.contract_type}, strike: ${option.details.strike_price}`)
+        
         // Filter by option type
         if (type !== 'both' && option.details.contract_type !== type) {
+          console.log(`  Filtered out: wrong type (${option.details.contract_type} != ${type})`)
           return false
         }
         
         // Filter by DTE
         const dte = calculateDTE(option.details.expiration_date)
+        console.log(`  DTE: ${dte} (min: ${minDTE}, max: ${maxDTE})`)
         if (dte < minDTE || dte > maxDTE) {
+          console.log(`  Filtered out: DTE out of range`)
           return false
         }
         
         // Filter by strike range if provided
         const strike = option.details.strike_price
-        if (minStrike && strike < parseFloat(minStrike)) return false
-        if (maxStrike && strike > parseFloat(maxStrike)) return false
+        if (minStrike && strike < parseFloat(minStrike)) {
+          console.log(`  Filtered out: strike too low`)
+          return false
+        }
+        if (maxStrike && strike > parseFloat(maxStrike)) {
+          console.log(`  Filtered out: strike too high`)
+          return false
+        }
         
         // Filter out options with no pricing data
         // Snapshot data uses different field names than quote data
         const hasPricing = option.last_quote?.bid || option.day?.close || option.fmv
+        console.log(`  Pricing: last_quote.bid=${option.last_quote?.bid}, day.close=${option.day?.close}, fmv=${option.fmv}`)
         if (!hasPricing || hasPricing === 0) {
+          console.log(`  Filtered out: no pricing data`)
           return false
         }
         
+        console.log(`  ✓ Option passed all filters`)
         return true
       })
       .map((option: any) => {
