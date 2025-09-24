@@ -22,16 +22,40 @@ export interface AIOpportunity {
 }
 
 class AIOpportunityFinder {
-  private popularSymbols = [
-    'SPY', 'QQQ', 'AAPL', 'TSLA', 'NVDA', 'MSFT'
+  private equitySymbols = [
+    'SPY', 'QQQ', 'AAPL', 'TSLA', 'NVDA', 'MSFT', 'AMZN', 'GOOGL', 'META', 'NFLX', 'AMD', 'INTC', 'JPM', 'BAC', 'XOM'
+  ]
+  
+  private indexSymbols = [
+    'SPX', 'NDX', 'VIX', 'DJX', 'RUT', 'IWM', 'DIA', 'XLF', 'XLK', 'XLE', 'XLV', 'XLI', 'XLY', 'XLU', 'XLP'
+  ]
+  
+  private futuresSymbols = [
+    'ES', 'NQ', 'YM', 'RTY', 'CL', 'GC', 'NG', 'SI', 'ZC', 'ZS', 'ZW', 'KC', 'CC', 'SB', 'CT'
   ]
 
-  async findBestOpportunities(limit: number = 6): Promise<AIOpportunity[]> {
+  private getSymbolsForMarketType(marketType: 'equity' | 'index' | 'futures'): string[] {
+    switch (marketType) {
+      case 'equity':
+        return this.equitySymbols
+      case 'index':
+        return this.indexSymbols
+      case 'futures':
+        return this.futuresSymbols
+      default:
+        return this.equitySymbols
+    }
+  }
+
+  async findBestOpportunities(marketType: 'equity' | 'index' | 'futures' = 'equity', limit: number = 15): Promise<AIOpportunity[]> {
     const opportunities: AIOpportunity[] = []
+    
+    // Get symbols based on market type
+    const symbols = this.getSymbolsForMarketType(marketType)
     
     try {
       // Process symbols one at a time to avoid rate limits
-      for (const symbol of this.popularSymbols) {
+      for (const symbol of symbols.slice(0, Math.min(symbols.length, limit * 2))) { // Process more symbols to get better opportunities
         try {
           // Add delay between requests to avoid rate limits
           if (opportunities.length > 0) {

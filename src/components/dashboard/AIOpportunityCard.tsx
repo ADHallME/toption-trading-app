@@ -22,24 +22,24 @@ import {
 
 interface AIOpportunityCardProps {
   opportunity: AIOpportunity
-  onSave?: (opportunity: AIOpportunity) => void
+  onStar?: (opportunity: AIOpportunity) => void
   onDismiss?: (opportunity: AIOpportunity) => void
+  isStarred?: boolean
 }
 
 export default function AIOpportunityCard({ 
   opportunity, 
-  onSave, 
-  onDismiss 
+  onStar, 
+  onDismiss,
+  isStarred = false
 }: AIOpportunityCardProps) {
   const [expanded, setExpanded] = useState(false)
-  const [saved, setSaved] = useState(false)
   const [dismissed, setDismissed] = useState(false)
 
   if (dismissed) return null
 
-  const handleSave = () => {
-    setSaved(true)
-    onSave?.(opportunity)
+  const handleStar = () => {
+    onStar?.(opportunity)
   }
 
   const handleDismiss = () => {
@@ -246,6 +246,27 @@ export default function AIOpportunityCard({
           </div>
         </div>
       )}
+
+      {/* Action Buttons */}
+      <div className="flex gap-2 mt-3">
+        <button
+          onClick={handleStar}
+          className={`flex-1 flex items-center justify-center gap-1 px-3 py-2 rounded text-xs font-medium transition-colors ${
+            isStarred 
+              ? 'bg-yellow-600 hover:bg-yellow-700 text-white' 
+              : 'bg-gray-700 hover:bg-gray-600 text-gray-300'
+          }`}
+        >
+          <Star className={`w-3 h-3 ${isStarred ? 'fill-current' : ''}`} />
+          {isStarred ? 'Starred' : 'Star'}
+        </button>
+        <button
+          onClick={handleDismiss}
+          className="px-3 py-2 bg-gray-700 hover:bg-gray-600 text-gray-300 rounded text-xs font-medium transition-colors"
+        >
+          Dismiss
+        </button>
+      </div>
     </div>
   )
 }

@@ -348,10 +348,28 @@ export default function ProfessionalTerminal() {
   const [savedOpportunities, setSavedOpportunities] = useState<any[]>([])
   const [chartData, setChartData] = useState(generateChartData(30))
   
+  // Watchlist system
+  const [watchlist, setWatchlist] = useState<AIOpportunity[]>([])
+  const [historical, setHistorical] = useState<AIOpportunity[]>([])
+  
   // Live data hooks - replaces all hardcoded data
   const { tickers: popularTickers, loading: tickersLoading } = usePopularTickers()
   const { data: marketData, loading: marketLoading } = useMarketData()
-  const { opportunities: aiOpportunities, loading: opportunitiesLoading, lastUpdated } = useAIOpportunities()
+  // Get market type string for AI opportunities
+  const getMarketTypeString = () => {
+    switch (selectedMarketType) {
+      case MarketType.EQUITY_OPTIONS:
+        return 'equity'
+      case MarketType.INDEX_OPTIONS:
+        return 'index'
+      case MarketType.FUTURES_OPTIONS:
+        return 'futures'
+      default:
+        return 'equity'
+    }
+  }
+  
+  const { opportunities: aiOpportunities, loading: opportunitiesLoading, lastUpdated } = useAIOpportunities(getMarketTypeString())
   const { results: searchResults, loading: isSearching } = useTickerSearch(searchQuery)
   const { options: topROIOptions, loading: optionsLoading } = useOptionsChain(selectedTicker, 'put', 60)
   
@@ -370,6 +388,26 @@ export default function ProfessionalTerminal() {
   }
   
   const currentMarketData = getCurrentMarketData()
+  
+  // Watchlist functions
+  const addToWatchlist = (opportunity: AIOpportunity) => {
+    if (!watchlist.find(item => item.id === opportunity.id)) {
+      setWatchlist(prev => [...prev, { ...opportunity, starredAt: new Date().toISOString() }])
+    }
+  }
+  
+  const removeFromWatchlist = (opportunityId: string) => {
+    setWatchlist(prev => prev.filter(item => item.id !== opportunityId))
+  }
+  
+  const moveToHistorical = (opportunity: AIOpportunity) => {
+    setHistorical(prev => [...prev, { ...opportunity, expiredAt: new Date().toISOString() }])
+    removeFromWatchlist(opportunity.id)
+  }
+  
+  const isInWatchlist = (opportunityId: string) => {
+    return watchlist.some(item => item.id === opportunityId)
+  }
   
   // Filter opportunities based on selected market type
   const getFilteredOpportunities = () => {
@@ -1068,7 +1106,7 @@ export default function ProfessionalTerminal() {
         <div className="flex-1 p-4 overflow-auto">
           {activeWorkspace === 'main' ? (
             <div className="space-y-4">
-              {/* AI Opportunities Panel */}
+              {/* Opportunities & Watchlist Side-by-Side */}
               <div className={`bg-gray-900 rounded-lg border border-gray-800 ${
                 expandedPanels.has('watchlist') ? '' : 'h-12'
               }`}>
@@ -1081,8 +1119,8 @@ export default function ProfessionalTerminal() {
                       expandedPanels.has('watchlist') ? 'rotate-90' : ''
                     }`} />
                     <Zap className="w-4 h-4 text-purple-400" />
-                    <h3 className="text-sm font-semibold text-white">Opportunities (Powered by AI)</h3>
-                    <span className="text-xs text-purple-400">({aiOpportunities.length} found)</span>
+                    <h3 className="text-sm font-semibold text-white">Opportunities & Watchlist</h3>
+                    <span className="text-xs text-purple-400">({aiOpportunities.length} opportunities, {watchlist.length} starred)</span>
                     {lastUpdated && (
                       <span className="text-xs text-gray-500">
                         Updated {lastUpdated.toLocaleTimeString()}
@@ -1104,34 +1142,70 @@ export default function ProfessionalTerminal() {
                 </div>
                 {expandedPanels.has('watchlist') && (
                   <div className="p-4">
-                    {opportunitiesLoading ? (
-                      <div className="flex items-center justify-center py-8">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500"></div>
-                        <span className="ml-3 text-gray-400">AI is analyzing opportunities...</span>
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                      {/* Opportunities Column */}
+                      <div>
+                        <h4 className="text-sm font-semibold text-white mb-3 flex items-center gap-2">
+                          <Zap className="w-4 h-4 text-purple-400" />
+                          AI Opportunities ({aiOpportunities.length})
+                        </h4>
+                        {opportunitiesLoading ? (
+                          <div className="flex items-center justify-center py-8">
+                            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-purple-500"></div>
+                            <span className="ml-2 text-gray-400 text-sm">AI is analyzing opportunities...</span>
+                          </div>
+                        ) : aiOpportunities.length > 0 ? (
+                          <div className="space-y-3 max-h-96 overflow-y-auto">
+                            {aiOpportunities.map(opportunity => (
+                              <AIOpportunityCard
+                                key={opportunity.id}
+                                opportunity={opportunity}
+                                onStar={addToWatchlist}
+                                onDismiss={(opp) => {
+                                  console.log('Dismissed opportunity:', opp.symbol)
+                                }}
+                                isStarred={isInWatchlist(opportunity.id)}
+                              />
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="text-center py-6 text-gray-500">
+                            <Zap className="w-8 h-8 mx-auto mb-2 text-gray-600" />
+                            <p className="text-sm">No opportunities found</p>
+                            <p className="text-xs">AI is scanning the market for the best options plays</p>
+                          </div>
+                        )}
                       </div>
-                    ) : aiOpportunities.length > 0 ? (
-                      <div className="space-y-4">
-                        {aiOpportunities.map(opportunity => (
-                          <AIOpportunityCard
-                            key={opportunity.id}
-                            opportunity={opportunity}
-                            onSave={(opp) => {
-                              setSavedOpportunities(prev => [...prev, opp])
-                            }}
-                            onDismiss={(opp) => {
-                              // Remove from opportunities
-                              console.log('Dismissed opportunity:', opp.symbol)
-                            }}
-                          />
-                        ))}
+
+                      {/* Watchlist Column */}
+                      <div>
+                        <h4 className="text-sm font-semibold text-white mb-3 flex items-center gap-2">
+                          <Star className="w-4 h-4 text-yellow-400" />
+                          Watchlist ({watchlist.length})
+                        </h4>
+                        {watchlist.length > 0 ? (
+                          <div className="space-y-3 max-h-96 overflow-y-auto">
+                            {watchlist.map(opportunity => (
+                              <AIOpportunityCard
+                                key={opportunity.id}
+                                opportunity={opportunity}
+                                onStar={() => removeFromWatchlist(opportunity.id)}
+                                onDismiss={(opp) => {
+                                  moveToHistorical(opp)
+                                }}
+                                isStarred={true}
+                              />
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="text-center py-6 text-gray-500">
+                            <Star className="w-8 h-8 mx-auto mb-2 text-gray-600" />
+                            <p className="text-sm">No starred opportunities</p>
+                            <p className="text-xs">Star opportunities to add them to your watchlist</p>
+                          </div>
+                        )}
                       </div>
-                    ) : (
-                      <div className="text-center py-8 text-gray-500">
-                        <Zap className="w-12 h-12 mx-auto mb-3 text-gray-600" />
-                        <p>No opportunities found</p>
-                        <p className="text-sm">AI is scanning the market for the best options plays</p>
-                      </div>
-                    )}
+                    </div>
                   </div>
                 )}
               </div>

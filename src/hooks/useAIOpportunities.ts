@@ -4,7 +4,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { aiOpportunityFinder, AIOpportunity } from '@/lib/ai/opportunity-finder'
 
-export function useAIOpportunities(refreshInterval: number = 300000) { // 5 minutes
+export function useAIOpportunities(marketType: 'equity' | 'index' | 'futures' = 'equity', refreshInterval: number = 300000) { // 5 minutes
   const [opportunities, setOpportunities] = useState<AIOpportunity[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -14,7 +14,7 @@ export function useAIOpportunities(refreshInterval: number = 300000) { // 5 minu
     try {
       setLoading(true)
       setError(null)
-      const data = await aiOpportunityFinder.findBestOpportunities(6)
+      const data = await aiOpportunityFinder.findBestOpportunities(marketType, 15)
       setOpportunities(data)
       setLastUpdated(new Date())
     } catch (err) {
@@ -23,7 +23,7 @@ export function useAIOpportunities(refreshInterval: number = 300000) { // 5 minu
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [marketType])
 
   useEffect(() => {
     fetchOpportunities()
