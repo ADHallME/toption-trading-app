@@ -16,8 +16,10 @@ export function useStockQuotes(symbols: string[], refreshInterval: number = 3000
     try {
       setLoading(true)
       setError(null)
-      const data = await unifiedPolygonClient.getStockQuotes(symbols)
-      setQuotes(data)
+      const response = await fetch(`/api/quotes?symbols=${symbols.join(',')}`)
+      if (!response.ok) throw new Error(`HTTP ${response.status}`)
+      const data = await response.json()
+      setQuotes(data.results || [])
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch quotes')
       console.error('Quote fetch error:', err)
@@ -48,8 +50,10 @@ export function useOptionsChain(underlying: string, type: 'put' | 'call' = 'put'
     try {
       setLoading(true)
       setError(null)
-      const data = await unifiedPolygonClient.getOptionsChain(underlying, type, maxDTE)
-      setOptions(data)
+      const response = await fetch(`/api/polygon/options?symbol=${underlying}&type=${type}&dte=${maxDTE}`)
+      if (!response.ok) throw new Error(`HTTP ${response.status}`)
+      const data = await response.json()
+      setOptions(data.results || [])
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch options')
       console.error('Options fetch error:', err)
@@ -79,8 +83,10 @@ export function usePopularTickers(refreshInterval: number = 60000) {
     try {
       setLoading(true)
       setError(null)
-      const data = await unifiedPolygonClient.getPopularTickers()
-      setTickers(data)
+      const response = await fetch('/api/market-data?type=all')
+      if (!response.ok) throw new Error(`HTTP ${response.status}`)
+      const data = await response.json()
+      setTickers(data.data || [])
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch tickers')
       console.error('Ticker fetch error:', err)
@@ -114,8 +120,10 @@ export function useTickerSearch(query: string) {
     try {
       setLoading(true)
       setError(null)
-      const data = await unifiedPolygonClient.searchTickers(searchQuery)
-      setResults(data)
+      const response = await fetch(`/api/trades?symbol=${searchQuery}`)
+      if (!response.ok) throw new Error(`HTTP ${response.status}`)
+      const data = await response.json()
+      setResults(data.results || [])
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Search failed')
       console.error('Search error:', err)
