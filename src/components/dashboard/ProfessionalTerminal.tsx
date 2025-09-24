@@ -268,6 +268,31 @@ const StrategyCard = ({ strategy, opportunities }: { strategy: string; opportuni
                   </div>
                 </div>
                 
+                {/* Strategy Legs Visualization */}
+                {opp.strike && typeof opp.strike === 'string' && opp.strike.includes('/') && (
+                  <div className="mb-2">
+                    <div className="text-xs text-gray-500 mb-1">Strategy Legs:</div>
+                    <div className="flex items-center gap-1 text-xs">
+                      {opp.strike.split('/').map((strike, idx) => (
+                        <div key={idx} className="flex items-center gap-1">
+                          <div className={`w-8 h-4 rounded flex items-center justify-center text-xs font-mono ${
+                            idx % 2 === 0 ? 'bg-red-900/30 text-red-400' : 'bg-green-900/30 text-green-400'
+                          }`}>
+                            ${strike}
+                          </div>
+                          {idx < opp.strike.split('/').length - 1 && (
+                            <span className="text-gray-500">/</span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                    <div className="flex items-center gap-1 mt-1 text-xs text-gray-500">
+                      <span className="w-8 h-4 rounded bg-red-900/30 text-red-400 flex items-center justify-center">Sell</span>
+                      <span className="w-8 h-4 rounded bg-green-900/30 text-green-400 flex items-center justify-center">Buy</span>
+                    </div>
+                  </div>
+                )}
+                
                 {/* Financial Details */}
                 <div className="grid grid-cols-2 gap-2 mb-2 text-xs">
                   <div className="flex justify-between">
@@ -554,6 +579,122 @@ export default function ProfessionalTerminal() {
         strategy: 'Iron Condor',
         description: 'Iron Condor - Sell put spread and call spread, profit from low volatility, limited risk'
       }
+    ],
+    'call-credit-spread': [
+      {
+        ticker: 'SPY',
+        strike: '490/495',
+        roi: 2.1,
+        dte: 21,
+        premium: 1.25,
+        pop: 82,
+        distance: 1.0,
+        delta: 0.15,
+        gamma: 0.003,
+        theta: -0.08,
+        vega: 0.12,
+        iv: 16.5,
+        capital: 500,
+        maxGain: 125,
+        maxLoss: 500,
+        breakeven: 491.25,
+        contractSize: 100,
+        underlyingPrice: 485.67,
+        volume: 850,
+        openInterest: 2100,
+        bid: 1.15,
+        ask: 1.35,
+        lastTrade: new Date().toISOString(),
+        strategy: 'Call Credit Spread',
+        description: 'Call Credit Spread - Sell call, buy higher call, profit from sideways/declining price'
+      }
+    ],
+    'put-credit-spread': [
+      {
+        ticker: 'QQQ',
+        strike: '405/400',
+        roi: 1.8,
+        dte: 21,
+        premium: 0.90,
+        pop: 80,
+        distance: 1.5,
+        delta: -0.20,
+        gamma: 0.004,
+        theta: -0.06,
+        vega: 0.10,
+        iv: 17.2,
+        capital: 500,
+        maxGain: 90,
+        maxLoss: 500,
+        breakeven: 404.10,
+        contractSize: 100,
+        underlyingPrice: 412.34,
+        volume: 650,
+        openInterest: 1800,
+        bid: 0.80,
+        ask: 1.00,
+        lastTrade: new Date().toISOString(),
+        strategy: 'Put Credit Spread',
+        description: 'Put Credit Spread - Sell put, buy lower put, profit from sideways/rising price'
+      }
+    ],
+    'call-calendar-spread': [
+      {
+        ticker: 'AAPL',
+        strike: '185',
+        roi: 1.5,
+        dte: 45,
+        premium: 2.20,
+        pop: 75,
+        distance: 0.0,
+        delta: 0.30,
+        gamma: 0.005,
+        theta: -0.15,
+        vega: 0.18,
+        iv: 22.5,
+        capital: 220,
+        maxGain: 220,
+        maxLoss: 220,
+        breakeven: '185.00',
+        contractSize: 100,
+        underlyingPrice: 184.25,
+        volume: 320,
+        openInterest: 950,
+        bid: 2.00,
+        ask: 2.40,
+        lastTrade: new Date().toISOString(),
+        strategy: 'Call Calendar Spread',
+        description: 'Call Calendar Spread - Sell short-term call, buy long-term call, profit from time decay'
+      }
+    ],
+    'put-calendar-spread': [
+      {
+        ticker: 'SPY',
+        strike: '480',
+        roi: 1.3,
+        dte: 45,
+        premium: 1.80,
+        pop: 73,
+        distance: 0.0,
+        delta: -0.25,
+        gamma: 0.004,
+        theta: -0.12,
+        vega: 0.15,
+        iv: 19.8,
+        capital: 180,
+        maxGain: 180,
+        maxLoss: 180,
+        breakeven: '480.00',
+        contractSize: 100,
+        underlyingPrice: 485.67,
+        volume: 280,
+        openInterest: 750,
+        bid: 1.60,
+        ask: 2.00,
+        lastTrade: new Date().toISOString(),
+        strategy: 'Put Calendar Spread',
+        description: 'Put Calendar Spread - Sell short-term put, buy long-term put, profit from time decay'
+      }
     ]
   }
 
@@ -575,6 +716,18 @@ export default function ProfessionalTerminal() {
             ['TSLA', 'NVDA', 'AAPL', 'MSFT'].includes(opp.ticker)
           ),
           'condor': baseOpportunities.condor.filter(opp => 
+            ['SPY', 'QQQ', 'AAPL', 'TSLA'].includes(opp.ticker)
+          ),
+          'call-credit-spread': baseOpportunities['call-credit-spread'].filter(opp => 
+            ['SPY', 'QQQ', 'AAPL', 'TSLA', 'MSFT', 'NVDA'].includes(opp.ticker)
+          ),
+          'put-credit-spread': baseOpportunities['put-credit-spread'].filter(opp => 
+            ['SPY', 'QQQ', 'AAPL', 'TSLA', 'MSFT', 'NVDA'].includes(opp.ticker)
+          ),
+          'call-calendar-spread': baseOpportunities['call-calendar-spread'].filter(opp => 
+            ['AAPL', 'MSFT', 'TSLA', 'NVDA'].includes(opp.ticker)
+          ),
+          'put-calendar-spread': baseOpportunities['put-calendar-spread'].filter(opp => 
             ['SPY', 'QQQ', 'AAPL', 'TSLA'].includes(opp.ticker)
           )
         }
@@ -1435,7 +1588,7 @@ export default function ProfessionalTerminal() {
                 </div>
                 {expandedPanels.has('screener') && (
                   <div className="p-4">
-                    <OptionsScreenerEnhanced />
+                    <OptionsScreenerEnhanced marketType={getMarketTypeString()} />
                   </div>
                 )}
               </div>

@@ -48,6 +48,8 @@ interface ScreenerFilters {
   // Technical filters
   rsi_min: number
   rsi_max: number
+  // Market type
+  marketType: 'equity' | 'index' | 'futures'
   ma20_position: string
   ma50_position: string
   // Earnings filters
@@ -94,7 +96,27 @@ interface ScreenerResult {
   stockPrice: number
 }
 
-const OptionsScreenerEnhanced: React.FC = () => {
+// Fuzzy search function
+const fuzzySearch = (query: string, items: string[]): string[] => {
+  if (!query) return items
+  
+  const queryLower = query.toLowerCase()
+  return items.filter(item => {
+    const itemLower = item.toLowerCase()
+    return itemLower.includes(queryLower) || 
+           itemLower.split('').some((char, i) => {
+             let queryIndex = 0
+             for (let j = i; j < itemLower.length && queryIndex < queryLower.length; j++) {
+               if (itemLower[j] === queryLower[queryIndex]) {
+                 queryIndex++
+               }
+             }
+             return queryIndex === queryLower.length
+           })
+  })
+}
+
+const OptionsScreenerEnhanced: React.FC<{ marketType?: 'equity' | 'index' | 'futures' }> = ({ marketType = 'equity' }) => {
   // Initialize with good liquid tickers
   const defaultTickers = ['SPY', 'QQQ', 'AAPL', 'TSLA']
   
@@ -109,6 +131,7 @@ const OptionsScreenerEnhanced: React.FC = () => {
     capital_max: 50000,
     min_volume: 0,
     min_oi: 10,
+    marketType: marketType,
     // Greeks filters
     delta_min: -1,
     delta_max: 1,
@@ -154,6 +177,8 @@ const OptionsScreenerEnhanced: React.FC = () => {
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set())
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false)
   const [screenedWatchlist, setScreenedWatchlist] = useState<ScreenerResult[]>([])
+  const [searchQuery, setSearchQuery] = useState('')
+  const [searchResults, setSearchResults] = useState<string[]>([])
   
   const strategyOptions = [
     'Cash Secured Put',
@@ -170,13 +195,32 @@ const OptionsScreenerEnhanced: React.FC = () => {
     'Ratio Spread'
   ]
 
-  const popularTickers = [
-    'SPY', 'QQQ', 'IWM', 'DIA',
-    'AAPL', 'MSFT', 'AMZN', 'GOOGL', 'META', 'NVDA', 'TSLA',
-    'JPM', 'BAC', 'XLF', 'GS',
-    'AMD', 'INTC', 'NFLX', 'DIS'
-  ]
+  // Market-specific tickers
+  const getMarketTickers = () => {
+    switch (marketType) {
+      case 'equity':
+        return ['SPY', 'QQQ', 'AAPL', 'MSFT', 'AMZN', 'GOOGL', 'META', 'NVDA', 'TSLA', 'JPM', 'BAC', 'XLF', 'GS', 'AMD', 'INTC', 'NFLX', 'DIS']
+      case 'index':
+        return ['SPX', 'NDX', 'VIX', 'DJX', 'RUT', 'IWM', 'DIA', 'XLF', 'XLK', 'XLE', 'XLV', 'XLI', 'XLY', 'XLU', 'XLP']
+      case 'futures':
+        return ['ES', 'NQ', 'YM', 'RTY', 'CL', 'GC', 'NG', 'SI', 'ZC', 'ZS', 'ZW', 'KC', 'CC', 'SB', 'CT']
+      default:
+        return ['SPY', 'QQQ', 'AAPL', 'MSFT', 'AMZN', 'GOOGL', 'META', 'NVDA', 'TSLA']
+    }
+  }
   
+  const popularTickers = getMarketTickers()
+  
+  // Fuzzy search effect
+  useEffect(() => {
+    if (searchQuery) {
+      const results = fuzzySearch(searchQuery, popularTickers)
+      setSearchResults(results)
+    } else {
+      setSearchResults([])
+    }
+  }, [searchQuery, popularTickers])
+
   // Ensure we have at least one ticker on component mount
   useEffect(() => {
     if (filters.tickers.length === 0 || 
@@ -317,6 +361,16 @@ const OptionsScreenerEnhanced: React.FC = () => {
     }))
   }
 
+  const addTickerFromSearch = (ticker: string) => {
+    if (ticker && !filters.tickers.includes(ticker)) {
+      setFilters(prev => ({
+        ...prev,
+        tickers: [...prev.tickers, ticker]
+      }))
+      setSearchQuery('')
+    }
+  }
+
   const toggleRowExpansion = (symbol: string) => {
     const newExpanded = new Set(expandedRows)
     if (newExpanded.has(symbol)) {
@@ -368,22 +422,38 @@ const OptionsScreenerEnhanced: React.FC = () => {
           </div>
           
           <div>
-            <label className="text-xs text-gray-400 block mb-1">Add Ticker</label>
-            <div className="flex gap-2">
+            <label className="text-xs text-gray-400 block mb-1">Add Ticker (Fuzzy Search)</label>
+            <div className="relative">
               <input
                 type="text"
-                value={tickerInput}
-                onChange={(e) => setTickerInput(e.target.value.toUpperCase())}
-                onKeyPress={(e) => e.key === 'Enter' && addTicker()}
-                placeholder="Enter ticker..."
-                className="flex-1 px-3 py-2 bg-gray-800 border border-gray-700 rounded text-sm text-white"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value.toUpperCase())}
+                onKeyPress={(e) => e.key === 'Enter' && searchResults.length > 0 && addTickerFromSearch(searchResults[0])}
+                placeholder="Type to search tickers..."
+                className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded text-sm text-white"
               />
-              <button
-                onClick={addTicker}
-                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded text-sm font-medium"
-              >
-                <Plus className="w-4 h-4" />
-              </button>
+              {searchQuery && searchResults.length > 0 && (
+                <div className="absolute top-full left-0 right-0 bg-gray-800 border border-gray-700 rounded-b mt-1 max-h-40 overflow-y-auto z-10">
+                  {searchResults.slice(0, 8).map(ticker => (
+                    <div
+                      key={ticker}
+                      onClick={() => addTickerFromSearch(ticker)}
+                      className="px-3 py-2 hover:bg-gray-700 cursor-pointer text-sm text-white flex items-center justify-between"
+                    >
+                      <span>{ticker}</span>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          addTickerFromSearch(ticker)
+                        }}
+                        className="text-blue-400 hover:text-blue-300"
+                      >
+                        <Plus className="w-3 h-3" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -556,6 +626,9 @@ const OptionsScreenerEnhanced: React.FC = () => {
                   <th className="text-right py-2 px-3 cursor-pointer hover:bg-gray-700" onClick={() => handleSort('openInterest')}>
                     OI <SortIcon column="openInterest" />
                   </th>
+                  <th className="text-right py-2 px-3">
+                    Spread Width
+                  </th>
                   <th className="text-center py-2 px-3">Actions</th>
                 </tr>
               </thead>
@@ -595,6 +668,12 @@ const OptionsScreenerEnhanced: React.FC = () => {
                       <td className="text-right py-2 px-3">{(result.iv * 100).toFixed(0)}%</td>
                       <td className="text-right py-2 px-3">{result.volume.toLocaleString()}</td>
                       <td className="text-right py-2 px-3">{result.openInterest.toLocaleString()}</td>
+                      <td className="text-right py-2 px-3">
+                        {result.strategy.includes('Spread') || result.strategy.includes('Condor') || result.strategy.includes('Butterfly') 
+                          ? `${(result.ask - result.bid).toFixed(2)}` 
+                          : 'N/A'
+                        }
+                      </td>
                       <td className="text-center py-2 px-3">
                         <button
                           onClick={(e) => {
