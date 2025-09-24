@@ -368,35 +368,36 @@ export default function ProfessionalTerminal() {
   
   const currentMarketData = getCurrentMarketData()
   
-  // Transform options data to opportunities format with comprehensive data
-  const opportunities = {
-    'CSP': topROIOptions.slice(0, 5).map(option => ({
-      ticker: option.underlying,
-      strike: option.strike,
-      roi: option.roi,
-      dte: option.dte,
-      premium: option.premium,
-      pop: option.pop,
-      distance: option.distance,
-      delta: option.delta || -0.25,
-      gamma: option.gamma || 0.002,
-      theta: option.theta || -0.15,
-      vega: option.vega || 0.12,
-      iv: option.iv || 18.5,
-      capital: option.strike * 100,
-      maxGain: option.premium * 100,
-      maxLoss: option.strike * 100,
-      breakeven: option.strike - option.premium,
-      contractSize: 100,
-      underlyingPrice: option.underlyingPrice || 485.67,
-      volume: option.volume || 1250,
-      openInterest: option.openInterest || 3400,
-      bid: option.bid || option.premium * 0.95,
-      ask: option.ask || option.premium * 1.05,
-      lastTrade: new Date().toISOString(),
-      strategy: 'CSP',
-      description: 'Cash Secured Put - Sell put option, collect premium, obligated to buy stock at strike if assigned'
-    })),
+  // Filter opportunities based on selected market type
+  const getFilteredOpportunities = () => {
+    const baseOpportunities = {
+      'CSP': topROIOptions.slice(0, 5).map(option => ({
+        ticker: option.underlying,
+        strike: option.strike,
+        roi: option.roi,
+        dte: option.dte,
+        premium: option.premium,
+        pop: option.pop,
+        distance: option.distance,
+        delta: option.delta || -0.25,
+        gamma: option.gamma || 0.002,
+        theta: option.theta || -0.15,
+        vega: option.vega || 0.12,
+        iv: option.iv || 18.5,
+        capital: option.strike * 100,
+        maxGain: option.premium * 100,
+        maxLoss: option.strike * 100,
+        breakeven: option.strike - option.premium,
+        contractSize: 100,
+        underlyingPrice: option.underlyingPrice || 485.67,
+        volume: option.volume || 1250,
+        openInterest: option.openInterest || 3400,
+        bid: option.bid || option.premium * 0.95,
+        ask: option.ask || option.premium * 1.05,
+        lastTrade: new Date().toISOString(),
+        strategy: 'CSP',
+        description: 'Cash Secured Put - Sell put option, collect premium, obligated to buy stock at strike if assigned'
+      })),
     'covered-call': [
       {
         ticker: 'AAPL',
@@ -514,6 +515,54 @@ export default function ProfessionalTerminal() {
       }
     ]
   }
+
+    // Filter based on market type
+    switch (selectedMarketType) {
+      case MarketType.EQUITY_OPTIONS:
+        return {
+          ...baseOpportunities,
+          'CSP': baseOpportunities.CSP.filter(opp => 
+            ['SPY', 'QQQ', 'AAPL', 'TSLA', 'MSFT', 'AMZN', 'GOOGL', 'META', 'NVDA'].includes(opp.ticker)
+          ),
+          'covered-call': baseOpportunities['covered-call'].filter(opp => 
+            ['AAPL', 'MSFT', 'AMZN', 'GOOGL', 'META', 'NVDA', 'TSLA'].includes(opp.ticker)
+          ),
+          'straddle': baseOpportunities.straddle.filter(opp => 
+            ['TSLA', 'NVDA', 'AAPL', 'MSFT'].includes(opp.ticker)
+          ),
+          'strangle': baseOpportunities.strangle.filter(opp => 
+            ['TSLA', 'NVDA', 'AAPL', 'MSFT'].includes(opp.ticker)
+          ),
+          'condor': baseOpportunities.condor.filter(opp => 
+            ['SPY', 'QQQ', 'AAPL', 'TSLA'].includes(opp.ticker)
+          )
+        }
+      case MarketType.INDEX_OPTIONS:
+        return {
+          'CSP': baseOpportunities.CSP.filter(opp => 
+            ['SPY', 'QQQ', 'IWM', 'DIA'].includes(opp.ticker)
+          ),
+          'covered-call': [],
+          'straddle': [],
+          'strangle': [],
+          'condor': baseOpportunities.condor.filter(opp => 
+            ['SPY', 'QQQ', 'IWM', 'DIA'].includes(opp.ticker)
+          )
+        }
+      case MarketType.FUTURES_OPTIONS:
+        return {
+          'CSP': [],
+          'covered-call': [],
+          'straddle': [],
+          'strangle': [],
+          'condor': []
+        }
+      default:
+        return baseOpportunities
+    }
+  }
+
+  const opportunities = getFilteredOpportunities()
 
   // Refresh function for options data
   const refreshOptions = () => {
@@ -1127,6 +1176,7 @@ export default function ProfessionalTerminal() {
                     }`} />
                     <Activity className="w-4 h-4 text-purple-400" />
                     <h3 className="text-sm font-semibold text-white">Top ROI Opportunities</h3>
+                    <span className="text-xs text-gray-500">Highest ROI with theta decay & IV crush analysis</span>
                   </div>
                   <div className="flex items-center gap-3">
                     <div className="relative" onClick={e => e.stopPropagation()}>
@@ -1197,6 +1247,10 @@ export default function ProfessionalTerminal() {
                             <th className="text-right py-2 px-2">Capital</th>
                             <th className="text-right py-2 px-2">Distance</th>
                             <th className="text-right py-2 px-2">IV</th>
+                            <th className="text-right py-2 px-2">Theta</th>
+                            <th className="text-right py-2 px-2">Vega</th>
+                            <th className="text-center py-2 px-2">Charts</th>
+                            <th className="text-center py-2 px-2">Actions</th>
                           </tr>
                         </thead>
                         <tbody className="text-gray-300">
@@ -1220,11 +1274,44 @@ export default function ProfessionalTerminal() {
                                 <td className="text-right py-2 px-2">${opp.capital}</td>
                                 <td className="text-right py-2 px-2">{opp.distance}%</td>
                                 <td className="text-right py-2 px-2">{opp.iv ? opp.iv.toFixed(1) : 'N/A'}%</td>
+                                <td className="text-right py-2 px-2">
+                                  <span className={opp.theta < 0 ? 'text-red-400' : 'text-green-400'}>
+                                    {opp.theta ? opp.theta.toFixed(3) : 'N/A'}
+                                  </span>
+                                </td>
+                                <td className="text-right py-2 px-2">
+                                  <span className={opp.vega > 0.1 ? 'text-orange-400' : 'text-gray-400'}>
+                                    {opp.vega ? opp.vega.toFixed(3) : 'N/A'}
+                                  </span>
+                                </td>
+                                <td className="text-center py-2 px-2">
+                                  <button
+                                    onClick={() => {
+                                      // Toggle chart view for this row
+                                      console.log('Show charts for:', opp.underlying)
+                                    }}
+                                    className="p-1 hover:bg-gray-800 rounded text-blue-400 hover:text-blue-300"
+                                    title="View Theta Decay & IV Crush Charts"
+                                  >
+                                    <LineChart className="w-3 h-3" />
+                                  </button>
+                                </td>
+                                <td className="text-center py-2 px-2">
+                                  <button
+                                    onClick={() => {
+                                      // Add to watchlist
+                                      console.log('Add to watchlist:', opp.underlying)
+                                    }}
+                                    className="px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded transition-colors"
+                                  >
+                                    Watch
+                                  </button>
+                                </td>
                               </tr>
                             ))
                           ) : (
                             <tr>
-                              <td colSpan={11} className="py-8 text-center text-gray-500">
+                              <td colSpan={15} className="py-8 text-center text-gray-500">
                                 {optionsLoading ? (
                                   <div className="flex items-center justify-center gap-2">
                                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-400"></div>
