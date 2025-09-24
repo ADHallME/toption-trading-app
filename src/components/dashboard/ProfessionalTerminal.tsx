@@ -53,6 +53,7 @@ import OptionsScreenerEnhanced from './OptionsScreenerEnhanced'
 import EnhancedResearchTab from './EnhancedResearchTab'
 import AnalyticsTab from './AnalyticsTab'
 import EducationTab from './EducationTab'
+import HistoricalTab from './HistoricalTab'
 import AIOpportunityCard from './AIOpportunityCard'
 
 // Simple line chart component  
@@ -353,7 +354,7 @@ const StrategyCard = ({ strategy, opportunities }: { strategy: string; opportuni
 
 export default function ProfessionalTerminal() {
   const { user } = useUser()
-  const [activeWorkspace, setActiveWorkspace] = useState<'main' | 'analysis' | 'education'>('main')
+  const [activeWorkspace, setActiveWorkspace] = useState<'main' | 'analysis' | 'education' | 'historical'>('main')
   const [showSettings, setShowSettings] = useState(false)
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
   const [selectedMarketType, setSelectedMarketType] = useState<MarketType>(MarketType.EQUITY_OPTIONS)
@@ -995,6 +996,16 @@ export default function ProfessionalTerminal() {
             }`}
           >
             Education
+          </button>
+          <button
+            onClick={() => setActiveWorkspace('historical')}
+            className={`px-3 py-1 text-xs font-medium rounded-lg transition-colors ${
+              activeWorkspace === 'historical' 
+                ? 'bg-gray-800 text-white' 
+                : 'text-gray-400 hover:text-gray-300'
+            }`}
+          >
+            Historical
           </button>
         </div>
       </header>
@@ -1667,10 +1678,20 @@ export default function ProfessionalTerminal() {
                 </div>
               </div>
             </div>
-          ) : (
+          ) : activeWorkspace === 'education' ? (
             // Education Workspace
             <div className="space-y-4">
               <EducationTab />
+            </div>
+          ) : (
+            // Historical Workspace
+            <div className="space-y-4">
+              <HistoricalTab 
+                historical={historical} 
+                onRemoveFromHistorical={(id) => {
+                  setHistorical(prev => prev.filter(item => item.id !== id))
+                }}
+              />
             </div>
           )}
         </div>
