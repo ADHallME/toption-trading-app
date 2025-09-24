@@ -47,6 +47,7 @@ import { MarketType } from '@/hooks/useEnhancedOptions'
 import { usePopularTickers, useOptionsChain, useTickerSearch } from '@/hooks/useLiveData'
 import { useAIOpportunities } from '@/hooks/useAIOpportunities'
 import { useMarketData } from '@/hooks/useMarketData'
+import { AIOpportunity } from '@/lib/ai/opportunity-finder'
 
 // Import existing components
 import OptionsScreenerEnhanced from './OptionsScreenerEnhanced'
