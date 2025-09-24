@@ -274,7 +274,7 @@ const StrategyCard = ({ strategy, opportunities }: { strategy: string; opportuni
                   <div className="mb-2">
                     <div className="text-xs text-gray-500 mb-1">Strategy Legs:</div>
                     <div className="flex items-center gap-1 text-xs">
-                      {opp.strike.split('/').map((strike, idx) => (
+                      {opp.strike.split('/').map((strike: string, idx: number) => (
                         <div key={idx} className="flex items-center gap-1">
                           <div className={`w-8 h-4 rounded flex items-center justify-center text-xs font-mono ${
                             idx % 2 === 0 ? 'bg-red-900/30 text-red-400' : 'bg-green-900/30 text-green-400'
