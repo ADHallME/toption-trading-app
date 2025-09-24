@@ -126,8 +126,10 @@ export async function GET(request: Request) {
         if (minStrike && strike < parseFloat(minStrike)) return false
         if (maxStrike && strike > parseFloat(maxStrike)) return false
         
-        // Filter out options with no bid
-        if (!option.last_quote?.bid || option.last_quote.bid === 0) {
+        // Filter out options with no pricing data
+        // Snapshot data uses different field names than quote data
+        const hasPricing = option.last_quote?.bid || option.day?.close || option.fmv
+        if (!hasPricing || hasPricing === 0) {
           return false
         }
         
@@ -138,11 +140,11 @@ export async function GET(request: Request) {
         const optionType = option.details.contract_type
         const dte = calculateDTE(option.details.expiration_date)
         
-        // Get REAL pricing data
-        const bid = option.last_quote?.bid || 0
-        const ask = option.last_quote?.ask || 0
+        // Get REAL pricing data - handle both snapshot and quote data structures
+        const bid = option.last_quote?.bid || option.day?.close || option.fmv || 0
+        const ask = option.last_quote?.ask || option.day?.close || option.fmv || 0
         const mid = (bid + ask) / 2
-        const last = option.last_trade?.price || mid
+        const last = option.last_trade?.price || option.day?.close || option.fmv || mid
         
         // Get REAL Greeks if available
         const delta = option.greeks?.delta || 0
