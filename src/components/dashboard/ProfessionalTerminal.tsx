@@ -42,8 +42,9 @@ import {
 import { MarketType } from '@/hooks/useEnhancedOptions'
 
 // Import live data hooks
-import { usePopularTickers, useMarketTicker, useOptionsChain, useTickerSearch } from '@/hooks/useLiveData'
+import { usePopularTickers, useOptionsChain, useTickerSearch } from '@/hooks/useLiveData'
 import { useAIOpportunities } from '@/hooks/useAIOpportunities'
+import { useMarketData } from '@/hooks/useMarketData'
 
 // Import existing components
 import OptionsScreenerEnhanced from './OptionsScreenerEnhanced'
@@ -246,10 +247,26 @@ export default function ProfessionalTerminal() {
   
   // Live data hooks - replaces all hardcoded data
   const { tickers: popularTickers, loading: tickersLoading } = usePopularTickers()
-  const { marketData, loading: marketLoading } = useMarketTicker(['SPY', 'QQQ', 'VIX', 'DIA'])
+  const { data: marketData, loading: marketLoading } = useMarketData()
   const { opportunities: aiOpportunities, loading: opportunitiesLoading, lastUpdated } = useAIOpportunities()
   const { results: searchResults, loading: isSearching } = useTickerSearch(searchQuery)
   const { options: topROIOptions, loading: optionsLoading } = useOptionsChain(selectedTicker, 'put', 60)
+  
+  // Get current market data based on selected market type
+  const getCurrentMarketData = () => {
+    switch (selectedMarketType) {
+      case MarketType.EQUITY_OPTIONS:
+        return marketData.equity.slice(0, 4) // Show top 4 equity symbols
+      case MarketType.INDEX_OPTIONS:
+        return marketData.index.slice(0, 4) // Show top 4 index symbols
+      case MarketType.FUTURES_OPTIONS:
+        return marketData.futures.slice(0, 4) // Show top 4 futures symbols
+      default:
+        return marketData.equity.slice(0, 4)
+    }
+  }
+  
+  const currentMarketData = getCurrentMarketData()
   
   // Transform options data to opportunities format
   const opportunities = {
@@ -371,13 +388,13 @@ export default function ProfessionalTerminal() {
 
             {/* Market Data Ticker */}
             <div className="flex items-center gap-4 text-xs">
-              {marketLoading ? (
+              {marketLoading && currentMarketData.length === 0 ? (
                 <div className="flex items-center gap-2 text-gray-500">
                   <div className="animate-spin rounded-full h-3 w-3 border-b border-gray-400"></div>
-                  <span>Loading market data...</span>
+                  <span>Loading {selectedMarketType === MarketType.EQUITY_OPTIONS ? 'equity' : selectedMarketType === MarketType.INDEX_OPTIONS ? 'index' : 'futures'} data...</span>
                 </div>
               ) : (
-                marketData.map(ticker => (
+                currentMarketData.map(ticker => (
                   <div key={ticker.symbol} className="flex items-center gap-2">
                     <span className="text-gray-500">{ticker.symbol}</span>
                     <span className="font-mono text-white">${ticker.price.toFixed(2)}</span>
