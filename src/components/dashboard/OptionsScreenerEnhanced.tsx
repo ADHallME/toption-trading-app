@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react'
 import { 
   Search, Filter, RefreshCw, Download, Plus, ChevronDown, 
   TrendingUp, Calendar, DollarSign, AlertCircle, Info,
-  ArrowUp, ArrowDown
+  ArrowUp, ArrowDown, Star, Settings
 } from 'lucide-react'
 import ChartPopup from './ChartPopup'
 
@@ -129,8 +129,8 @@ const fuzzySearch = (query: string, items: any[]): any[] => {
 }
 
 const OptionsScreenerEnhanced: React.FC<{ marketType?: 'equity' | 'index' | 'futures' }> = ({ marketType = 'equity' }) => {
-  // Initialize with good liquid tickers
-  const defaultTickers = ['SPY', 'QQQ', 'AAPL', 'TSLA']
+  // Initialize with high ROI opportunity tickers across all stocks
+  const defaultTickers = ['AAPL', 'TSLA', 'NVDA', 'MSFT', 'AMZN', 'GOOGL', 'META', 'NFLX', 'AMD', 'INTC']
   
   const [filters, setFilters] = useState<ScreenerFilters>({
     strategy: 'Cash Secured Put',
@@ -778,6 +778,345 @@ const OptionsScreenerEnhanced: React.FC<{ marketType?: 'equity' | 'index' | 'fut
           </div>
         </div>
 
+        {/* Advanced Filters Toggle */}
+        <div className="flex items-center justify-between">
+          <button
+            onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+            className="flex items-center gap-2 text-sm text-blue-400 hover:text-blue-300"
+          >
+            <Settings className="w-4 h-4" />
+            {showAdvancedFilters ? 'Hide' : 'Show'} Advanced Filters
+          </button>
+        </div>
+
+        {/* Advanced Filters */}
+        {showAdvancedFilters && (
+          <div className="space-y-4 pt-4 border-t border-gray-800">
+            {/* Greeks Filters */}
+            <div>
+              <h4 className="text-sm font-semibold text-gray-300 mb-3">Greeks Filters</h4>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <div>
+                  <label className="text-xs text-gray-400">Delta Range</label>
+                  <div className="flex gap-1 mt-1">
+                    <input
+                      type="number"
+                      value={filters.delta_min}
+                      onChange={(e) => setFilters(prev => ({ ...prev, delta_min: parseFloat(e.target.value) || -1 }))}
+                      className="w-1/2 px-2 py-1 bg-gray-800 border border-gray-700 rounded text-sm"
+                      placeholder="Min"
+                      step="0.01"
+                    />
+                    <input
+                      type="number"
+                      value={filters.delta_max}
+                      onChange={(e) => setFilters(prev => ({ ...prev, delta_max: parseFloat(e.target.value) || 1 }))}
+                      className="w-1/2 px-2 py-1 bg-gray-800 border border-gray-700 rounded text-sm"
+                      placeholder="Max"
+                      step="0.01"
+                    />
+                  </div>
+                </div>
+                
+                <div>
+                  <label className="text-xs text-gray-400">Gamma Range</label>
+                  <div className="flex gap-1 mt-1">
+                    <input
+                      type="number"
+                      value={filters.gamma_min}
+                      onChange={(e) => setFilters(prev => ({ ...prev, gamma_min: parseFloat(e.target.value) || 0 }))}
+                      className="w-1/2 px-2 py-1 bg-gray-800 border border-gray-700 rounded text-sm"
+                      placeholder="Min"
+                      step="0.001"
+                    />
+                    <input
+                      type="number"
+                      value={filters.gamma_max}
+                      onChange={(e) => setFilters(prev => ({ ...prev, gamma_max: parseFloat(e.target.value) || 1 }))}
+                      className="w-1/2 px-2 py-1 bg-gray-800 border border-gray-700 rounded text-sm"
+                      placeholder="Max"
+                      step="0.001"
+                    />
+                  </div>
+                </div>
+                
+                <div>
+                  <label className="text-xs text-gray-400">Theta Range</label>
+                  <div className="flex gap-1 mt-1">
+                    <input
+                      type="number"
+                      value={filters.theta_min}
+                      onChange={(e) => setFilters(prev => ({ ...prev, theta_min: parseFloat(e.target.value) || -1 }))}
+                      className="w-1/2 px-2 py-1 bg-gray-800 border border-gray-700 rounded text-sm"
+                      placeholder="Min"
+                      step="0.01"
+                    />
+                    <input
+                      type="number"
+                      value={filters.theta_max}
+                      onChange={(e) => setFilters(prev => ({ ...prev, theta_max: parseFloat(e.target.value) || 0 }))}
+                      className="w-1/2 px-2 py-1 bg-gray-800 border border-gray-700 rounded text-sm"
+                      placeholder="Max"
+                      step="0.01"
+                    />
+                  </div>
+                </div>
+                
+                <div>
+                  <label className="text-xs text-gray-400">Vega Range</label>
+                  <div className="flex gap-1 mt-1">
+                    <input
+                      type="number"
+                      value={filters.vega_min}
+                      onChange={(e) => setFilters(prev => ({ ...prev, vega_min: parseFloat(e.target.value) || 0 }))}
+                      className="w-1/2 px-2 py-1 bg-gray-800 border border-gray-700 rounded text-sm"
+                      placeholder="Min"
+                      step="0.01"
+                    />
+                    <input
+                      type="number"
+                      value={filters.vega_max}
+                      onChange={(e) => setFilters(prev => ({ ...prev, vega_max: parseFloat(e.target.value) || 1 }))}
+                      className="w-1/2 px-2 py-1 bg-gray-800 border border-gray-700 rounded text-sm"
+                      placeholder="Max"
+                      step="0.01"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* IV and Pricing Filters */}
+            <div>
+              <h4 className="text-sm font-semibold text-gray-300 mb-3">IV & Pricing Filters</h4>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <div>
+                  <label className="text-xs text-gray-400">IV Range %</label>
+                  <div className="flex gap-1 mt-1">
+                    <input
+                      type="number"
+                      value={filters.iv_min}
+                      onChange={(e) => setFilters(prev => ({ ...prev, iv_min: parseFloat(e.target.value) || 0 }))}
+                      className="w-1/2 px-2 py-1 bg-gray-800 border border-gray-700 rounded text-sm"
+                      placeholder="Min"
+                      step="0.1"
+                    />
+                    <input
+                      type="number"
+                      value={filters.iv_max}
+                      onChange={(e) => setFilters(prev => ({ ...prev, iv_max: parseFloat(e.target.value) || 100 }))}
+                      className="w-1/2 px-2 py-1 bg-gray-800 border border-gray-700 rounded text-sm"
+                      placeholder="Max"
+                      step="0.1"
+                    />
+                  </div>
+                </div>
+                
+                <div>
+                  <label className="text-xs text-gray-400">Strike Range $</label>
+                  <div className="flex gap-1 mt-1">
+                    <input
+                      type="number"
+                      value={filters.strike_min}
+                      onChange={(e) => setFilters(prev => ({ ...prev, strike_min: parseFloat(e.target.value) || 0 }))}
+                      className="w-1/2 px-2 py-1 bg-gray-800 border border-gray-700 rounded text-sm"
+                      placeholder="Min"
+                      step="0.01"
+                    />
+                    <input
+                      type="number"
+                      value={filters.strike_max}
+                      onChange={(e) => setFilters(prev => ({ ...prev, strike_max: parseFloat(e.target.value) || 1000 }))}
+                      className="w-1/2 px-2 py-1 bg-gray-800 border border-gray-700 rounded text-sm"
+                      placeholder="Max"
+                      step="0.01"
+                    />
+                  </div>
+                </div>
+                
+                <div>
+                  <label className="text-xs text-gray-400">Premium Range $</label>
+                  <div className="flex gap-1 mt-1">
+                    <input
+                      type="number"
+                      value={filters.premium_min}
+                      onChange={(e) => setFilters(prev => ({ ...prev, premium_min: parseFloat(e.target.value) || 0 }))}
+                      className="w-1/2 px-2 py-1 bg-gray-800 border border-gray-700 rounded text-sm"
+                      placeholder="Min"
+                      step="0.01"
+                    />
+                    <input
+                      type="number"
+                      value={filters.premium_max}
+                      onChange={(e) => setFilters(prev => ({ ...prev, premium_max: parseFloat(e.target.value) || 100 }))}
+                      className="w-1/2 px-2 py-1 bg-gray-800 border border-gray-700 rounded text-sm"
+                      placeholder="Max"
+                      step="0.01"
+                    />
+                  </div>
+                </div>
+                
+                <div>
+                  <label className="text-xs text-gray-400">Max Capital $</label>
+                  <input
+                    type="number"
+                    value={filters.capital_max}
+                    onChange={(e) => setFilters(prev => ({ ...prev, capital_max: parseInt(e.target.value) || 50000 }))}
+                    className="w-full mt-1 px-2 py-1 bg-gray-800 border border-gray-700 rounded text-sm"
+                    step="1000"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Stock Filters */}
+            <div>
+              <h4 className="text-sm font-semibold text-gray-300 mb-3">Stock Filters</h4>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <div>
+                  <label className="text-xs text-gray-400">Stock Price Range $</label>
+                  <div className="flex gap-1 mt-1">
+                    <input
+                      type="number"
+                      value={filters.stock_price_min}
+                      onChange={(e) => setFilters(prev => ({ ...prev, stock_price_min: parseFloat(e.target.value) || 0 }))}
+                      className="w-1/2 px-2 py-1 bg-gray-800 border border-gray-700 rounded text-sm"
+                      placeholder="Min"
+                      step="0.01"
+                    />
+                    <input
+                      type="number"
+                      value={filters.stock_price_max}
+                      onChange={(e) => setFilters(prev => ({ ...prev, stock_price_max: parseFloat(e.target.value) || 1000 }))}
+                      className="w-1/2 px-2 py-1 bg-gray-800 border border-gray-700 rounded text-sm"
+                      placeholder="Max"
+                      step="0.01"
+                    />
+                  </div>
+                </div>
+                
+                <div>
+                  <label className="text-xs text-gray-400">Min Volume</label>
+                  <input
+                    type="number"
+                    value={filters.min_volume}
+                    onChange={(e) => setFilters(prev => ({ ...prev, min_volume: parseInt(e.target.value) || 0 }))}
+                    className="w-full mt-1 px-2 py-1 bg-gray-800 border border-gray-700 rounded text-sm"
+                    step="1000"
+                  />
+                </div>
+                
+                <div>
+                  <label className="text-xs text-gray-400">Market Cap Range $B</label>
+                  <div className="flex gap-1 mt-1">
+                    <input
+                      type="number"
+                      value={filters.market_cap_min}
+                      onChange={(e) => setFilters(prev => ({ ...prev, market_cap_min: parseFloat(e.target.value) || 0 }))}
+                      className="w-1/2 px-2 py-1 bg-gray-800 border border-gray-700 rounded text-sm"
+                      placeholder="Min"
+                      step="0.1"
+                    />
+                    <input
+                      type="number"
+                      value={filters.market_cap_max}
+                      onChange={(e) => setFilters(prev => ({ ...prev, market_cap_max: parseFloat(e.target.value) || 1000 }))}
+                      className="w-1/2 px-2 py-1 bg-gray-800 border border-gray-700 rounded text-sm"
+                      placeholder="Max"
+                      step="0.1"
+                    />
+                  </div>
+                </div>
+                
+                <div>
+                  <label className="text-xs text-gray-400">Sector</label>
+                  <select
+                    value={filters.sector}
+                    onChange={(e) => setFilters(prev => ({ ...prev, sector: e.target.value }))}
+                    className="w-full mt-1 px-2 py-1 bg-gray-800 border border-gray-700 rounded text-sm"
+                  >
+                    <option value="">All Sectors</option>
+                    <option value="Technology">Technology</option>
+                    <option value="Healthcare">Healthcare</option>
+                    <option value="Financial">Financial</option>
+                    <option value="Energy">Energy</option>
+                    <option value="Consumer">Consumer</option>
+                    <option value="Industrial">Industrial</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            {/* Technical Analysis Filters */}
+            <div>
+              <h4 className="text-sm font-semibold text-gray-300 mb-3">Technical Analysis</h4>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <div>
+                  <label className="text-xs text-gray-400">RSI Range</label>
+                  <div className="flex gap-1 mt-1">
+                    <input
+                      type="number"
+                      value={filters.rsi_min}
+                      onChange={(e) => setFilters(prev => ({ ...prev, rsi_min: parseFloat(e.target.value) || 0 }))}
+                      className="w-1/2 px-2 py-1 bg-gray-800 border border-gray-700 rounded text-sm"
+                      placeholder="Min"
+                      step="1"
+                    />
+                    <input
+                      type="number"
+                      value={filters.rsi_max}
+                      onChange={(e) => setFilters(prev => ({ ...prev, rsi_max: parseFloat(e.target.value) || 100 }))}
+                      className="w-1/2 px-2 py-1 bg-gray-800 border border-gray-700 rounded text-sm"
+                      placeholder="Max"
+                      step="1"
+                    />
+                  </div>
+                </div>
+                
+                <div>
+                  <label className="text-xs text-gray-400">Price vs MA20</label>
+                  <select
+                    value={filters.ma20_position}
+                    onChange={(e) => setFilters(prev => ({ ...prev, ma20_position: e.target.value }))}
+                    className="w-full mt-1 px-2 py-1 bg-gray-800 border border-gray-700 rounded text-sm"
+                  >
+                    <option value="">Any</option>
+                    <option value="above">Above</option>
+                    <option value="below">Below</option>
+                  </select>
+                </div>
+                
+                <div>
+                  <label className="text-xs text-gray-400">Price vs MA50</label>
+                  <select
+                    value={filters.ma50_position}
+                    onChange={(e) => setFilters(prev => ({ ...prev, ma50_position: e.target.value }))}
+                    className="w-full mt-1 px-2 py-1 bg-gray-800 border border-gray-700 rounded text-sm"
+                  >
+                    <option value="">Any</option>
+                    <option value="above">Above</option>
+                    <option value="below">Below</option>
+                  </select>
+                </div>
+                
+                <div>
+                  <label className="text-xs text-gray-400">Earnings Filter</label>
+                  <select
+                    value={filters.earnings_filter}
+                    onChange={(e) => setFilters(prev => ({ ...prev, earnings_filter: e.target.value }))}
+                    className="w-full mt-1 px-2 py-1 bg-gray-800 border border-gray-700 rounded text-sm"
+                  >
+                    <option value="">Any</option>
+                    <option value="avoid">Avoid Earnings</option>
+                    <option value="after">After Earnings</option>
+                    <option value="before">Before Earnings</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Run Screener Button */}
         <button
           onClick={runScreener}
@@ -953,16 +1292,20 @@ const OptionsScreenerEnhanced: React.FC<{ marketType?: 'equity' | 'index' | 'fut
                         <button
                           onClick={(e) => {
                             e.stopPropagation()
-                            addToScreenedWatchlist(result)
+                            if (isInScreenedWatchlist(result.symbol)) {
+                              removeFromScreenedWatchlist(result.symbol)
+                            } else {
+                              addToScreenedWatchlist(result)
+                            }
                           }}
-                          disabled={isInScreenedWatchlist(result.symbol)}
-                          className={`px-2 py-1 rounded text-xs transition-colors ${
+                          className={`p-1 rounded transition-colors ${
                             isInScreenedWatchlist(result.symbol)
-                              ? 'bg-gray-700 text-gray-400 cursor-not-allowed'
-                              : 'bg-blue-600 hover:bg-blue-700 text-white'
+                              ? 'text-yellow-400 hover:text-yellow-300'
+                              : 'text-gray-400 hover:text-yellow-400'
                           }`}
+                          title={isInScreenedWatchlist(result.symbol) ? 'Remove from Watchlist' : 'Add to Watchlist'}
                         >
-                          {isInScreenedWatchlist(result.symbol) ? 'Added' : 'Add to Watchlist'}
+                          <Star className={`w-4 h-4 ${isInScreenedWatchlist(result.symbol) ? 'fill-current' : ''}`} />
                         </button>
                       </td>
                     </tr>

@@ -338,10 +338,39 @@ const StrategyCard = ({ strategy, opportunities }: { strategy: string; opportuni
                 
                 {/* Action Buttons */}
                 <div className="flex gap-2 mt-2">
-                  <button className="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-xs py-1 px-2 rounded transition-colors">
+                  <button 
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      addToWatchlist(opp)
+                    }}
+                    className="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-xs py-1 px-2 rounded transition-colors"
+                  >
                     Add to Watchlist
                   </button>
-                  <button className="flex-1 bg-gray-600 hover:bg-gray-700 text-white text-xs py-1 px-2 rounded transition-colors">
+                  <button 
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setChartPopup({
+                        isOpen: true,
+                        symbol: opp.ticker,
+                        companyName: `${opp.ticker} Inc.`,
+                        currentPrice: opp.stockPrice || 100,
+                        change: (Math.random() - 0.5) * 10,
+                        changePercent: (Math.random() - 0.5) * 5,
+                        exchange: 'NYSE',
+                        marketCap: Math.random() * 1000000000000,
+                        peRatio: Math.random() * 50 + 10,
+                        eps: Math.random() * 10 + 1,
+                        founded: 2000 + Math.floor(Math.random() * 20),
+                        employees: Math.floor(Math.random() * 100000) + 10000,
+                        ceo: 'John Smith',
+                        website: `${opp.ticker.toLowerCase()}.com`,
+                        description: `${opp.ticker} is a leading company in its industry, providing innovative solutions and services to customers worldwide.`,
+                        coverageStart: '01-01-2020'
+                      })
+                    }}
+                    className="flex-1 bg-gray-600 hover:bg-gray-700 text-white text-xs py-1 px-2 rounded transition-colors"
+                  >
                     View Details
                   </button>
                 </div>
