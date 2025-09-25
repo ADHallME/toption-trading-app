@@ -476,7 +476,7 @@ export default function ProfessionalTerminal() {
              nameLower.includes(queryLower) ||
              typeLower.includes(queryLower) ||
              // Fuzzy matching for symbol
-             symbolLower.split('').some((char, i) => {
+             symbolLower.split('').some((char: string, i: number) => {
                let queryIndex = 0
                for (let j = i; j < symbolLower.length && queryIndex < queryLower.length; j++) {
                  if (symbolLower[j] === queryLower[queryIndex]) {
