@@ -198,6 +198,17 @@ const OptionsScreenerEnhanced: React.FC<{ marketType?: 'equity' | 'index' | 'fut
     currentPrice: number
     change: number
     changePercent: number
+    exchange?: string
+    marketCap?: number
+    peRatio?: number
+    eps?: number
+    founded?: number
+    employees?: number
+    ceo?: string
+    website?: string
+    description?: string
+    coverageStart?: string
+    coverageEnd?: string
   } | null>(null)
   
   const strategyOptions = [
