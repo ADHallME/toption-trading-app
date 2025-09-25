@@ -51,7 +51,18 @@ const ChartPopup: React.FC<ChartPopupProps> = ({
   change = 0,
   changePercent = 0,
   afterHoursChange = 0,
-  afterHoursChangePercent = 0
+  afterHoursChangePercent = 0,
+  exchange = 'NYSE',
+  marketCap,
+  peRatio,
+  eps,
+  founded,
+  employees,
+  ceo,
+  website,
+  description,
+  coverageStart = '01-01-2020',
+  coverageEnd,
 }) => {
   const [optionsData, setOptionsData] = useState<OptionsContract[]>([])
   const [loading, setLoading] = useState(false)
