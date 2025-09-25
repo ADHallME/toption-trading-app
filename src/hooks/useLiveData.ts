@@ -66,7 +66,7 @@ export function useOptionsChain(underlying: string, type: 'put' | 'call' = 'put'
     fetchOptions()
   }, [fetchOptions])
 
-  return { options, loading, error, refresh: fetchOptions }
+  return { options, setOptions, loading, error, refresh: fetchOptions }
 }
 
 // Hook for popular tickers (replaces hardcoded arrays)

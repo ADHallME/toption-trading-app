@@ -15,8 +15,13 @@ interface ScreenerFilters {
   dte_max: number
   roi_min: number
   roi_max: number
+  roi_per_day_min: number
+  roi_per_day_max: number
   pop_min: number
   capital_max: number
+  distance_min: number
+  distance_max: number
+  option_type: string
   min_volume: number
   min_oi: number
   // Greeks filters
@@ -153,8 +158,13 @@ const OptionsScreenerEnhanced: React.FC<{ marketType?: 'equity' | 'index' | 'fut
     dte_max: 45,
     roi_min: 0,
     roi_max: 100,
+    roi_per_day_min: 0.1,
+    roi_per_day_max: 5.0,
     pop_min: 50,
     capital_max: 50000,
+    distance_min: 0,
+    distance_max: 20,
+    option_type: 'put',
     min_volume: 0,
     min_oi: 10,
     marketType: marketType,
@@ -495,10 +505,15 @@ const OptionsScreenerEnhanced: React.FC<{ marketType?: 'equity' | 'index' | 'fut
               .filter((option: any) => {
                 // Apply basic filters - check if properties exist first
                 if (option.roi !== undefined && (option.roi < filters.roi_min || option.roi > filters.roi_max)) return false
+                if (option.roiPerDay !== undefined && (option.roiPerDay < filters.roi_per_day_min || option.roiPerDay > filters.roi_per_day_max)) return false
                 if (option.pop !== undefined && option.pop < filters.pop_min) return false
                 if (option.capital !== undefined && option.capital > filters.capital_max) return false
+                if (option.distance !== undefined && (option.distance < filters.distance_min || option.distance > filters.distance_max)) return false
                 if (option.volume !== undefined && option.volume < filters.min_volume) return false
                 if (option.openInterest !== undefined && option.openInterest < filters.min_oi) return false
+                
+                // Apply option type filter
+                if (filters.option_type !== 'both' && option.type !== undefined && option.type !== filters.option_type) return false
                 
                 // Apply Greeks filters - check if properties exist first
                 if (option.delta !== undefined && (option.delta < filters.delta_min || option.delta > filters.delta_max)) return false
@@ -762,16 +777,74 @@ const OptionsScreenerEnhanced: React.FC<{ marketType?: 'equity' | 'index' | 'fut
           </div>
           
           <div>
-            <label className="text-xs text-gray-400">Min ROI %</label>
-            <input
-              type="number"
-              value={filters.roi_min}
-              onChange={(e) => setFilters(prev => ({ ...prev, roi_min: parseFloat(e.target.value) || 0 }))}
-              className="w-full mt-1 px-2 py-1 bg-gray-800 border border-gray-700 rounded text-sm"
-              step="0.1"
-            />
+            <label className="text-xs text-gray-400">ROI Range %</label>
+            <div className="flex gap-1 mt-1">
+              <input
+                type="number"
+                value={filters.roi_min}
+                onChange={(e) => setFilters(prev => ({ ...prev, roi_min: parseFloat(e.target.value) || 0 }))}
+                className="w-1/2 px-2 py-1 bg-gray-800 border border-gray-700 rounded text-sm"
+                placeholder="Min"
+                step="0.1"
+              />
+              <input
+                type="number"
+                value={filters.roi_max}
+                onChange={(e) => setFilters(prev => ({ ...prev, roi_max: parseFloat(e.target.value) || 100 }))}
+                className="w-1/2 px-2 py-1 bg-gray-800 border border-gray-700 rounded text-sm"
+                placeholder="Max"
+                step="0.1"
+              />
+            </div>
           </div>
           
+          <div>
+            <label className="text-xs text-gray-400">ROI/Day Range %</label>
+            <div className="flex gap-1 mt-1">
+              <input
+                type="number"
+                value={filters.roi_per_day_min}
+                onChange={(e) => setFilters(prev => ({ ...prev, roi_per_day_min: parseFloat(e.target.value) || 0 }))}
+                className="w-1/2 px-2 py-1 bg-gray-800 border border-gray-700 rounded text-sm"
+                placeholder="Min"
+                step="0.01"
+              />
+              <input
+                type="number"
+                value={filters.roi_per_day_max}
+                onChange={(e) => setFilters(prev => ({ ...prev, roi_per_day_max: parseFloat(e.target.value) || 5 }))}
+                className="w-1/2 px-2 py-1 bg-gray-800 border border-gray-700 rounded text-sm"
+                placeholder="Max"
+                step="0.01"
+              />
+            </div>
+          </div>
+          
+          <div>
+            <label className="text-xs text-gray-400">Distance Range %</label>
+            <div className="flex gap-1 mt-1">
+              <input
+                type="number"
+                value={filters.distance_min}
+                onChange={(e) => setFilters(prev => ({ ...prev, distance_min: parseFloat(e.target.value) || 0 }))}
+                className="w-1/2 px-2 py-1 bg-gray-800 border border-gray-700 rounded text-sm"
+                placeholder="Min"
+                step="0.1"
+              />
+              <input
+                type="number"
+                value={filters.distance_max}
+                onChange={(e) => setFilters(prev => ({ ...prev, distance_max: parseFloat(e.target.value) || 20 }))}
+                className="w-1/2 px-2 py-1 bg-gray-800 border border-gray-700 rounded text-sm"
+                placeholder="Max"
+                step="0.1"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Additional Filters Row */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <div>
             <label className="text-xs text-gray-400">Min PoP %</label>
             <input
@@ -780,6 +853,30 @@ const OptionsScreenerEnhanced: React.FC<{ marketType?: 'equity' | 'index' | 'fut
               onChange={(e) => setFilters(prev => ({ ...prev, pop_min: parseFloat(e.target.value) || 0 }))}
               className="w-full mt-1 px-2 py-1 bg-gray-800 border border-gray-700 rounded text-sm"
             />
+          </div>
+          
+          <div>
+            <label className="text-xs text-gray-400">Max Capital $</label>
+            <input
+              type="number"
+              value={filters.capital_max}
+              onChange={(e) => setFilters(prev => ({ ...prev, capital_max: parseInt(e.target.value) || 50000 }))}
+              className="w-full mt-1 px-2 py-1 bg-gray-800 border border-gray-700 rounded text-sm"
+              step="1000"
+            />
+          </div>
+          
+          <div>
+            <label className="text-xs text-gray-400">Option Type</label>
+            <select
+              value={filters.option_type}
+              onChange={(e) => setFilters(prev => ({ ...prev, option_type: e.target.value }))}
+              className="w-full mt-1 px-2 py-1 bg-gray-800 border border-gray-700 rounded text-sm"
+            >
+              <option value="put">Put</option>
+              <option value="call">Call</option>
+              <option value="both">Both</option>
+            </select>
           </div>
           
           <div>

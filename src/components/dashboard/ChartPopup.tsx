@@ -154,7 +154,7 @@ const ChartPopup: React.FC<ChartPopupProps> = ({
           <div className="flex items-center gap-4">
             {getCompanyLogo(symbol)}
             <div>
-              <h2 className="text-2xl font-bold text-gray-900">{companyName}</h2>
+              <h2 className="text-2xl font-bold text-gray-900">{companyName || `${symbol} Corporation`}</h2>
               <p className="text-gray-600">{symbol}</p>
             </div>
           </div>

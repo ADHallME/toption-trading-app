@@ -213,36 +213,36 @@ const StrategyCard = ({ strategy, opportunities, onAddToWatchlist, onViewDetails
               className="p-2 cursor-pointer"
               onClick={() => toggleCard(idx)}
             >
-              <div className="flex justify-between items-center mb-1">
-                <div>
-                  <span className="font-semibold text-white text-sm">{opp.ticker}</span>
-                  <span className="text-xs text-gray-500 ml-2">${opp.strike}</span>
-                </div>
+            <div className="flex justify-between items-center mb-1">
+              <div>
+                <span className="font-semibold text-white text-sm">{opp.ticker}</span>
+                <span className="text-xs text-gray-500 ml-2">${opp.strike}</span>
+              </div>
                 <div className="flex items-center gap-2">
-                  <div className={`text-${color}-400 font-semibold text-sm`}>
-                    {opp.roi}% ROI
+              <div className={`text-${color}-400 font-semibold text-sm`}>
+                {opp.roi}% ROI
                   </div>
                   <ChevronDown className={`w-3 h-3 text-gray-400 transition-transform ${expandedCards.has(idx) ? 'rotate-180' : ''}`} />
-                </div>
               </div>
-              <div className="grid grid-cols-3 gap-2 text-xs text-gray-400">
-                <div>
-                  <span className="text-gray-500">Premium:</span>
-                  <span className="ml-1 text-gray-300">${opp.premium}</span>
-                </div>
-                <div>
-                  <span className="text-gray-500">PoP:</span>
-                  <span className="ml-1 text-gray-300">{opp.pop || 85}%</span>
-                </div>
-                <div>
-                  <span className="text-gray-500">DTE:</span>
-                  <span className="ml-1 text-gray-300">{opp.dte}</span>
-                </div>
+            </div>
+            <div className="grid grid-cols-3 gap-2 text-xs text-gray-400">
+              <div>
+                <span className="text-gray-500">Premium:</span>
+                <span className="ml-1 text-gray-300">${opp.premium}</span>
               </div>
-              {opp.distance && (
-                <div className="text-xs text-gray-500 mt-1">
-                  Distance from strike: {opp.distance}%
-                </div>
+              <div>
+                <span className="text-gray-500">PoP:</span>
+                <span className="ml-1 text-gray-300">{opp.pop || 85}%</span>
+              </div>
+              <div>
+                <span className="text-gray-500">DTE:</span>
+                <span className="ml-1 text-gray-300">{opp.dte}</span>
+              </div>
+            </div>
+            {opp.distance && (
+              <div className="text-xs text-gray-500 mt-1">
+                Distance from strike: {opp.distance}%
+              </div>
               )}
             </div>
             
@@ -413,6 +413,45 @@ export default function ProfessionalTerminal() {
   } | null>(null)
   
   // Enhanced ticker data for search (same as screener)
+  // Helper function to get full company name
+  const getCompanyFullName = (symbol: string) => {
+    const companyNames: { [key: string]: string } = {
+      'AAPL': 'Apple Inc.',
+      'MSFT': 'Microsoft Corporation',
+      'AMZN': 'Amazon.com Inc.',
+      'GOOGL': 'Alphabet Inc. Class A',
+      'META': 'Meta Platforms Inc.',
+      'NVDA': 'NVIDIA Corporation',
+      'TSLA': 'Tesla Inc.',
+      'AMD': 'Advanced Micro Devices Inc.',
+      'INTC': 'Intel Corporation',
+      'NFLX': 'Netflix Inc.',
+      'EC': 'Ecopetrol S.A.',
+      'IBM': 'International Business Machines Corporation',
+      'GE': 'General Electric Company',
+      'CAT': 'Caterpillar Inc.',
+      'BA': 'The Boeing Company',
+      'MCD': 'McDonald\'s Corporation',
+      'NKE': 'NIKE Inc.',
+      'UNH': 'UnitedHealth Group Incorporated',
+      'T': 'AT&T Inc.',
+      'VZ': 'Verizon Communications Inc.',
+      'COST': 'Costco Wholesale Corporation',
+      'SBUX': 'Starbucks Corporation',
+      'ADBE': 'Adobe Inc.',
+      'CRM': 'Salesforce Inc.',
+      'ORCL': 'Oracle Corporation',
+      'CSCO': 'Cisco Systems Inc.',
+      'ACN': 'Accenture plc',
+      'TMO': 'Thermo Fisher Scientific Inc.',
+      'ABT': 'Abbott Laboratories',
+      'DHR': 'Danaher Corporation',
+      'LLY': 'Eli Lilly and Company',
+      'BMY': 'Bristol-Myers Squibb Company'
+    }
+    return companyNames[symbol] || `${symbol} Corporation`
+  }
+
   const getMarketTickers = () => {
     const equityTickers = [
       { symbol: 'SPY', name: 'SPDR S&P 500 ETF', type: 'ETF' },
@@ -569,7 +608,51 @@ export default function ProfessionalTerminal() {
   }
   
   const { opportunities: aiOpportunities, loading: opportunitiesLoading, lastUpdated } = useAIOpportunities(getMarketTypeString())
-  const { options: topROIOptions, loading: optionsLoading } = useOptionsChain(selectedTicker, 'put', 60)
+  // For Top ROI, we'll fetch opportunities across multiple equities instead of just selectedTicker
+  const [topROIOptions, setTopROIOptions] = useState<any[]>([])
+  const [optionsLoading, setOptionsLoading] = useState(false)
+  
+  // Fetch high ROI opportunities across multiple equities
+  useEffect(() => {
+    const fetchTopROIOpportunities = async () => {
+      if (selectedMarketType !== MarketType.EQUITY_OPTIONS) return
+      
+      setOptionsLoading(true)
+      try {
+        // Fetch opportunities for multiple high-volume equities
+        const equitySymbols = ['AAPL', 'MSFT', 'AMZN', 'GOOGL', 'META', 'NVDA', 'TSLA', 'AMD', 'INTC', 'NFLX']
+        const allOpportunities = []
+        
+        for (const symbol of equitySymbols.slice(0, 5)) { // Limit to 5 to avoid rate limits
+          try {
+            const response = await fetch(`/api/polygon/options?symbol=${symbol}&type=put&dte=60`)
+            if (response.ok) {
+              const data = await response.json()
+              if (data.results) {
+                allOpportunities.push(...data.results)
+              }
+            }
+          } catch (error) {
+            console.error(`Error fetching options for ${symbol}:`, error)
+          }
+        }
+        
+        // Sort by ROI and take top 20
+        const sortedOpportunities = allOpportunities
+          .filter(opt => opt.roi > 0 && opt.capital < 10000) // High ROI, low capital
+          .sort((a, b) => b.roi - a.roi)
+          .slice(0, 20)
+        
+        setTopROIOptions(sortedOpportunities)
+      } catch (error) {
+        console.error('Error fetching top ROI opportunities:', error)
+      } finally {
+        setOptionsLoading(false)
+      }
+    }
+    
+    fetchTopROIOpportunities()
+  }, [selectedMarketType])
 
   // Enhanced search effect for Top ROI - using Polygon API for full universe
   useEffect(() => {
@@ -619,6 +702,13 @@ export default function ProfessionalTerminal() {
   const addToWatchlist = (opportunity: AIOpportunity) => {
     if (!watchlist.find(item => item.id === opportunity.id)) {
       setWatchlist(prev => [...prev, { ...opportunity, starredAt: new Date().toISOString() }])
+      
+      // Remove from Top ROI opportunities to show next best
+      setTopROIOptions(prev => prev.filter(opt => 
+        !(opt.underlying === opportunity.symbol && 
+          opt.strike === opportunity.opportunity.strike && 
+          opt.dte === opportunity.opportunity.dte)
+      ))
     }
   }
   
@@ -640,7 +730,7 @@ export default function ProfessionalTerminal() {
     setChartPopup({
       isOpen: true,
       symbol: opp.ticker,
-      companyName: `${opp.ticker} Inc.`,
+      companyName: getCompanyFullName(opp.ticker),
       currentPrice: opp.stockPrice || 100,
       change: (Math.random() - 0.5) * 10,
       changePercent: (Math.random() - 0.5) * 5,
@@ -1087,13 +1177,13 @@ export default function ProfessionalTerminal() {
                 </div>
               ) : (
                 currentMarketData.map(ticker => (
-                  <div key={ticker.symbol} className="flex items-center gap-2">
-                    <span className="text-gray-500">{ticker.symbol}</span>
-                    <span className="font-mono text-white">${ticker.price.toFixed(2)}</span>
-                    <span className={`font-mono ${ticker.change >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                      {ticker.change >= 0 ? '+' : ''}{ticker.changePercent.toFixed(2)}%
-                    </span>
-                  </div>
+                <div key={ticker.symbol} className="flex items-center gap-2">
+                  <span className="text-gray-500">{ticker.symbol}</span>
+                  <span className="font-mono text-white">${ticker.price.toFixed(2)}</span>
+                  <span className={`font-mono ${ticker.change >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                    {ticker.change >= 0 ? '+' : ''}{ticker.changePercent.toFixed(2)}%
+                  </span>
+                </div>
                 ))
               )}
             </div>
@@ -1239,7 +1329,7 @@ export default function ProfessionalTerminal() {
                 <X className="w-4 h-4 text-gray-400 hover:text-white" />
               </button>
             </div>
-
+            
             {/* Strategy Filters */}
             <div className="mb-6">
               <h4 className="text-xs font-medium text-gray-400 mb-3">Strategy Preferences</h4>
@@ -1460,14 +1550,14 @@ export default function ProfessionalTerminal() {
             <div className="mb-6">
               <h4 className="text-xs font-medium text-gray-400 mb-3">Earnings</h4>
               <div className="space-y-2">
+              <label className="flex items-center gap-2">
+                <input type="checkbox" className="rounded" />
+                <span className="text-xs text-gray-300">Before Earnings Only</span>
+              </label>
                 <label className="flex items-center gap-2">
-                  <input type="checkbox" className="rounded" />
-                  <span className="text-xs text-gray-300">Before Earnings Only</span>
-                </label>
-                <label className="flex items-center gap-2">
-                  <input type="checkbox" className="rounded" />
-                  <span className="text-xs text-gray-300">Avoid Earnings (7 days)</span>
-                </label>
+                <input type="checkbox" className="rounded" />
+                <span className="text-xs text-gray-300">Avoid Earnings (7 days)</span>
+              </label>
                 <label className="flex items-center gap-2">
                   <input type="checkbox" className="rounded" />
                   <span className="text-xs text-gray-300">Earnings This Week</span>
@@ -1556,8 +1646,8 @@ export default function ProfessionalTerminal() {
                             <p className="text-sm">No opportunities found</p>
                             <p className="text-xs">AI is scanning the market for the best options plays</p>
                           </div>
-                        )}
-                      </div>
+                            )}
+                          </div>
 
                       {/* Watchlist Column */}
                       <div>
@@ -1673,7 +1763,7 @@ export default function ProfessionalTerminal() {
                               >
                                 <div className="flex flex-col">
                                   <div className="flex items-center gap-2">
-                                    <span className="text-sm font-medium text-white">{ticker.symbol}</span>
+                                  <span className="text-sm font-medium text-white">{ticker.symbol}</span>
                                     <span className="text-xs px-1 py-0.5 bg-gray-700 rounded text-gray-300">
                                       {ticker.type}
                                     </span>
@@ -1682,7 +1772,7 @@ export default function ProfessionalTerminal() {
                                         {ticker.primary_exchange}
                                       </span>
                                     )}
-                                  </div>
+                                </div>
                                   <span className="text-xs text-gray-400 truncate max-w-xs">
                                     {ticker.name}
                                   </span>
@@ -1734,24 +1824,24 @@ export default function ProfessionalTerminal() {
                         <tbody className="text-gray-300">
                           {topROIOptions.length > 0 ? (
                             topROIOptions.slice(0, 10).map((opp, idx) => (
-                              <tr key={idx} className="border-b border-gray-800/50 hover:bg-gray-800/30">
+                            <tr key={idx} className="border-b border-gray-800/50 hover:bg-gray-800/30">
                                 <td className="py-2 px-2 font-mono font-semibold text-white">{opp.underlying}</td>
-                                <td className="py-2 px-2">
-                                  <span className="px-1 py-0.5 rounded text-xs bg-emerald-900/30 text-emerald-400">
+                              <td className="py-2 px-2">
+                                <span className="px-1 py-0.5 rounded text-xs bg-emerald-900/30 text-emerald-400">
                                     {opp.type.toUpperCase()}
-                                  </span>
-                                </td>
-                                <td className="text-right py-2 px-2">${opp.strike}</td>
-                                <td className="text-right py-2 px-2">{opp.dte}d</td>
-                                <td className="text-right py-2 px-2">${opp.premium.toFixed(2)}</td>
-                                <td className="text-right py-2 px-2 text-emerald-400 font-semibold">
-                                  {opp.roi.toFixed(2)}%
-                                </td>
-                                <td className="text-right py-2 px-2">{opp.roiPerDay.toFixed(3)}%</td>
-                                <td className="text-right py-2 px-2">{opp.pop}%</td>
-                                <td className="text-right py-2 px-2">${opp.capital}</td>
-                                <td className="text-right py-2 px-2">{opp.distance}%</td>
-                                <td className="text-right py-2 px-2">{opp.iv ? opp.iv.toFixed(1) : 'N/A'}%</td>
+                                </span>
+                              </td>
+                              <td className="text-right py-2 px-2">${opp.strike}</td>
+                              <td className="text-right py-2 px-2">{opp.dte}d</td>
+                              <td className="text-right py-2 px-2">${opp.premium.toFixed(2)}</td>
+                              <td className="text-right py-2 px-2 text-emerald-400 font-semibold">
+                                {opp.roi.toFixed(2)}%
+                              </td>
+                              <td className="text-right py-2 px-2">{opp.roiPerDay.toFixed(3)}%</td>
+                              <td className="text-right py-2 px-2">{opp.pop}%</td>
+                              <td className="text-right py-2 px-2">${opp.capital}</td>
+                              <td className="text-right py-2 px-2">{opp.distance}%</td>
+                                <td className="text-right py-2 px-2">{opp.iv ? opp.iv.toFixed(2) : 'N/A'}%</td>
                                 <td className="text-right py-2 px-2">
                                   <span className={opp.theta && opp.theta < 0 ? 'text-red-400' : 'text-green-400'}>
                                     {opp.theta ? opp.theta.toFixed(3) : 'N/A'}
@@ -1768,7 +1858,7 @@ export default function ProfessionalTerminal() {
                                       setChartPopup({
                                         isOpen: true,
                                         symbol: opp.underlying,
-                                        companyName: `${opp.underlying} Inc.`,
+                                        companyName: getCompanyFullName(opp.underlying),
                                         currentPrice: opp.stockPrice,
                                         change: (Math.random() - 0.5) * 10,
                                         changePercent: (Math.random() - 0.5) * 5,
@@ -1793,15 +1883,60 @@ export default function ProfessionalTerminal() {
                                 <td className="text-center py-2 px-2">
                                   <button
                                     onClick={() => {
-                                      // Add to watchlist
-                                      console.log('Add to watchlist:', opp.underlying)
+                                      // Add to watchlist - create a proper AIOpportunity object
+                                      const watchlistItem: AIOpportunity = {
+                                        id: `${opp.underlying}-${opp.strike}-${opp.dte}`,
+                                        symbol: opp.underlying,
+                                        name: getCompanyFullName(opp.underlying),
+                                        price: opp.stockPrice || 100,
+                                        change: (Math.random() - 0.5) * 10,
+                                        changePercent: (Math.random() - 0.5) * 5,
+                                        opportunity: {
+                                          symbol: `${opp.underlying}${opp.expiration?.replace(/-/g, '')}${opp.type?.toUpperCase()}${(opp.strike * 1000).toString().padStart(8, '0')}`,
+                                          underlying: opp.underlying,
+                                          strike: opp.strike,
+                                          expiration: opp.expiration || new Date(Date.now() + opp.dte * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+                                          dte: opp.dte,
+                                          type: opp.type,
+                                          bid: opp.bid || opp.premium * 0.95,
+                                          ask: opp.ask || opp.premium * 1.05,
+                                          last: opp.premium,
+                                          mid: opp.premium,
+                                          premium: opp.premium,
+                                          volume: opp.volume || 0,
+                                          openInterest: opp.openInterest || 0,
+                                          delta: opp.delta,
+                                          gamma: opp.gamma,
+                                          theta: opp.theta,
+                                          vega: opp.vega,
+                                          iv: opp.iv,
+                                          roi: opp.roi,
+                                          roiPerDay: opp.roiPerDay,
+                                          roiAnnualized: opp.roi * 365 / opp.dte,
+                                          stockPrice: opp.stockPrice || 100,
+                                          distance: opp.distance,
+                                          breakeven: opp.breakeven,
+                                          pop: opp.pop,
+                                          capital: opp.capital,
+                                          lastUpdated: new Date().toISOString()
+                                        },
+                                        aiScore: Math.min(95, Math.max(60, opp.roi * 2)),
+                                        reasons: [`High ROI of ${opp.roi.toFixed(1)}%`, `DTE: ${opp.dte} days`, `PoP: ${opp.pop}%`],
+                                        warnings: opp.distance > 10 ? ['High distance from strike'] : [],
+                                        strategy: 'CSP',
+                                        riskLevel: opp.roi > 20 ? 'high' : opp.roi > 10 ? 'medium' : 'low',
+                                        timeToExpiry: `${opp.dte} days`,
+                                        expectedReturn: opp.roi,
+                                        probabilityOfProfit: opp.pop
+                                      }
+                                      addToWatchlist(watchlistItem)
                                     }}
                                     className="px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded transition-colors"
                                   >
                                     Watch
                                   </button>
                                 </td>
-                              </tr>
+                            </tr>
                             ))
                           ) : (
                             <tr>
