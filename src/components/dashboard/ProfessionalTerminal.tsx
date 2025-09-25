@@ -612,18 +612,34 @@ export default function ProfessionalTerminal() {
   const [topROIOptions, setTopROIOptions] = useState<any[]>([])
   const [optionsLoading, setOptionsLoading] = useState(false)
   
-  // Fetch high ROI opportunities across multiple equities
+  // Fetch high ROI opportunities across multiple symbols for selected asset class
   useEffect(() => {
     const fetchTopROIOpportunities = async () => {
-      if (selectedMarketType !== MarketType.EQUITY_OPTIONS) return
-      
       setOptionsLoading(true)
       try {
-        // Fetch opportunities for multiple high-volume equities
-        const equitySymbols = ['AAPL', 'MSFT', 'AMZN', 'GOOGL', 'META', 'NVDA', 'TSLA', 'AMD', 'INTC', 'NFLX']
+        let symbolsToFetch: string[] = []
+        
+        // Get symbols based on selected market type
+        switch (selectedMarketType) {
+          case MarketType.EQUITY_OPTIONS:
+            // Fetch opportunities for multiple high-volume equities
+            symbolsToFetch = ['AAPL', 'MSFT', 'AMZN', 'GOOGL', 'META', 'NVDA', 'TSLA', 'AMD', 'INTC', 'NFLX']
+            break
+          case MarketType.INDEX_OPTIONS:
+            // Fetch opportunities for indexes
+            symbolsToFetch = ['SPY', 'QQQ', 'IWM', 'DIA', 'XLF', 'XLK', 'XLE', 'XLV', 'XLI', 'XLY']
+            break
+          case MarketType.FUTURES_OPTIONS:
+            // Fetch opportunities for futures
+            symbolsToFetch = ['ES', 'NQ', 'YM', 'RTY', 'CL', 'GC', 'NG', 'SI', 'ZC', 'ZS']
+            break
+          default:
+            symbolsToFetch = ['AAPL', 'MSFT', 'AMZN', 'GOOGL', 'META', 'NVDA']
+        }
+        
         const allOpportunities = []
         
-        for (const symbol of equitySymbols.slice(0, 5)) { // Limit to 5 to avoid rate limits
+        for (const symbol of symbolsToFetch.slice(0, 5)) { // Limit to 5 to avoid rate limits
           try {
             const response = await fetch(`/api/polygon/options?symbol=${symbol}&type=put&dte=60`)
             if (response.ok) {
@@ -686,13 +702,20 @@ export default function ProfessionalTerminal() {
   const getCurrentMarketData = () => {
     switch (selectedMarketType) {
       case MarketType.EQUITY_OPTIONS:
-        return marketData.equity.slice(0, 4) // Show top 4 equity symbols
+        // Show top 7 highest volume stocks of the day
+        return marketData.equity
+          .sort((a, b) => b.volume - a.volume)
+          .slice(0, 7)
       case MarketType.INDEX_OPTIONS:
-        return marketData.index.slice(0, 4) // Show top 4 index symbols
+        // Show SPY, DJX, VIX, QQQ
+        const indexSymbols = ['SPY', 'DJX', 'VIX', 'QQQ']
+        return marketData.index.filter(item => indexSymbols.includes(item.symbol))
       case MarketType.FUTURES_OPTIONS:
-        return marketData.futures.slice(0, 4) // Show top 4 futures symbols
+        // Show Crude Oil (/CL), Natural Gas, Gold, Silver, Copper, Corn
+        const futuresSymbols = ['CL', 'NG', 'GC', 'SI', 'CU', 'CZ']
+        return marketData.futures.filter(item => futuresSymbols.includes(item.symbol))
       default:
-        return marketData.equity.slice(0, 4)
+        return marketData.equity.slice(0, 7)
     }
   }
   
@@ -749,6 +772,22 @@ export default function ProfessionalTerminal() {
   
   // Filter opportunities based on selected market type
   const getFilteredOpportunities = () => {
+    // Get symbols based on selected market type
+    let symbols: string[] = []
+    switch (selectedMarketType) {
+      case MarketType.EQUITY_OPTIONS:
+        symbols = ['AAPL', 'MSFT', 'AMZN', 'GOOGL', 'META', 'NVDA', 'TSLA', 'AMD', 'INTC', 'NFLX']
+        break
+      case MarketType.INDEX_OPTIONS:
+        symbols = ['SPY', 'QQQ', 'IWM', 'DIA', 'XLF', 'XLK', 'XLE', 'XLV', 'XLI', 'XLY']
+        break
+      case MarketType.FUTURES_OPTIONS:
+        symbols = ['ES', 'NQ', 'YM', 'RTY', 'CL', 'GC', 'NG', 'SI', 'ZC', 'ZS']
+        break
+      default:
+        symbols = ['AAPL', 'MSFT', 'AMZN', 'GOOGL', 'META', 'NVDA']
+    }
+
     const baseOpportunities = {
       'CSP': topROIOptions.slice(0, 5).map(option => ({
         ticker: option.underlying,
@@ -777,296 +816,226 @@ export default function ProfessionalTerminal() {
         strategy: 'CSP',
         description: 'Cash Secured Put - Sell put option, collect premium, obligated to buy stock at strike if assigned'
       })),
-    'covered-call': [
-      {
-        ticker: 'AAPL',
-        strike: 185,
-        roi: 2.3,
-        dte: 30,
-        premium: 3.45,
-        pop: 78,
-        distance: 0.5,
-        delta: 0.28,
-        gamma: 0.004,
-        theta: -0.12,
-        vega: 0.08,
-        iv: 25.1,
-        capital: 18500,
-        maxGain: 345,
-        maxLoss: 18500,
-        breakeven: 188.45,
-        contractSize: 100,
-        underlyingPrice: 184.25,
-        volume: 2100,
-        openInterest: 5600,
-        bid: 3.20,
-        ask: 3.70,
-        lastTrade: new Date().toISOString(),
-        strategy: 'Covered Call',
-        description: 'Covered Call - Own stock, sell call option, collect premium, obligated to sell stock at strike if assigned'
-      }
-    ],
-    'straddle': [
-      {
-        ticker: 'TSLA',
-        strike: 250,
-        roi: 5.2,
-        dte: 45,
-        premium: 25.50,
-        pop: 65,
-        distance: 0,
-        delta: 0.02,
-        gamma: 0.008,
-        theta: -0.45,
-        vega: 0.35,
-        iv: 45.2,
-        capital: 50000,
-        maxGain: 2550,
-        maxLoss: 50000,
-        breakeven: '224.50 / 275.50',
-        contractSize: 100,
-        underlyingPrice: 248.73,
-        volume: 450,
-        openInterest: 1200,
-        bid: 24.80,
-        ask: 26.20,
-        lastTrade: new Date().toISOString(),
-        strategy: 'Straddle',
-        description: 'Straddle - Buy both put and call at same strike, profit from large moves in either direction'
-      }
-    ],
-    'strangle': [
-      {
-        ticker: 'TSLA',
-        strike: '245/255',
-        roi: 4.2,
-        dte: 45,
-        premium: 12.50,
-        pop: 72,
-        distance: 2.0,
-        delta: 0.05,
-        gamma: 0.006,
-        theta: -0.25,
-        vega: 0.20,
-        iv: 42.8,
-        capital: 50000,
-        maxGain: 1250,
-        maxLoss: 50000,
-        breakeven: '232.50 / 267.50',
-        contractSize: 100,
-        underlyingPrice: 248.73,
-        volume: 280,
-        openInterest: 750,
-        bid: 11.80,
-        ask: 13.20,
-        lastTrade: new Date().toISOString(),
-        strategy: 'Strangle',
-        description: 'Strangle - Buy put and call at different strikes, profit from large moves in either direction'
-      }
-    ],
-    'condor': [
-      {
-        ticker: 'QQQ',
-        strike: '400/405/415/420',
-        roi: 1.9,
-        dte: 30,
-        premium: 2.85,
-        pop: 85,
-        distance: 2.5,
-        delta: 0.08,
+    'covered-call': symbols.slice(0, 1).map((symbol: string) => ({
+      ticker: symbol,
+      strike: selectedMarketType === MarketType.FUTURES_OPTIONS ? 2000 : 185,
+      roi: 2.3,
+      dte: 30,
+      premium: 3.45,
+      pop: 78,
+      distance: 0.5,
+      delta: 0.28,
+      gamma: 0.004,
+      theta: -0.12,
+      vega: 0.08,
+      iv: 25.1,
+      capital: selectedMarketType === MarketType.FUTURES_OPTIONS ? 200000 : 18500,
+      maxGain: 345,
+      maxLoss: selectedMarketType === MarketType.FUTURES_OPTIONS ? 200000 : 18500,
+      breakeven: selectedMarketType === MarketType.FUTURES_OPTIONS ? 2003.45 : 188.45,
+      contractSize: selectedMarketType === MarketType.FUTURES_OPTIONS ? 50 : 100,
+      underlyingPrice: selectedMarketType === MarketType.FUTURES_OPTIONS ? 2000 : 184.25,
+      volume: 2100,
+      openInterest: 5600,
+      bid: 3.20,
+      ask: 3.70,
+      lastTrade: new Date().toISOString(),
+      strategy: 'Covered Call',
+      description: 'Covered Call - Own stock, sell call option, collect premium, obligated to sell stock at strike if assigned'
+    })),
+    'straddle': symbols.slice(1, 2).map((symbol: string) => ({
+      ticker: symbol,
+      strike: selectedMarketType === MarketType.FUTURES_OPTIONS ? 2500 : 250,
+      roi: 5.2,
+      dte: 45,
+      premium: selectedMarketType === MarketType.FUTURES_OPTIONS ? 25.50 : 25.50,
+      pop: 65,
+      distance: 0,
+      delta: 0.02,
+      gamma: 0.008,
+      theta: -0.45,
+      vega: 0.35,
+      iv: 45.2,
+      capital: selectedMarketType === MarketType.FUTURES_OPTIONS ? 500000 : 50000,
+      maxGain: selectedMarketType === MarketType.FUTURES_OPTIONS ? 25500 : 2550,
+      maxLoss: selectedMarketType === MarketType.FUTURES_OPTIONS ? 500000 : 50000,
+      breakeven: selectedMarketType === MarketType.FUTURES_OPTIONS ? '2245.00 / 2755.00' : '224.50 / 275.50',
+      contractSize: selectedMarketType === MarketType.FUTURES_OPTIONS ? 50 : 100,
+      underlyingPrice: selectedMarketType === MarketType.FUTURES_OPTIONS ? 2487.30 : 248.73,
+      volume: 450,
+      openInterest: 1200,
+      bid: selectedMarketType === MarketType.FUTURES_OPTIONS ? 24.80 : 24.80,
+      ask: selectedMarketType === MarketType.FUTURES_OPTIONS ? 26.20 : 26.20,
+      lastTrade: new Date().toISOString(),
+      strategy: 'Straddle',
+      description: 'Straddle - Buy both put and call at same strike, profit from large moves in either direction'
+    })),
+    'strangle': symbols.slice(2, 3).map((symbol: string) => ({
+      ticker: symbol,
+      strike: selectedMarketType === MarketType.FUTURES_OPTIONS ? '2450/2550' : '245/255',
+      roi: 4.2,
+      dte: 45,
+      premium: selectedMarketType === MarketType.FUTURES_OPTIONS ? 12.50 : 12.50,
+      pop: 72,
+      distance: 2.0,
+      delta: 0.05,
+      gamma: 0.006,
+      theta: -0.25,
+      vega: 0.20,
+      iv: 42.8,
+      capital: selectedMarketType === MarketType.FUTURES_OPTIONS ? 500000 : 50000,
+      maxGain: selectedMarketType === MarketType.FUTURES_OPTIONS ? 12500 : 1250,
+      maxLoss: selectedMarketType === MarketType.FUTURES_OPTIONS ? 500000 : 50000,
+      breakeven: selectedMarketType === MarketType.FUTURES_OPTIONS ? '2325.00 / 2675.00' : '232.50 / 267.50',
+      contractSize: selectedMarketType === MarketType.FUTURES_OPTIONS ? 50 : 100,
+      underlyingPrice: selectedMarketType === MarketType.FUTURES_OPTIONS ? 2487.30 : 248.73,
+      volume: 280,
+      openInterest: 750,
+      bid: selectedMarketType === MarketType.FUTURES_OPTIONS ? 11.80 : 11.80,
+      ask: selectedMarketType === MarketType.FUTURES_OPTIONS ? 13.20 : 13.20,
+      lastTrade: new Date().toISOString(),
+      strategy: 'Strangle',
+      description: 'Strangle - Buy put and call at different strikes, profit from large moves in either direction'
+    })),
+    'condor': symbols.slice(3, 4).map((symbol: string) => ({
+      ticker: symbol,
+      strike: selectedMarketType === MarketType.FUTURES_OPTIONS ? '4000/4050/4150/4200' : '400/405/415/420',
+      roi: 1.9,
+      dte: 30,
+      premium: selectedMarketType === MarketType.FUTURES_OPTIONS ? 2.85 : 2.85,
+      pop: 85,
+      distance: 2.5,
+      delta: 0.08,
         gamma: 0.001,
         theta: -0.08,
         vega: 0.05,
         iv: 18.2,
-        capital: 5000,
-        maxGain: 285,
-        maxLoss: 5000,
-        breakeven: '402.15 / 417.85',
-        contractSize: 100,
-        underlyingPrice: 412.34,
+        capital: selectedMarketType === MarketType.FUTURES_OPTIONS ? 50000 : 5000,
+        maxGain: selectedMarketType === MarketType.FUTURES_OPTIONS ? 2850 : 285,
+        maxLoss: selectedMarketType === MarketType.FUTURES_OPTIONS ? 50000 : 5000,
+        breakeven: selectedMarketType === MarketType.FUTURES_OPTIONS ? '4021.50 / 4178.50' : '402.15 / 417.85',
+        contractSize: selectedMarketType === MarketType.FUTURES_OPTIONS ? 50 : 100,
+        underlyingPrice: selectedMarketType === MarketType.FUTURES_OPTIONS ? 4123.40 : 412.34,
         volume: 120,
         openInterest: 340,
-        bid: 2.60,
-        ask: 3.10,
+        bid: selectedMarketType === MarketType.FUTURES_OPTIONS ? 2.60 : 2.60,
+        ask: selectedMarketType === MarketType.FUTURES_OPTIONS ? 3.10 : 3.10,
         lastTrade: new Date().toISOString(),
         strategy: 'Iron Condor',
         description: 'Iron Condor - Sell put spread and call spread, profit from low volatility, limited risk'
-      }
-    ],
-    'call-credit-spread': [
-      {
-        ticker: 'SPY',
-        strike: '490/495',
-        roi: 2.1,
-        dte: 21,
-        premium: 1.25,
-        pop: 82,
-        distance: 1.0,
-        delta: 0.15,
-        gamma: 0.003,
-        theta: -0.08,
-        vega: 0.12,
-        iv: 16.5,
-        capital: 500,
-        maxGain: 125,
-        maxLoss: 500,
-        breakeven: 491.25,
-        contractSize: 100,
-        underlyingPrice: 485.67,
-        volume: 850,
-        openInterest: 2100,
-        bid: 1.15,
-        ask: 1.35,
-        lastTrade: new Date().toISOString(),
-        strategy: 'Call Credit Spread',
-        description: 'Call Credit Spread - Sell call, buy higher call, profit from sideways/declining price'
-      }
-    ],
-    'put-credit-spread': [
-      {
-        ticker: 'QQQ',
-        strike: '405/400',
-        roi: 1.8,
-        dte: 21,
-        premium: 0.90,
-        pop: 80,
-        distance: 1.5,
-        delta: -0.20,
-        gamma: 0.004,
-        theta: -0.06,
-        vega: 0.10,
-        iv: 17.2,
-        capital: 500,
-        maxGain: 90,
-        maxLoss: 500,
-        breakeven: 404.10,
-        contractSize: 100,
-        underlyingPrice: 412.34,
-        volume: 650,
-        openInterest: 1800,
-        bid: 0.80,
-        ask: 1.00,
-        lastTrade: new Date().toISOString(),
-        strategy: 'Put Credit Spread',
-        description: 'Put Credit Spread - Sell put, buy lower put, profit from sideways/rising price'
-      }
-    ],
-    'call-calendar-spread': [
-      {
-        ticker: 'AAPL',
-        strike: '185',
-        roi: 1.5,
-        dte: 45,
-        premium: 2.20,
-        pop: 75,
-        distance: 0.0,
-        delta: 0.30,
-        gamma: 0.005,
-        theta: -0.15,
-        vega: 0.18,
-        iv: 22.5,
-        capital: 220,
-        maxGain: 220,
-        maxLoss: 220,
-        breakeven: '185.00',
-        contractSize: 100,
-        underlyingPrice: 184.25,
-        volume: 320,
-        openInterest: 950,
-        bid: 2.00,
-        ask: 2.40,
+      })),
+    'call-credit-spread': symbols.slice(4, 5).map((symbol: string) => ({
+      ticker: symbol,
+      strike: selectedMarketType === MarketType.FUTURES_OPTIONS ? '4900/4950' : '490/495',
+      roi: 2.1,
+      dte: 21,
+      premium: selectedMarketType === MarketType.FUTURES_OPTIONS ? 1.25 : 1.25,
+      pop: 82,
+      distance: 1.0,
+      delta: 0.15,
+      gamma: 0.003,
+      theta: -0.08,
+      vega: 0.12,
+      iv: 16.5,
+      capital: selectedMarketType === MarketType.FUTURES_OPTIONS ? 5000 : 500,
+      maxGain: selectedMarketType === MarketType.FUTURES_OPTIONS ? 1250 : 125,
+      maxLoss: selectedMarketType === MarketType.FUTURES_OPTIONS ? 5000 : 500,
+      breakeven: selectedMarketType === MarketType.FUTURES_OPTIONS ? 4912.50 : 491.25,
+      contractSize: selectedMarketType === MarketType.FUTURES_OPTIONS ? 50 : 100,
+      underlyingPrice: selectedMarketType === MarketType.FUTURES_OPTIONS ? 4856.70 : 485.67,
+      volume: 850,
+      openInterest: 2100,
+      bid: selectedMarketType === MarketType.FUTURES_OPTIONS ? 1.15 : 1.15,
+      ask: selectedMarketType === MarketType.FUTURES_OPTIONS ? 1.35 : 1.35,
+      lastTrade: new Date().toISOString(),
+      strategy: 'Call Credit Spread',
+      description: 'Call Credit Spread - Sell call, buy higher call, profit from sideways/declining price'
+    })),
+    'put-credit-spread': symbols.slice(5, 6).map((symbol: string) => ({
+      ticker: symbol,
+      strike: selectedMarketType === MarketType.FUTURES_OPTIONS ? '4050/4000' : '405/400',
+      roi: 1.8,
+      dte: 21,
+      premium: selectedMarketType === MarketType.FUTURES_OPTIONS ? 0.90 : 0.90,
+      pop: 80,
+      distance: 1.5,
+      delta: -0.20,
+      gamma: 0.004,
+      theta: -0.06,
+      vega: 0.10,
+      iv: 17.2,
+      capital: selectedMarketType === MarketType.FUTURES_OPTIONS ? 5000 : 500,
+      maxGain: selectedMarketType === MarketType.FUTURES_OPTIONS ? 900 : 90,
+      maxLoss: selectedMarketType === MarketType.FUTURES_OPTIONS ? 5000 : 500,
+      breakeven: selectedMarketType === MarketType.FUTURES_OPTIONS ? 4041.00 : 404.10,
+      contractSize: selectedMarketType === MarketType.FUTURES_OPTIONS ? 50 : 100,
+      underlyingPrice: selectedMarketType === MarketType.FUTURES_OPTIONS ? 4123.40 : 412.34,
+      volume: 650,
+      openInterest: 1800,
+      bid: selectedMarketType === MarketType.FUTURES_OPTIONS ? 0.80 : 0.80,
+      ask: selectedMarketType === MarketType.FUTURES_OPTIONS ? 1.00 : 1.00,
+      lastTrade: new Date().toISOString(),
+      strategy: 'Put Credit Spread',
+      description: 'Put Credit Spread - Sell put, buy lower put, profit from sideways/rising price'
+    })),
+    'call-calendar-spread': symbols.slice(6, 7).map((symbol: string) => ({
+      ticker: symbol,
+      strike: selectedMarketType === MarketType.FUTURES_OPTIONS ? '1850' : '185',
+      roi: 1.5,
+      dte: 45,
+      premium: selectedMarketType === MarketType.FUTURES_OPTIONS ? 2.20 : 2.20,
+      pop: 75,
+      distance: 0.0,
+      delta: 0.30,
+      gamma: 0.005,
+      theta: -0.15,
+      vega: 0.18,
+      iv: 22.5,
+      capital: selectedMarketType === MarketType.FUTURES_OPTIONS ? 2200 : 220,
+      maxGain: selectedMarketType === MarketType.FUTURES_OPTIONS ? 2200 : 220,
+      maxLoss: selectedMarketType === MarketType.FUTURES_OPTIONS ? 2200 : 220,
+      breakeven: selectedMarketType === MarketType.FUTURES_OPTIONS ? '1850.00' : '185.00',
+      contractSize: selectedMarketType === MarketType.FUTURES_OPTIONS ? 50 : 100,
+      underlyingPrice: selectedMarketType === MarketType.FUTURES_OPTIONS ? 1842.50 : 184.25,
+      volume: 320,
+      openInterest: 950,
+      bid: selectedMarketType === MarketType.FUTURES_OPTIONS ? 2.00 : 2.00,
+      ask: selectedMarketType === MarketType.FUTURES_OPTIONS ? 2.40 : 2.40,
         lastTrade: new Date().toISOString(),
         strategy: 'Call Calendar Spread',
         description: 'Call Calendar Spread - Sell short-term call, buy long-term call, profit from time decay'
-      }
-    ],
-    'put-calendar-spread': [
-      {
-        ticker: 'SPY',
-        strike: '480',
-        roi: 1.3,
-        dte: 45,
-        premium: 1.80,
-        pop: 73,
-        distance: 0.0,
-        delta: -0.25,
-        gamma: 0.004,
-        theta: -0.12,
-        vega: 0.15,
-        iv: 19.8,
-        capital: 180,
-        maxGain: 180,
-        maxLoss: 180,
-        breakeven: '480.00',
-        contractSize: 100,
-        underlyingPrice: 485.67,
-        volume: 280,
-        openInterest: 750,
-        bid: 1.60,
-        ask: 2.00,
-        lastTrade: new Date().toISOString(),
-        strategy: 'Put Calendar Spread',
-        description: 'Put Calendar Spread - Sell short-term put, buy long-term put, profit from time decay'
-      }
-    ]
+      })),
+    'put-calendar-spread': symbols.slice(7, 8).map((symbol: string) => ({
+      ticker: symbol,
+      strike: selectedMarketType === MarketType.FUTURES_OPTIONS ? '4800' : '480',
+      roi: 1.3,
+      dte: 45,
+      premium: selectedMarketType === MarketType.FUTURES_OPTIONS ? 1.80 : 1.80,
+      pop: 73,
+      distance: 0.0,
+      delta: -0.25,
+      gamma: 0.004,
+      theta: -0.12,
+      vega: 0.15,
+      iv: 19.8,
+      capital: selectedMarketType === MarketType.FUTURES_OPTIONS ? 1800 : 180,
+      maxGain: selectedMarketType === MarketType.FUTURES_OPTIONS ? 1800 : 180,
+      maxLoss: selectedMarketType === MarketType.FUTURES_OPTIONS ? 1800 : 180,
+      breakeven: selectedMarketType === MarketType.FUTURES_OPTIONS ? '4800.00' : '480.00',
+      contractSize: selectedMarketType === MarketType.FUTURES_OPTIONS ? 50 : 100,
+      underlyingPrice: selectedMarketType === MarketType.FUTURES_OPTIONS ? 4856.70 : 485.67,
+      volume: 280,
+      openInterest: 750,
+      bid: selectedMarketType === MarketType.FUTURES_OPTIONS ? 1.60 : 1.60,
+      ask: selectedMarketType === MarketType.FUTURES_OPTIONS ? 2.00 : 2.00,
+      lastTrade: new Date().toISOString(),
+      strategy: 'Put Calendar Spread',
+      description: 'Put Calendar Spread - Sell short-term put, buy long-term put, profit from time decay'
+    }))
   }
 
-    // Filter based on market type
-    switch (selectedMarketType) {
-      case MarketType.EQUITY_OPTIONS:
-        return {
-          ...baseOpportunities,
-          'CSP': baseOpportunities.CSP.filter(opp => 
-            ['SPY', 'QQQ', 'AAPL', 'TSLA', 'MSFT', 'AMZN', 'GOOGL', 'META', 'NVDA'].includes(opp.ticker)
-          ),
-          'covered-call': baseOpportunities['covered-call'].filter(opp => 
-            ['AAPL', 'MSFT', 'AMZN', 'GOOGL', 'META', 'NVDA', 'TSLA'].includes(opp.ticker)
-          ),
-          'straddle': baseOpportunities.straddle.filter(opp => 
-            ['TSLA', 'NVDA', 'AAPL', 'MSFT'].includes(opp.ticker)
-          ),
-          'strangle': baseOpportunities.strangle.filter(opp => 
-            ['TSLA', 'NVDA', 'AAPL', 'MSFT'].includes(opp.ticker)
-          ),
-          'condor': baseOpportunities.condor.filter(opp => 
-            ['SPY', 'QQQ', 'AAPL', 'TSLA'].includes(opp.ticker)
-          ),
-          'call-credit-spread': baseOpportunities['call-credit-spread'].filter(opp => 
-            ['SPY', 'QQQ', 'AAPL', 'TSLA', 'MSFT', 'NVDA'].includes(opp.ticker)
-          ),
-          'put-credit-spread': baseOpportunities['put-credit-spread'].filter(opp => 
-            ['SPY', 'QQQ', 'AAPL', 'TSLA', 'MSFT', 'NVDA'].includes(opp.ticker)
-          ),
-          'call-calendar-spread': baseOpportunities['call-calendar-spread'].filter(opp => 
-            ['AAPL', 'MSFT', 'TSLA', 'NVDA'].includes(opp.ticker)
-          ),
-          'put-calendar-spread': baseOpportunities['put-calendar-spread'].filter(opp => 
-            ['SPY', 'QQQ', 'AAPL', 'TSLA'].includes(opp.ticker)
-          )
-        }
-      case MarketType.INDEX_OPTIONS:
-        return {
-          'CSP': baseOpportunities.CSP.filter(opp => 
-            ['SPY', 'QQQ', 'IWM', 'DIA'].includes(opp.ticker)
-          ),
-          'covered-call': [],
-          'straddle': [],
-          'strangle': [],
-          'condor': baseOpportunities.condor.filter(opp => 
-            ['SPY', 'QQQ', 'IWM', 'DIA'].includes(opp.ticker)
-          )
-        }
-      case MarketType.FUTURES_OPTIONS:
-        return {
-          'CSP': [],
-          'covered-call': [],
-          'straddle': [],
-          'strangle': [],
-          'condor': []
-        }
-      default:
-        return baseOpportunities
-    }
+    // Return opportunities based on selected market type (already filtered by symbols array)
+    return baseOpportunities
   }
 
   const opportunities = getFilteredOpportunities()
