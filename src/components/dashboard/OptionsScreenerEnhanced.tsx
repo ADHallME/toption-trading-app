@@ -100,18 +100,25 @@ interface ScreenerResult {
   source?: string
 }
 
-// Fuzzy search function
-const fuzzySearch = (query: string, items: string[]): string[] => {
+// Enhanced fuzzy search function for ticker objects
+const fuzzySearch = (query: string, items: any[]): any[] => {
   if (!query) return items
   
   const queryLower = query.toLowerCase()
   return items.filter(item => {
-    const itemLower = item.toLowerCase()
-    return itemLower.includes(queryLower) || 
-           itemLower.split('').some((char, i) => {
+    const symbolLower = item.symbol.toLowerCase()
+    const nameLower = item.name.toLowerCase()
+    const typeLower = item.type.toLowerCase()
+    
+    // Search in symbol, name, and type
+    return symbolLower.includes(queryLower) || 
+           nameLower.includes(queryLower) ||
+           typeLower.includes(queryLower) ||
+           // Fuzzy matching for symbol
+           symbolLower.split('').some((char, i) => {
              let queryIndex = 0
-             for (let j = i; j < itemLower.length && queryIndex < queryLower.length; j++) {
-               if (itemLower[j] === queryLower[queryIndex]) {
+             for (let j = i; j < symbolLower.length && queryIndex < queryLower.length; j++) {
+               if (symbolLower[j] === queryLower[queryIndex]) {
                  queryIndex++
                }
              }
@@ -199,17 +206,85 @@ const OptionsScreenerEnhanced: React.FC<{ marketType?: 'equity' | 'index' | 'fut
     'Ratio Spread'
   ]
 
-  // Market-specific tickers
+  // Market-specific tickers with company names and asset classes
   const getMarketTickers = () => {
+    const equityTickers = [
+      { symbol: 'SPY', name: 'SPDR S&P 500 ETF', type: 'ETF' },
+      { symbol: 'QQQ', name: 'Invesco QQQ Trust', type: 'ETF' },
+      { symbol: 'AAPL', name: 'Apple Inc.', type: 'Stock' },
+      { symbol: 'MSFT', name: 'Microsoft Corporation', type: 'Stock' },
+      { symbol: 'AMZN', name: 'Amazon.com Inc.', type: 'Stock' },
+      { symbol: 'GOOGL', name: 'Alphabet Inc. Class A', type: 'Stock' },
+      { symbol: 'META', name: 'Meta Platforms Inc.', type: 'Stock' },
+      { symbol: 'NVDA', name: 'NVIDIA Corporation', type: 'Stock' },
+      { symbol: 'TSLA', name: 'Tesla Inc.', type: 'Stock' },
+      { symbol: 'JPM', name: 'JPMorgan Chase & Co.', type: 'Stock' },
+      { symbol: 'BAC', name: 'Bank of America Corp.', type: 'Stock' },
+      { symbol: 'XLF', name: 'Financial Select Sector SPDR Fund', type: 'ETF' },
+      { symbol: 'GS', name: 'Goldman Sachs Group Inc.', type: 'Stock' },
+      { symbol: 'AMD', name: 'Advanced Micro Devices Inc.', type: 'Stock' },
+      { symbol: 'INTC', name: 'Intel Corporation', type: 'Stock' },
+      { symbol: 'NFLX', name: 'Netflix Inc.', type: 'Stock' },
+      { symbol: 'DIS', name: 'Walt Disney Company', type: 'Stock' },
+      { symbol: 'PBR', name: 'Petróleo Brasileiro S.A. - Petrobras', type: 'Stock' },
+      { symbol: 'PBR.A', name: 'Petróleo Brasileiro S.A. - Petrobras Class A', type: 'Stock' },
+      { symbol: 'XOM', name: 'Exxon Mobil Corporation', type: 'Stock' },
+      { symbol: 'CVX', name: 'Chevron Corporation', type: 'Stock' },
+      { symbol: 'PFE', name: 'Pfizer Inc.', type: 'Stock' },
+      { symbol: 'JNJ', name: 'Johnson & Johnson', type: 'Stock' },
+      { symbol: 'PG', name: 'Procter & Gamble Company', type: 'Stock' },
+      { symbol: 'KO', name: 'Coca-Cola Company', type: 'Stock' },
+      { symbol: 'PEP', name: 'PepsiCo Inc.', type: 'Stock' },
+      { symbol: 'WMT', name: 'Walmart Inc.', type: 'Stock' },
+      { symbol: 'HD', name: 'Home Depot Inc.', type: 'Stock' },
+      { symbol: 'V', name: 'Visa Inc.', type: 'Stock' },
+      { symbol: 'MA', name: 'Mastercard Inc.', type: 'Stock' }
+    ]
+    
+    const indexTickers = [
+      { symbol: 'SPX', name: 'S&P 500 Index', type: 'Index' },
+      { symbol: 'NDX', name: 'NASDAQ 100 Index', type: 'Index' },
+      { symbol: 'VIX', name: 'CBOE Volatility Index', type: 'Index' },
+      { symbol: 'DJX', name: 'Dow Jones Industrial Average', type: 'Index' },
+      { symbol: 'RUT', name: 'Russell 2000 Index', type: 'Index' },
+      { symbol: 'IWM', name: 'iShares Russell 2000 ETF', type: 'ETF' },
+      { symbol: 'DIA', name: 'SPDR Dow Jones Industrial Average ETF', type: 'ETF' },
+      { symbol: 'XLK', name: 'Technology Select Sector SPDR Fund', type: 'ETF' },
+      { symbol: 'XLE', name: 'Energy Select Sector SPDR Fund', type: 'ETF' },
+      { symbol: 'XLV', name: 'Health Care Select Sector SPDR Fund', type: 'ETF' },
+      { symbol: 'XLI', name: 'Industrial Select Sector SPDR Fund', type: 'ETF' },
+      { symbol: 'XLY', name: 'Consumer Discretionary Select Sector SPDR Fund', type: 'ETF' },
+      { symbol: 'XLU', name: 'Utilities Select Sector SPDR Fund', type: 'ETF' },
+      { symbol: 'XLP', name: 'Consumer Staples Select Sector SPDR Fund', type: 'ETF' }
+    ]
+    
+    const futuresTickers = [
+      { symbol: 'ES', name: 'E-mini S&P 500 Futures', type: 'Future' },
+      { symbol: 'NQ', name: 'E-mini NASDAQ-100 Futures', type: 'Future' },
+      { symbol: 'YM', name: 'E-mini Dow Jones Industrial Average Futures', type: 'Future' },
+      { symbol: 'RTY', name: 'E-mini Russell 2000 Futures', type: 'Future' },
+      { symbol: 'CL', name: 'Crude Oil Futures', type: 'Future' },
+      { symbol: 'GC', name: 'Gold Futures', type: 'Future' },
+      { symbol: 'NG', name: 'Natural Gas Futures', type: 'Future' },
+      { symbol: 'SI', name: 'Silver Futures', type: 'Future' },
+      { symbol: 'ZC', name: 'Corn Futures', type: 'Future' },
+      { symbol: 'ZS', name: 'Soybean Futures', type: 'Future' },
+      { symbol: 'ZW', name: 'Wheat Futures', type: 'Future' },
+      { symbol: 'KC', name: 'Coffee Futures', type: 'Future' },
+      { symbol: 'CC', name: 'Cocoa Futures', type: 'Future' },
+      { symbol: 'SB', name: 'Sugar Futures', type: 'Future' },
+      { symbol: 'CT', name: 'Cotton Futures', type: 'Future' }
+    ]
+    
     switch (marketType) {
       case 'equity':
-        return ['SPY', 'QQQ', 'AAPL', 'MSFT', 'AMZN', 'GOOGL', 'META', 'NVDA', 'TSLA', 'JPM', 'BAC', 'XLF', 'GS', 'AMD', 'INTC', 'NFLX', 'DIS', 'PBR', 'XOM', 'CVX']
+        return equityTickers
       case 'index':
-        return ['SPX', 'NDX', 'VIX', 'DJX', 'RUT', 'IWM', 'DIA', 'XLF', 'XLK', 'XLE', 'XLV', 'XLI', 'XLY', 'XLU', 'XLP']
+        return indexTickers
       case 'futures':
-        return ['ES', 'NQ', 'YM', 'RTY', 'CL', 'GC', 'NG', 'SI', 'ZC', 'ZS', 'ZW', 'KC', 'CC', 'SB', 'CT']
+        return futuresTickers
       default:
-        return ['SPY', 'QQQ', 'AAPL', 'MSFT', 'AMZN', 'GOOGL', 'META', 'NVDA', 'TSLA', 'PBR']
+        return equityTickers
     }
   }
   
@@ -502,15 +577,25 @@ const OptionsScreenerEnhanced: React.FC<{ marketType?: 'equity' | 'index' | 'fut
                 <div className="absolute top-full left-0 right-0 bg-gray-800 border border-gray-700 rounded-b mt-1 max-h-40 overflow-y-auto z-10">
                   {searchResults.slice(0, 8).map(ticker => (
                     <div
-                      key={ticker}
-                      onClick={() => addTickerFromSearch(ticker)}
+                      key={ticker.symbol}
+                      onClick={() => addTickerFromSearch(ticker.symbol)}
                       className="px-3 py-2 hover:bg-gray-700 cursor-pointer text-sm text-white flex items-center justify-between"
                     >
-                      <span>{ticker}</span>
+                      <div className="flex flex-col">
+                        <div className="flex items-center gap-2">
+                          <span className="font-semibold text-blue-400">{ticker.symbol}</span>
+                          <span className="text-xs px-1 py-0.5 bg-gray-700 rounded text-gray-300">
+                            {ticker.type}
+                          </span>
+                        </div>
+                        <span className="text-xs text-gray-400 truncate max-w-xs">
+                          {ticker.name}
+                        </span>
+                      </div>
                       <button
                         onClick={(e) => {
                           e.stopPropagation()
-                          addTickerFromSearch(ticker)
+                          addTickerFromSearch(ticker.symbol)
                         }}
                         className="text-blue-400 hover:text-blue-300"
                       >
@@ -549,13 +634,15 @@ const OptionsScreenerEnhanced: React.FC<{ marketType?: 'equity' | 'index' | 'fut
         <div>
           <label className="text-xs text-gray-400 block mb-1">Quick Add</label>
           <div className="flex flex-wrap gap-1">
-            {popularTickers.filter(t => !filters.tickers.includes(t)).map(ticker => (
+            {popularTickers.filter(t => !filters.tickers.includes(t.symbol)).map(ticker => (
               <button
-                key={ticker}
-                onClick={() => setFilters(prev => ({ ...prev, tickers: [...prev.tickers, ticker] }))}
-                className="px-2 py-1 bg-gray-800 hover:bg-gray-700 rounded text-xs"
+                key={ticker.symbol}
+                onClick={() => setFilters(prev => ({ ...prev, tickers: [...prev.tickers, ticker.symbol] }))}
+                className="px-2 py-1 bg-gray-800 hover:bg-gray-700 rounded text-xs flex items-center gap-1"
+                title={`${ticker.name} (${ticker.type})`}
               >
-                {ticker}
+                <span>{ticker.symbol}</span>
+                <span className="text-gray-500 text-xs">({ticker.type})</span>
               </button>
             ))}
           </div>
@@ -692,9 +779,16 @@ const OptionsScreenerEnhanced: React.FC<{ marketType?: 'equity' | 'index' | 'fut
                   <th className="text-right py-2 px-3 cursor-pointer hover:bg-gray-700" onClick={() => handleSort('openInterest')}>
                     OI <SortIcon column="openInterest" />
                   </th>
+                  <th className="text-right py-2 px-3 cursor-pointer hover:bg-gray-700" onClick={() => handleSort('theta')}>
+                    Theta <SortIcon column="theta" />
+                  </th>
+                  <th className="text-right py-2 px-3 cursor-pointer hover:bg-gray-700" onClick={() => handleSort('vega')}>
+                    Vega <SortIcon column="vega" />
+                  </th>
                   <th className="text-right py-2 px-3">
                     Spread Width
                   </th>
+                  <th className="text-center py-2 px-3">Charts</th>
                   <th className="text-center py-2 px-3">Actions</th>
                 </tr>
               </thead>
@@ -735,10 +829,33 @@ const OptionsScreenerEnhanced: React.FC<{ marketType?: 'equity' | 'index' | 'fut
                       <td className="text-right py-2 px-3">{result.volume.toLocaleString()}</td>
                       <td className="text-right py-2 px-3">{result.openInterest.toLocaleString()}</td>
                       <td className="text-right py-2 px-3">
+                        <span className={result.theta < 0 ? 'text-red-400' : 'text-green-400'}>
+                          {result.theta ? result.theta.toFixed(3) : 'N/A'}
+                        </span>
+                      </td>
+                      <td className="text-right py-2 px-3">
+                        {result.vega ? result.vega.toFixed(3) : 'N/A'}
+                      </td>
+                      <td className="text-right py-2 px-3">
                         {result.strategy.includes('Spread') || result.strategy.includes('Condor') || result.strategy.includes('Butterfly') 
                           ? `${(result.ask - result.bid).toFixed(2)}` 
                           : 'N/A'
                         }
+                      </td>
+                      <td className="text-center py-2 px-3">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            // TODO: Implement chart functionality
+                            console.log('View chart for', result.symbol)
+                          }}
+                          className="p-1 text-blue-400 hover:text-blue-300"
+                          title="View Chart"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                          </svg>
+                        </button>
                       </td>
                       <td className="text-center py-2 px-3">
                         <button
@@ -761,7 +878,7 @@ const OptionsScreenerEnhanced: React.FC<{ marketType?: 'equity' | 'index' | 'fut
                     {/* Expanded Row with Greeks */}
                     {expandedRows.has(result.symbol) && (
                       <tr className="bg-gray-800/20 border-b border-gray-800">
-                        <td colSpan={13} className="p-3">
+                        <td colSpan={16} className="p-3">
                           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs">
                             <div>
                               <span className="text-gray-500">Delta:</span>
