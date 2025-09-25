@@ -400,4 +400,3 @@ const ChartPopup: React.FC<ChartPopupProps> = ({
 }
 
 export default ChartPopup
-// Trigger new deployment
