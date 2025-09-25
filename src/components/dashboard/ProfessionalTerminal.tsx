@@ -161,7 +161,7 @@ const generateChartData = (days: number) => {
 }
 
 // Strategy opportunity card with expandable details
-const StrategyCard = ({ strategy, opportunities, onAddToWatchlist }: { strategy: string; opportunities: any[]; onAddToWatchlist: (opp: any) => void }) => {
+const StrategyCard = ({ strategy, opportunities, onAddToWatchlist, onViewDetails }: { strategy: string; opportunities: any[]; onAddToWatchlist: (opp: any) => void; onViewDetails: (opp: any) => void }) => {
   const [expandedCards, setExpandedCards] = useState<Set<number>>(new Set())
   
   const getStrategyColor = (strat: string) => {
@@ -350,24 +350,7 @@ const StrategyCard = ({ strategy, opportunities, onAddToWatchlist }: { strategy:
                   <button 
                     onClick={(e) => {
                       e.stopPropagation()
-                      setChartPopup({
-                        isOpen: true,
-                        symbol: opp.ticker,
-                        companyName: `${opp.ticker} Inc.`,
-                        currentPrice: opp.stockPrice || 100,
-                        change: (Math.random() - 0.5) * 10,
-                        changePercent: (Math.random() - 0.5) * 5,
-                        exchange: 'NYSE',
-                        marketCap: Math.random() * 1000000000000,
-                        peRatio: Math.random() * 50 + 10,
-                        eps: Math.random() * 10 + 1,
-                        founded: 2000 + Math.floor(Math.random() * 20),
-                        employees: Math.floor(Math.random() * 100000) + 10000,
-                        ceo: 'John Smith',
-                        website: `${opp.ticker.toLowerCase()}.com`,
-                        description: `${opp.ticker} is a leading company in its industry, providing innovative solutions and services to customers worldwide.`,
-                        coverageStart: '01-01-2020'
-                      })
+                      onViewDetails(opp)
                     }}
                     className="flex-1 bg-gray-600 hover:bg-gray-700 text-white text-xs py-1 px-2 rounded transition-colors"
                   >
@@ -650,6 +633,28 @@ export default function ProfessionalTerminal() {
   
   const isInWatchlist = (opportunityId: string) => {
     return watchlist.some(item => item.id === opportunityId)
+  }
+
+  // Handler for viewing opportunity details
+  const handleViewDetails = (opp: any) => {
+    setChartPopup({
+      isOpen: true,
+      symbol: opp.ticker,
+      companyName: `${opp.ticker} Inc.`,
+      currentPrice: opp.stockPrice || 100,
+      change: (Math.random() - 0.5) * 10,
+      changePercent: (Math.random() - 0.5) * 5,
+      exchange: 'NYSE',
+      marketCap: Math.random() * 1000000000000,
+      peRatio: Math.random() * 50 + 10,
+      eps: Math.random() * 10 + 1,
+      founded: 2000 + Math.floor(Math.random() * 20),
+      employees: Math.floor(Math.random() * 100000) + 10000,
+      ceo: 'John Smith',
+      website: `${opp.ticker.toLowerCase()}.com`,
+      description: `${opp.ticker} is a leading company in its industry, providing innovative solutions and services to customers worldwide.`,
+      coverageStart: '01-01-2020'
+    })
   }
   
   // Filter opportunities based on selected market type
@@ -1619,7 +1624,7 @@ export default function ProfessionalTerminal() {
                   <div className="p-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                       {Object.entries(opportunities).map(([strategy, opps]) => (
-                        <StrategyCard key={strategy} strategy={strategy} opportunities={opps} onAddToWatchlist={addToWatchlist} />
+                        <StrategyCard key={strategy} strategy={strategy} opportunities={opps} onAddToWatchlist={addToWatchlist} onViewDetails={handleViewDetails} />
                       ))}
                     </div>
                   </div>
