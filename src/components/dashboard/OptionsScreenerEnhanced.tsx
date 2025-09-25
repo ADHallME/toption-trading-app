@@ -129,8 +129,21 @@ const fuzzySearch = (query: string, items: any[]): any[] => {
 }
 
 const OptionsScreenerEnhanced: React.FC<{ marketType?: 'equity' | 'index' | 'futures' }> = ({ marketType = 'equity' }) => {
-  // Initialize with high ROI opportunity tickers across all stocks
-  const defaultTickers = ['AAPL', 'TSLA', 'NVDA', 'MSFT', 'AMZN', 'GOOGL', 'META', 'NFLX', 'AMD', 'INTC']
+  // Initialize with high ROI opportunity tickers based on market type
+  const getDefaultTickers = (marketType: string) => {
+    switch (marketType) {
+      case 'equity':
+        return ['AAPL', 'TSLA', 'NVDA', 'MSFT', 'AMZN', 'GOOGL', 'META', 'NFLX', 'AMD', 'INTC']
+      case 'index':
+        return ['SPY', 'QQQ', 'IWM', 'DIA', 'XLK', 'XLE', 'XLV', 'XLI', 'XLY', 'XLU']
+      case 'futures':
+        return ['ES', 'NQ', 'YM', 'RTY', 'CL', 'GC', 'NG', 'SI', 'ZC', 'ZS']
+      default:
+        return ['AAPL', 'TSLA', 'NVDA', 'MSFT', 'AMZN', 'GOOGL', 'META', 'NFLX', 'AMD', 'INTC']
+    }
+  }
+  
+  const defaultTickers = getDefaultTickers(marketType)
   
   const [filters, setFilters] = useState<ScreenerFilters>({
     strategy: 'Cash Secured Put',
