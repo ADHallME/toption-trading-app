@@ -161,7 +161,7 @@ const generateChartData = (days: number) => {
 }
 
 // Strategy opportunity card with expandable details
-const StrategyCard = ({ strategy, opportunities }: { strategy: string; opportunities: any[] }) => {
+const StrategyCard = ({ strategy, opportunities, onAddToWatchlist }: { strategy: string; opportunities: any[]; onAddToWatchlist: (opp: any) => void }) => {
   const [expandedCards, setExpandedCards] = useState<Set<number>>(new Set())
   
   const getStrategyColor = (strat: string) => {
@@ -341,7 +341,7 @@ const StrategyCard = ({ strategy, opportunities }: { strategy: string; opportuni
                   <button 
                     onClick={(e) => {
                       e.stopPropagation()
-                      addToWatchlist(opp)
+                      onAddToWatchlist(opp)
                     }}
                     className="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-xs py-1 px-2 rounded transition-colors"
                   >
@@ -1619,7 +1619,7 @@ export default function ProfessionalTerminal() {
                   <div className="p-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                       {Object.entries(opportunities).map(([strategy, opps]) => (
-                        <StrategyCard key={strategy} strategy={strategy} opportunities={opps} />
+                        <StrategyCard key={strategy} strategy={strategy} opportunities={opps} onAddToWatchlist={addToWatchlist} />
                       ))}
                     </div>
                   </div>
