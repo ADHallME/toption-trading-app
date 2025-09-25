@@ -189,7 +189,7 @@ const OptionsScreenerEnhanced: React.FC<{ marketType?: 'equity' | 'index' | 'fut
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false)
   const [screenedWatchlist, setScreenedWatchlist] = useState<ScreenerResult[]>([])
   const [searchQuery, setSearchQuery] = useState('')
-  const [searchResults, setSearchResults] = useState<string[]>([])
+  const [searchResults, setSearchResults] = useState<any[]>([])
   
   const strategyOptions = [
     'Cash Secured Put',
