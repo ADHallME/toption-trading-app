@@ -1024,6 +1024,35 @@ export default function ProfessionalTerminal() {
     ).slice(0, 8)
   }
 
+  // Watchlist functions
+  const addToWatchlist = (opportunity: any) => {
+    const watchlistItem = {
+      ...opportunity,
+      starredAt: new Date().toISOString()
+    }
+    setWatchlist(prev => [...prev, watchlistItem])
+  }
+
+  const removeFromWatchlist = (id: string) => {
+    setWatchlist(prev => prev.filter(item => item.id !== id))
+  }
+
+  const moveToHistorical = (id: string) => {
+    const item = watchlist.find(item => item.id === id)
+    if (item) {
+      const historicalItem = {
+        ...item,
+        expiredAt: new Date().toISOString()
+      }
+      setHistorical(prev => [...prev, historicalItem])
+      removeFromWatchlist(id)
+    }
+  }
+
+  const isInWatchlist = (id: string) => {
+    return watchlist.some(item => item.id === id)
+  }
+
   return (
     <div className="min-h-screen bg-gray-950 text-gray-100 flex flex-col">
       {/* Professional Terminal Header */}
