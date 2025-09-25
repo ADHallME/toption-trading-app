@@ -538,11 +538,29 @@ export default function ProfessionalTerminal() {
   const { opportunities: aiOpportunities, loading: opportunitiesLoading, lastUpdated } = useAIOpportunities(getMarketTypeString())
   const { options: topROIOptions, loading: optionsLoading } = useOptionsChain(selectedTicker, 'put', 60)
 
-  // Enhanced search effect for Top ROI
+  // Enhanced search effect for Top ROI - using Polygon API for full universe
   useEffect(() => {
-    if (chainSearchQuery) {
-      const results = fuzzySearch(chainSearchQuery, popularTickers)
-      setSearchResults(results)
+    if (chainSearchQuery && chainSearchQuery.length >= 2) {
+      const searchTickers = async () => {
+        try {
+          const response = await fetch(`/api/ticker-search?ticker=${encodeURIComponent(chainSearchQuery)}`)
+          if (response.ok) {
+            const data = await response.json()
+            setSearchResults(data.results || [])
+          } else {
+            // Fallback to local search if API fails
+            const results = fuzzySearch(chainSearchQuery, popularTickers)
+            setSearchResults(results)
+          }
+        } catch (error) {
+          console.error('Ticker search error:', error)
+          // Fallback to local search
+          const results = fuzzySearch(chainSearchQuery, popularTickers)
+          setSearchResults(results)
+        }
+      }
+      
+      searchTickers()
     } else {
       setSearchResults([])
     }
@@ -1603,10 +1621,20 @@ export default function ProfessionalTerminal() {
                                     <span className="text-xs px-1 py-0.5 bg-gray-700 rounded text-gray-300">
                                       {ticker.type}
                                     </span>
+                                    {ticker.primary_exchange && (
+                                      <span className="text-xs px-1 py-0.5 bg-blue-900/30 rounded text-blue-300">
+                                        {ticker.primary_exchange}
+                                      </span>
+                                    )}
                                   </div>
                                   <span className="text-xs text-gray-400 truncate max-w-xs">
                                     {ticker.name}
                                   </span>
+                                  {ticker.market && (
+                                    <span className="text-xs text-gray-500">
+                                      {ticker.market} • {ticker.currency_name || 'USD'}
+                                    </span>
+                                  )}
                                 </div>
                               </button>
                             ))

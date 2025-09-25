@@ -318,11 +318,29 @@ const OptionsScreenerEnhanced: React.FC<{ marketType?: 'equity' | 'index' | 'fut
   
   const popularTickers = getMarketTickers()
   
-  // Fuzzy search effect - using local search for now
+  // Enhanced search effect - using Polygon API for full universe
   useEffect(() => {
     if (searchQuery && searchQuery.length >= 2) {
-      const results = fuzzySearch(searchQuery, popularTickers)
-      setSearchResults(results)
+      const searchTickers = async () => {
+        try {
+          const response = await fetch(`/api/ticker-search?ticker=${encodeURIComponent(searchQuery)}`)
+          if (response.ok) {
+            const data = await response.json()
+            setSearchResults(data.results || [])
+          } else {
+            // Fallback to local search if API fails
+            const results = fuzzySearch(searchQuery, popularTickers)
+            setSearchResults(results)
+          }
+        } catch (error) {
+          console.error('Ticker search error:', error)
+          // Fallback to local search
+          const results = fuzzySearch(searchQuery, popularTickers)
+          setSearchResults(results)
+        }
+      }
+      
+      searchTickers()
     } else {
       setSearchResults([])
     }
@@ -615,10 +633,20 @@ const OptionsScreenerEnhanced: React.FC<{ marketType?: 'equity' | 'index' | 'fut
                           <span className="text-xs px-1 py-0.5 bg-gray-700 rounded text-gray-300">
                             {ticker.type}
                           </span>
+                          {ticker.primary_exchange && (
+                            <span className="text-xs px-1 py-0.5 bg-blue-900/30 rounded text-blue-300">
+                              {ticker.primary_exchange}
+                            </span>
+                          )}
                         </div>
                         <span className="text-xs text-gray-400 truncate max-w-xs">
                           {ticker.name}
                         </span>
+                        {ticker.market && (
+                          <span className="text-xs text-gray-500">
+                            {ticker.market} • {ticker.currency_name || 'USD'}
+                          </span>
+                        )}
                       </div>
                       <button
                         onClick={(e) => {
