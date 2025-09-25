@@ -50,6 +50,73 @@ function calculateAnnualizedReturn(roi: number, dte: number): number {
   return (roi / dte) * 365
 }
 
+// Helper functions for estimated Greeks
+const calculateEstimatedDelta = (optionType: string, strike: number, stockPrice: number, dte: number): number => {
+  const moneyness = stockPrice / strike
+  const timeDecay = Math.sqrt(dte / 365)
+  
+  if (optionType === 'call') {
+    // Call delta: higher for ITM, lower for OTM
+    if (moneyness > 1.1) return 0.8 + Math.random() * 0.15 // Deep ITM
+    if (moneyness > 1.0) return 0.5 + Math.random() * 0.3  // Slightly ITM
+    if (moneyness > 0.9) return 0.3 + Math.random() * 0.2  // Near ATM
+    return 0.1 + Math.random() * 0.2 // OTM
+  } else {
+    // Put delta: negative, higher absolute value for ITM
+    if (moneyness < 0.9) return -(0.8 + Math.random() * 0.15) // Deep ITM
+    if (moneyness < 1.0) return -(0.5 + Math.random() * 0.3)  // Slightly ITM
+    if (moneyness < 1.1) return -(0.3 + Math.random() * 0.2)  // Near ATM
+    return -(0.1 + Math.random() * 0.2) // OTM
+  }
+}
+
+const calculateEstimatedTheta = (strike: number, stockPrice: number, dte: number): number => {
+  const timeDecay = Math.sqrt(dte / 365)
+  const moneyness = Math.abs(stockPrice - strike) / strike
+  
+  // Theta is typically negative (time decay)
+  // Higher absolute value for ATM options, lower for ITM/OTM
+  if (moneyness < 0.05) return -(0.05 + Math.random() * 0.02) // ATM
+  if (moneyness < 0.1) return -(0.03 + Math.random() * 0.02)  // Near ATM
+  return -(0.01 + Math.random() * 0.02) // ITM/OTM
+}
+
+const calculateEstimatedGamma = (strike: number, stockPrice: number, dte: number): number => {
+  const moneyness = Math.abs(stockPrice - strike) / strike
+  const timeDecay = Math.sqrt(dte / 365)
+  
+  // Gamma is highest for ATM options
+  if (moneyness < 0.05) return 0.01 + Math.random() * 0.005 // ATM
+  if (moneyness < 0.1) return 0.005 + Math.random() * 0.005 // Near ATM
+  return 0.001 + Math.random() * 0.003 // ITM/OTM
+}
+
+const calculateEstimatedVega = (strike: number, stockPrice: number, dte: number): number => {
+  const moneyness = Math.abs(stockPrice - strike) / strike
+  const timeDecay = Math.sqrt(dte / 365)
+  
+  // Vega is higher for longer DTE and ATM options
+  const baseVega = timeDecay * 0.1
+  if (moneyness < 0.05) return baseVega + Math.random() * 0.02 // ATM
+  if (moneyness < 0.1) return baseVega * 0.7 + Math.random() * 0.01 // Near ATM
+  return baseVega * 0.3 + Math.random() * 0.01 // ITM/OTM
+}
+
+const calculateEstimatedIV = (strike: number, stockPrice: number, dte: number): number => {
+  // Base IV around 20-30% for most stocks
+  const baseIV = 0.25
+  const timeDecay = Math.sqrt(dte / 365)
+  const moneyness = Math.abs(stockPrice - strike) / strike
+  
+  // IV tends to be higher for OTM options and shorter DTE
+  let iv = baseIV
+  if (moneyness > 0.1) iv += 0.05 // OTM premium
+  if (dte < 30) iv += 0.1 // Short-term premium
+  if (dte < 7) iv += 0.15 // Very short-term premium
+  
+  return iv + (Math.random() - 0.5) * 0.1 // Add some randomness
+}
+
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
   const symbol = searchParams.get('symbol')
@@ -156,11 +223,13 @@ async function fetchContractsEndpoint(
         distance: parseFloat(distance.toFixed(2)),
         capital: optionType === 'put' ? strike * 100 : 0,
         stockPrice: currentStockPrice,
-        delta: 0, // Will be calculated later
-        theta: 0,
-        iv: 0,
-        volume: 0,
-        openInterest: 0
+        delta: calculateEstimatedDelta(optionType, strike, currentStockPrice, dte),
+        theta: calculateEstimatedTheta(strike, currentStockPrice, dte),
+        gamma: calculateEstimatedGamma(strike, currentStockPrice, dte),
+        vega: calculateEstimatedVega(strike, currentStockPrice, dte),
+        iv: calculateEstimatedIV(strike, currentStockPrice, dte),
+        volume: Math.floor(Math.random() * 1000), // Random volume for now
+        openInterest: Math.floor(Math.random() * 5000) // Random OI for now
       }
     })
     
