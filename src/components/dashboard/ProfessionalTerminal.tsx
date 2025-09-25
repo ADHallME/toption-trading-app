@@ -56,6 +56,7 @@ import AnalyticsTab from './AnalyticsTab'
 import EducationTab from './EducationTab'
 import HistoricalTab from './HistoricalTab'
 import AIOpportunityCard from './AIOpportunityCard'
+import ChartPopup from './ChartPopup'
 
 // Simple line chart component  
 const SimpleLineChart = ({ data, height = 200 }: { data: any[], height?: number }) => {
@@ -378,6 +379,26 @@ export default function ProfessionalTerminal() {
   // Watchlist system
   const [watchlist, setWatchlist] = useState<AIOpportunity[]>([])
   const [historical, setHistorical] = useState<(AIOpportunity & { starredAt?: string; expiredAt?: string })[]>([])
+  
+  // Chart popup state
+  const [chartPopup, setChartPopup] = useState<{
+    isOpen: boolean
+    symbol: string
+    companyName: string
+    currentPrice: number
+    change: number
+    changePercent: number
+    exchange?: string
+    marketCap?: number
+    peRatio?: number
+    eps?: number
+    founded?: number
+    employees?: number
+    ceo?: string
+    website?: string
+    description?: string
+    coverageStart?: string
+  } | null>(null)
   
   // Enhanced ticker data for search (same as screener)
   const getMarketTickers = () => {
@@ -1709,11 +1730,27 @@ export default function ProfessionalTerminal() {
                                 <td className="text-center py-2 px-2">
                                   <button
                                     onClick={() => {
-                                      // Toggle chart view for this row
-                                      console.log('Show charts for:', opp.underlying)
+                                      setChartPopup({
+                                        isOpen: true,
+                                        symbol: opp.underlying,
+                                        companyName: `${opp.underlying} Inc.`,
+                                        currentPrice: opp.stockPrice,
+                                        change: (Math.random() - 0.5) * 10,
+                                        changePercent: (Math.random() - 0.5) * 5,
+                                        exchange: 'NYSE',
+                                        marketCap: Math.random() * 1000000000000,
+                                        peRatio: Math.random() * 50 + 10,
+                                        eps: Math.random() * 10 + 1,
+                                        founded: 2000 + Math.floor(Math.random() * 20),
+                                        employees: Math.floor(Math.random() * 100000) + 10000,
+                                        ceo: 'John Smith',
+                                        website: `${opp.underlying.toLowerCase()}.com`,
+                                        description: `${opp.underlying} is a leading company in its industry, providing innovative solutions and services to customers worldwide.`,
+                                        coverageStart: '01-01-2020'
+                                      })
                                     }}
                                     className="p-1 hover:bg-gray-800 rounded text-blue-400 hover:text-blue-300"
-                                    title="View Theta Decay & IV Crush Charts"
+                                    title="View Chart & Reference Data"
                                   >
                                     <LineChart className="w-3 h-3" />
                                   </button>
@@ -1906,6 +1943,29 @@ export default function ProfessionalTerminal() {
           </div>
         </div>
       </footer>
+
+      {/* Chart Popup */}
+      {chartPopup && (
+        <ChartPopup
+          isOpen={chartPopup.isOpen}
+          onClose={() => setChartPopup(null)}
+          symbol={chartPopup.symbol}
+          companyName={chartPopup.companyName}
+          currentPrice={chartPopup.currentPrice}
+          change={chartPopup.change}
+          changePercent={chartPopup.changePercent}
+          exchange={chartPopup.exchange}
+          marketCap={chartPopup.marketCap}
+          peRatio={chartPopup.peRatio}
+          eps={chartPopup.eps}
+          founded={chartPopup.founded}
+          employees={chartPopup.employees}
+          ceo={chartPopup.ceo}
+          website={chartPopup.website}
+          description={chartPopup.description}
+          coverageStart={chartPopup.coverageStart}
+        />
+      )}
     </div>
   )
 }

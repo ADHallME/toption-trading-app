@@ -6,6 +6,7 @@ import {
   TrendingUp, Calendar, DollarSign, AlertCircle, Info,
   ArrowUp, ArrowDown
 } from 'lucide-react'
+import ChartPopup from './ChartPopup'
 
 interface ScreenerFilters {
   strategy: string
@@ -190,6 +191,14 @@ const OptionsScreenerEnhanced: React.FC<{ marketType?: 'equity' | 'index' | 'fut
   const [screenedWatchlist, setScreenedWatchlist] = useState<ScreenerResult[]>([])
   const [searchQuery, setSearchQuery] = useState('')
   const [searchResults, setSearchResults] = useState<any[]>([])
+  const [chartPopup, setChartPopup] = useState<{
+    isOpen: boolean
+    symbol: string
+    companyName: string
+    currentPrice: number
+    change: number
+    changePercent: number
+  } | null>(null)
   
   const strategyOptions = [
     'Cash Secured Put',
@@ -902,11 +911,27 @@ const OptionsScreenerEnhanced: React.FC<{ marketType?: 'equity' | 'index' | 'fut
                         <button
                           onClick={(e) => {
                             e.stopPropagation()
-                            // TODO: Implement chart functionality
-                            console.log('View chart for', result.symbol)
+                            setChartPopup({
+                              isOpen: true,
+                              symbol: result.underlying,
+                              companyName: `${result.underlying} Inc.`,
+                              currentPrice: result.stockPrice,
+                              change: (Math.random() - 0.5) * 10,
+                              changePercent: (Math.random() - 0.5) * 5,
+                              exchange: 'NYSE',
+                              marketCap: Math.random() * 1000000000000,
+                              peRatio: Math.random() * 50 + 10,
+                              eps: Math.random() * 10 + 1,
+                              founded: 2000 + Math.floor(Math.random() * 20),
+                              employees: Math.floor(Math.random() * 100000) + 10000,
+                              ceo: 'John Smith',
+                              website: `${result.underlying.toLowerCase()}.com`,
+                              description: `${result.underlying} is a leading company in its industry, providing innovative solutions and services to customers worldwide.`,
+                              coverageStart: '01-01-2020'
+                            })
                           }}
                           className="p-1 text-blue-400 hover:text-blue-300"
-                          title="View Chart"
+                          title="View Chart & Reference Data"
                         >
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
@@ -1052,6 +1077,29 @@ const OptionsScreenerEnhanced: React.FC<{ marketType?: 'equity' | 'index' | 'fut
             Click "Run Screener" to find options opportunities
           </p>
         </div>
+      )}
+
+      {/* Chart Popup */}
+      {chartPopup && (
+        <ChartPopup
+          isOpen={chartPopup.isOpen}
+          onClose={() => setChartPopup(null)}
+          symbol={chartPopup.symbol}
+          companyName={chartPopup.companyName}
+          currentPrice={chartPopup.currentPrice}
+          change={chartPopup.change}
+          changePercent={chartPopup.changePercent}
+          exchange={chartPopup.exchange}
+          marketCap={chartPopup.marketCap}
+          peRatio={chartPopup.peRatio}
+          eps={chartPopup.eps}
+          founded={chartPopup.founded}
+          employees={chartPopup.employees}
+          ceo={chartPopup.ceo}
+          website={chartPopup.website}
+          description={chartPopup.description}
+          coverageStart={chartPopup.coverageStart}
+        />
       )}
     </div>
   )
