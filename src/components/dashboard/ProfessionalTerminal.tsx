@@ -922,12 +922,7 @@ export default function ProfessionalTerminal() {
     }
     
     // Fallback to popular tickers if no search results
-    const allTickers = [
-      ...popularTickers.equity,
-      ...popularTickers.index,
-      ...popularTickers.futures
-    ]
-    return allTickers.filter(ticker => 
+    return popularTickers.filter(ticker => 
       ticker.symbol.toLowerCase().includes(query.toLowerCase()) || 
       ticker.name.toLowerCase().includes(query.toLowerCase())
     ).slice(0, 8)
