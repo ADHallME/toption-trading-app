@@ -45,6 +45,7 @@ interface ScreenerFilters {
   stock_price_max: number
   volume_min: number
   market_cap_min: number
+  market_cap_max: number
   sector: string
   // Technical filters
   rsi_min: number
@@ -183,6 +184,7 @@ const OptionsScreenerEnhanced: React.FC<{ marketType?: 'equity' | 'index' | 'fut
     stock_price_max: 10000,
     volume_min: 0,
     market_cap_min: 0,
+    market_cap_max: 1000,
     sector: '',
     // Technical filters
     rsi_min: 0,
