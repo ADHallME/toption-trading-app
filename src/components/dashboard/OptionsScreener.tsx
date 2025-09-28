@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react'
 import { getPolygonClient } from '@/lib/polygon/client'
-import { sampleOptionsData } from '@/lib/polygon/sample-data'
+// Removed sampleOptionsData import - using real API calls instead
 import { 
   Search, Filter, SlidersHorizontal, RefreshCw, Download, Save, Plus,
   ChevronDown, ChevronUp, TrendingUp, Brain, Eye, Settings, Zap,
@@ -90,43 +90,50 @@ const OptionsScreener: React.FC = () => {
     try {
       const screenResults: ScreenerResult[] = []
       
-      // Generate sample results based on filters
+      // Fetch real options data for each ticker
       for (const ticker of selectedTickers) {
-        const optionsData = sampleOptionsData[ticker]
-        if (!optionsData) continue
-        
-        for (const option of optionsData.results) {
-          const dte = getDTE(option.expiration_date)
-          const roi = calculateROI(option.bid, option.strike_price, dte)
-          const pop = calculatePOP(option.delta)
+        try {
+          const response = await fetch(`/api/polygon/options?symbol=${ticker}&type=put&dte=60`)
+          if (!response.ok) continue
           
-          // Apply filters
-          if (dte < parseInt(filters.dte_min) || dte > parseInt(filters.dte_max)) continue
-          if (roi < parseFloat(filters.roi_min) || roi > parseFloat(filters.roi_max)) continue
-          if (pop < parseFloat(filters.pop_min)) continue
-          if (option.strike_price * 100 > parseFloat(filters.capital_max)) continue
-          if (option.open_interest < parseInt(filters.min_oi)) continue
+          const data = await response.json()
+          if (!data.results) continue
           
-          screenResults.push({
-            symbol: ticker,
-            expiration: option.expiration_date,
-            dte,
-            strike: option.strike_price,
-            premium: option.bid,
-            roi,
-            roi_per_day: roi / dte,
-            roi_per_year: (roi / dte) * 365,
-            stock_price: option.strike_price * 1.05, // Simulated
-            stock_distance: 5, // Simulated %
-            break_even: option.strike_price - option.bid,
-            earnings: filters.avoid_earnings ? 'After' : 'Before',
-            '30_day_change': '+2.5%',
-            oi: option.open_interest,
-            delta: option.delta,
-            theta: option.theta || -0.05,
-            iv: option.implied_volatility,
-            last_updated: 'Now'
-          })
+          for (const option of data.results) {
+            const dte = getDTE(option.expiration)
+            const roi = calculateROI(option.premium, option.strike, dte)
+            const pop = calculatePOP(option.delta)
+            
+            // Apply filters
+            if (dte < parseInt(filters.dte_min) || dte > parseInt(filters.dte_max)) continue
+            if (roi < parseFloat(filters.roi_min) || roi > parseFloat(filters.roi_max)) continue
+            if (pop < parseFloat(filters.pop_min)) continue
+            if (option.strike * 100 > parseFloat(filters.capital_max)) continue
+            if ((option.openInterest || 0) < parseInt(filters.min_oi)) continue
+            
+            screenResults.push({
+              symbol: ticker,
+              expiration: option.expiration,
+              dte,
+              strike: option.strike,
+              premium: option.premium,
+              roi,
+              roi_per_day: roi / dte,
+              roi_per_year: (roi / dte) * 365,
+              stock_price: option.stockPrice || option.strike * 1.05,
+              stock_distance: 5, // Simulated %
+              break_even: option.strike - option.premium,
+              earnings: filters.avoid_earnings ? 'After' : 'Before',
+              '30_day_change': '+2.5%',
+              oi: option.openInterest || 0,
+              delta: option.delta || 0,
+              theta: option.theta || -0.05,
+              iv: option.iv || 20,
+              last_updated: 'Now'
+            })
+          }
+        } catch (error) {
+          console.error(`Error fetching options for ${ticker}:`, error)
         }
       }
       
