@@ -63,9 +63,9 @@ class PolygonClient {
         // ... implement real-time quote fetching
       }
     } catch (error) {
-      console.warn('Falling back to sample data:', error);
-      // Return sample data when API fails
-      return sampleQuotes[ticker] || sampleQuotes['SPY'];
+      console.warn('API call failed, returning null:', error);
+      // Return null when API fails
+      return null;
     }
   }
 
