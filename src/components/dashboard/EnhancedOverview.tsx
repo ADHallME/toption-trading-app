@@ -226,23 +226,26 @@ const EnhancedOverview: React.FC<EnhancedOverviewProps> = ({ user }) => {
     setLoading(true);
     
     try {
-      // For now, use sample data
-      const opportunities = [];
+      // Use real market scanner instead of sample data
+      const response = await fetch('/api/market-scan?limit=20&minROI=1&minPoP=70');
+      const data = await response.json();
       
-      // Process SPY options
-      for (const option of sampleOptionsData.SPY.results) {
-        const opp = polygonToOpportunity(option, 485.67, 'wheel');
-        opportunities.push(opp);
-      }
-      
-      // Process AAPL options
-      for (const option of sampleOptionsData.AAPL.results) {
-        const opp = polygonToOpportunity(option, 184.25, 'wheel');
-        opportunities.push(opp);
-      }
-      
-      // Get AI recommendations
-      if (userProfile) {
+      if (data.results && userProfile) {
+        // Convert market scan results to opportunities
+        const opportunities = data.results.map((r: any) => ({
+          ticker: r.symbol,
+          strike: r.strike,
+          premium: r.premium,
+          dte: r.dte,
+          monthlyReturn: (r.roi / r.dte) * 30,
+          annualizedReturn: r.roiAnnualized,
+          probabilityOfProfit: r.pop,
+          delta: r.delta,
+          iv: r.iv,
+          strategy: r.type === 'put' ? 'csp' : 'cc'
+        }));
+        
+        // Get AI recommendations
         const recommendations = aiEngine.recommend(opportunities, userProfile, 3);
         setAiRecommendations(recommendations);
       }
