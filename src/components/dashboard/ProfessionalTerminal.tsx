@@ -1880,7 +1880,6 @@ export default function ProfessionalTerminal() {
                                           roi: opp.roi,
                                           roiPerDay: opp.roiPerDay,
                                           roiAnnualized: opp.roi * 365 / opp.dte,
-                                          stockPrice: opp.stockPrice || 100,
                                           distance: opp.distance,
                                           breakeven: opp.breakeven,
                                           pop: opp.pop,
