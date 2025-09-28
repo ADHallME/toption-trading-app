@@ -1869,7 +1869,6 @@ export default function ProfessionalTerminal() {
                                           type: opp.type,
                                           bid: opp.bid || opp.premium * 0.95,
                                           ask: opp.ask || opp.premium * 1.05,
-                                          last: opp.premium,
                                           mid: opp.premium,
                                           premium: opp.premium,
                                           volume: opp.volume || 0,
