@@ -1,7 +1,7 @@
 // Enhanced Polygon Client with Full Options Support (Equity + Futures)
 // Supports real-time data, advanced Greeks, and multiple market types
 
-import { sampleOptionsData } from './sample-data';
+// Removed sampleOptionsData import - using real API calls instead
 
 // Market type definitions
 export enum MarketType {
