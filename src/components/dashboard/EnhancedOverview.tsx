@@ -5,7 +5,7 @@ import { User } from '@supabase/supabase-js'
 import { createBrowserClient } from '@/lib/supabase'
 import { getPolygonClient } from '@/lib/polygon/client'
 import { aiEngine, polygonToOpportunity, AIRecommendation } from '@/lib/ai/recommendation-engine'
-import { sampleOptionsData, sampleQuotes } from '@/lib/polygon/sample-data'
+// import { sampleOptionsData, sampleQuotes } from '@/lib/polygon/sample-data' // Removed - no more dummy data
 import OptionsScreenerEnhanced from './OptionsScreenerEnhanced'
 import ResearchTab from './ResearchTab'
 import AnalyticsTab from './AnalyticsTab'

@@ -28,6 +28,8 @@ export interface AIOpportunity {
     openInterest: number
     delta: number
     theta: number
+    gamma?: number  // Added gamma
+    vega?: number   // Added vega
     iv: number
     distance: number
     capital: number

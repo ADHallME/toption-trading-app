@@ -1,7 +1,23 @@
 // AI Recommendation Engine for Options Trading
 // Learns from user preferences and behavior to provide personalized recommendations
 
-import { getDTE, calculateMonthlyReturn, calculateAnnualizedReturn } from '../polygon/sample-data';
+// Helper functions (previously imported from sample-data)
+const getDTE = (expiration: string): number => {
+  const exp = new Date(expiration)
+  const today = new Date()
+  const diff = exp.getTime() - today.getTime()
+  return Math.ceil(diff / (1000 * 60 * 60 * 24))
+}
+
+const calculateMonthlyReturn = (roi: number, dte: number): number => {
+  if (dte <= 0) return 0
+  return (roi / dte) * 30
+}
+
+const calculateAnnualizedReturn = (roi: number, dte: number): number => {
+  if (dte <= 0) return 0
+  return (roi / dte) * 365
+}
 
 export interface UserProfile {
   // From onboarding

@@ -1,7 +1,7 @@
-// Polygon.io API Client with smart caching and fallback to mock data
-// TEMPORARY: Using free tier - will swap to paid tier after launch
+// Polygon.io API Client with smart caching
+// No more fallback to mock data - real data only
 
-import { sampleOptionsData, sampleQuotes } from './sample-data';
+// Removed: import { sampleOptionsData, sampleQuotes } from './sample-data';
 
 interface PolygonConfig {
   apiKey: string;
