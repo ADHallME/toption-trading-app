@@ -73,9 +73,11 @@ export default function AIOpportunityCard({
           </div>
           <div className="flex items-center space-x-1 px-2 py-1 bg-gradient-to-r from-purple-500/20 to-blue-500/20 rounded-full">
             <Zap className="w-3 h-3 text-purple-400" />
-            <span className={`text-sm font-semibold ${getAIScoreColor(opportunity.aiScore)}`}>
+            <span className={`text-sm font-semibold ${getAIScoreColor(opportunity.aiScore)}`}
+                  title="AI Score: ROI (30pts) + DTE (25pts) + PoP (25pts) + Volume (15pts) + Greeks (10pts)">
               AI: {opportunity.aiScore}
             </span>
+            <span className="text-xs text-gray-400">/ 100</span>
           </div>
         </div>
         <div className="flex items-center space-x-2">

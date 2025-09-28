@@ -84,3 +84,4 @@ export function useMarketData(refreshInterval: number = 30000) {
     refresh: fetchMarketData 
   }
 }
+

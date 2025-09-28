@@ -195,3 +195,4 @@ const EducationTab: React.FC = () => {
 }
 
 export default EducationTab
+
