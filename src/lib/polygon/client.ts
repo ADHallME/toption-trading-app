@@ -105,9 +105,9 @@ class PolygonClient {
       this.setCache(cacheKey, data);
       return data;
     } catch (error) {
-      console.warn('Falling back to sample options data:', error);
-      // Return sample data when API fails
-      return sampleOptionsData[ticker] || sampleOptionsData['SPY'];
+      console.warn('API call failed, returning null:', error);
+      // Return null when API fails
+      return null;
     }
   }
 
