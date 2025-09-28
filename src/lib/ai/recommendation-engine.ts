@@ -338,8 +338,8 @@ export function polygonToOpportunity(
     openInterest: optionData.open_interest || 5000,
     
     // Calculate metrics
-    monthlyReturn: calculateMonthlyReturn(premium, strike, dte),
-    annualizedReturn: calculateAnnualizedReturn(calculateMonthlyReturn(premium, strike, dte)),
+    monthlyReturn: calculateMonthlyReturn((premium / strike) * 100, dte),
+    annualizedReturn: calculateAnnualizedReturn((premium / strike) * 100, dte),
     capitalRequired: strike * 100, // For cash-secured put
     maxLoss: strike * 100 - premium * 100,
     breakeven: strike - premium,
