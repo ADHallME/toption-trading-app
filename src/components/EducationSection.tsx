@@ -158,13 +158,8 @@ export default function EducationSection() {
                 <div className="pb-3">
                   <div className="flex justify-between items-start">
                     <h3 className="text-lg">{s.name}</h3>
-                    <span variant={
-                      s.difficulty === 'Beginner' ? 'default' :
-                      s.difficulty === 'Intermediate' ? 'secondary' : 'destructive'
-                    }>
-                      {s.difficulty}
-                    </span>
-                  </div>
+                    
+                    <span className="px-2 py-1 rounded text-xs">{s.difficulty}                  </div>
                   <p className="text-xs">
                     {s.description}
                   </p>
@@ -226,12 +221,12 @@ export default function EducationSection() {
                 </div>
                 <div className="space-y-2">
                   <div>
-                    <span className="text-gray-500 text-sm">Range: </span>
-                    <span className="text-gray-300 text-sm">{greek.range}</span>
+                    <span className="text-gray-500 text-sm">Range: 
+                    <span className="text-gray-300 text-sm">{greek.range}
                   </div>
                   <div className="p-2 bg-gray-800 rounded">
-                    <span className="text-yellow-400 text-sm">Example: </span>
-                    <span className="text-gray-300 text-sm">{greek.example}</span>
+                    <span className="text-yellow-400 text-sm">Example: 
+                    <span className="text-gray-300 text-sm">{greek.example}
                   </div>
                 </div>
               </div>
@@ -272,7 +267,7 @@ export default function EducationSection() {
               <div className="space-y-3">
                 <div className="flex items-start gap-3">
                   <div className="w-8 h-8 rounded-full bg-cyan-500/20 flex items-center justify-center flex-shrink-0">
-                    <span className="text-cyan-400 font-bold">1</span>
+                    <span className="text-cyan-400 font-bold">1
                   </div>
                   <div>
                     <h4 className="font-semibold text-white">Position Sizing</h4>
@@ -285,7 +280,7 @@ export default function EducationSection() {
                 
                 <div className="flex items-start gap-3">
                   <div className="w-8 h-8 rounded-full bg-cyan-500/20 flex items-center justify-center flex-shrink-0">
-                    <span className="text-cyan-400 font-bold">2</span>
+                    <span className="text-cyan-400 font-bold">2
                   </div>
                   <div>
                     <h4 className="font-semibold text-white">Exit Rules</h4>
@@ -298,7 +293,7 @@ export default function EducationSection() {
                 
                 <div className="flex items-start gap-3">
                   <div className="w-8 h-8 rounded-full bg-cyan-500/20 flex items-center justify-center flex-shrink-0">
-                    <span className="text-cyan-400 font-bold">3</span>
+                    <span className="text-cyan-400 font-bold">3
                   </div>
                   <div>
                     <h4 className="font-semibold text-white">Diversification</h4>
@@ -311,7 +306,7 @@ export default function EducationSection() {
                 
                 <div className="flex items-start gap-3">
                   <div className="w-8 h-8 rounded-full bg-cyan-500/20 flex items-center justify-center flex-shrink-0">
-                    <span className="text-cyan-400 font-bold">4</span>
+                    <span className="text-cyan-400 font-bold">4
                   </div>
                   <div>
                     <h4 className="font-semibold text-white">IV Management</h4>
