@@ -158,12 +158,12 @@ export default function EducationSection() {
                 <div className="pb-3">
                   <div className="flex justify-between items-start">
                     <h3 className="text-lg">{s.name}</h3>
-                    <Badge variant={
+                    <span variant={
                       s.difficulty === 'Beginner' ? 'default' :
                       s.difficulty === 'Intermediate' ? 'secondary' : 'destructive'
                     }>
                       {s.difficulty}
-                    </Badge>
+                    </span>
                   </div>
                   <divDescription className="text-xs">
                     {s.description}
