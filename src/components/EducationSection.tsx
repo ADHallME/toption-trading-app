@@ -165,9 +165,9 @@ export default function EducationSection() {
                       {s.difficulty}
                     </span>
                   </div>
-                  <divDescription className="text-xs">
+                  <p className="text-xs">
                     {s.description}
-                  </CardDescription>
+                  </p>
                 </div>
               </div>
             ))}
@@ -222,7 +222,7 @@ export default function EducationSection() {
               <div key={greek.name} className="border-gray-700">
                 <div>
                   <h3 className="text-xl">{greek.name}</h3>
-                  <divDescription>{greek.description}</CardDescription>
+                  <p>{greek.description}</p>
                 </div>
                 <div className="space-y-2">
                   <div>
@@ -245,7 +245,7 @@ export default function EducationSection() {
               <div key={metric.name} className="border-gray-700">
                 <div>
                   <h3>{metric.name}</h3>
-                  <divDescription>{metric.description}</CardDescription>
+                  <p>{metric.description}</p>
                 </div>
                 <div className="space-y-2">
                   <div className="p-2 bg-gray-800 rounded font-mono text-cyan-400">
