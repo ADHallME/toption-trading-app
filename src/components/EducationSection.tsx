@@ -135,15 +135,15 @@ export default function EducationSection() {
         <p className="text-gray-400">Master the strategies that generate consistent income</p>
       </div>
 
-      <Tabs defaultValue="strategies" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-4 bg-gray-800">
-          <TabsTrigger value="strategies">Strategies</TabsTrigger>
-          <TabsTrigger value="greeks">Greeks</TabsTrigger>
-          <TabsTrigger value="metrics">Metrics</TabsTrigger>
-          <TabsTrigger value="risk">Risk Management</TabsTrigger>
-        </TabsList>
+      <div defaultValue="strategies" className="space-y-4">
+        <divList className="grid w-full grid-cols-4 bg-gray-800">
+          <divTrigger value="strategies">Strategies</button>
+          <divTrigger value="greeks">Greeks</button>
+          <divTrigger value="metrics">Metrics</button>
+          <divTrigger value="risk">Risk Management</button>
+        </div>
 
-        <TabsContent value="strategies" className="space-y-4">
+        <divContent value="strategies" className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             {strategies.map(s => (
               <Card 
@@ -214,9 +214,9 @@ export default function EducationSection() {
               </CardContent>
             </Card>
           )}
-        </TabsContent>
+        </div>
 
-        <TabsContent value="greeks" className="space-y-4">
+        <divContent value="greeks" className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {greeks.map(greek => (
               <Card key={greek.name} className="border-gray-700">
@@ -237,9 +237,9 @@ export default function EducationSection() {
               </Card>
             ))}
           </div>
-        </TabsContent>
+        </div>
 
-        <TabsContent value="metrics" className="space-y-4">
+        <divContent value="metrics" className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {metrics.map(metric => (
               <Card key={metric.name} className="border-gray-700">
@@ -258,9 +258,9 @@ export default function EducationSection() {
               </Card>
             ))}
           </div>
-        </TabsContent>
+        </div>
 
-        <TabsContent value="risk" className="space-y-4">
+        <divContent value="risk" className="space-y-4">
           <Card className="border-gray-700">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -324,8 +324,8 @@ export default function EducationSection() {
               </div>
             </CardContent>
           </Card>
-        </TabsContent>
-      </Tabs>
+        </div>
+      </div>
     </div>
   )
 }
