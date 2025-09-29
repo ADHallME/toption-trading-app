@@ -159,7 +159,7 @@ export default function EducationSection() {
                   <div className="flex justify-between items-start">
                     <h3 className="text-lg">{s.name}</h3>
                     
-                    <span className="px-2 py-1 rounded text-xs">{s.difficulty}                  </div>
+                    <span className="px-2 py-1 rounded text-xs">{s.difficulty}</span>
                   <p className="text-xs">
                     {s.description}
                   </p>
