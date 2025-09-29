@@ -136,14 +136,14 @@ export default function EducationSection() {
       </div>
 
       <div defaultValue="strategies" className="space-y-4">
-        <divList className="grid w-full grid-cols-4 bg-gray-800">
-          <divTrigger value="strategies">Strategies</button>
-          <divTrigger value="greeks">Greeks</button>
-          <divTrigger value="metrics">Metrics</button>
-          <divTrigger value="risk">Risk Management</button>
+        <div className="grid w-full grid-cols-4 bg-gray-800">
+          <button value="strategies">Strategies</button>
+          <button value="greeks">Greeks</button>
+          <button value="metrics">Metrics</button>
+          <button value="risk">Risk Management</button>
         </div>
 
-        <divContent value="strategies" className="space-y-4">
+        <div value="strategies" className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             {strategies.map(s => (
               <div 
@@ -178,7 +178,7 @@ export default function EducationSection() {
               <divHeader>
                 <divTitle>{strategy.name} Strategy</h3>
               </div>
-              <divContent className="space-y-4">
+              <div className="space-y-4">
                 <div>
                   <h4 className="font-semibold text-cyan-400 mb-2">Overview</h4>
                   <p className="text-gray-300 text-sm">{strategy.content.overview}</p>
@@ -216,7 +216,7 @@ export default function EducationSection() {
           )}
         </div>
 
-        <divContent value="greeks" className="space-y-4">
+        <div value="greeks" className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {greeks.map(greek => (
               <div key={greek.name} className="border-gray-700">
@@ -224,7 +224,7 @@ export default function EducationSection() {
                   <divTitle className="text-xl">{greek.name}</h3>
                   <divDescription>{greek.description}</CardDescription>
                 </div>
-                <divContent className="space-y-2">
+                <div className="space-y-2">
                   <div>
                     <span className="text-gray-500 text-sm">Range: </span>
                     <span className="text-gray-300 text-sm">{greek.range}</span>
@@ -239,7 +239,7 @@ export default function EducationSection() {
           </div>
         </div>
 
-        <divContent value="metrics" className="space-y-4">
+        <div value="metrics" className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {metrics.map(metric => (
               <div key={metric.name} className="border-gray-700">
@@ -247,7 +247,7 @@ export default function EducationSection() {
                   <divTitle>{metric.name}</h3>
                   <divDescription>{metric.description}</CardDescription>
                 </div>
-                <divContent className="space-y-2">
+                <div className="space-y-2">
                   <div className="p-2 bg-gray-800 rounded font-mono text-cyan-400">
                     {metric.formula}
                   </div>
@@ -260,7 +260,7 @@ export default function EducationSection() {
           </div>
         </div>
 
-        <divContent value="risk" className="space-y-4">
+        <div value="risk" className="space-y-4">
           <div className="border-gray-700">
             <divHeader>
               <divTitle className="flex items-center gap-2">
@@ -268,7 +268,7 @@ export default function EducationSection() {
                 Risk Management Rules
               </h3>
             </div>
-            <divContent className="space-y-4">
+            <div className="space-y-4">
               <div className="space-y-3">
                 <div className="flex items-start gap-3">
                   <div className="w-8 h-8 rounded-full bg-cyan-500/20 flex items-center justify-center flex-shrink-0">
