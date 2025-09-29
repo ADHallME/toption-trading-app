@@ -155,9 +155,9 @@ export default function EducationSection() {
                 }`}
                 onClick={() => setSelectedStrategy(s.id)}
               >
-                <divHeader className="pb-3">
+                <div className="pb-3">
                   <div className="flex justify-between items-start">
-                    <divTitle className="text-lg">{s.name}</h3>
+                    <h3 className="text-lg">{s.name}</h3>
                     <Badge variant={
                       s.difficulty === 'Beginner' ? 'default' :
                       s.difficulty === 'Intermediate' ? 'secondary' : 'destructive'
@@ -175,8 +175,8 @@ export default function EducationSection() {
 
           {strategy && (
             <div className="border-gray-700">
-              <divHeader>
-                <divTitle>{strategy.name} Strategy</h3>
+              <div>
+                <h3>{strategy.name} Strategy</h3>
               </div>
               <div className="space-y-4">
                 <div>
@@ -220,8 +220,8 @@ export default function EducationSection() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {greeks.map(greek => (
               <div key={greek.name} className="border-gray-700">
-                <divHeader>
-                  <divTitle className="text-xl">{greek.name}</h3>
+                <div>
+                  <h3 className="text-xl">{greek.name}</h3>
                   <divDescription>{greek.description}</CardDescription>
                 </div>
                 <div className="space-y-2">
@@ -243,8 +243,8 @@ export default function EducationSection() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {metrics.map(metric => (
               <div key={metric.name} className="border-gray-700">
-                <divHeader>
-                  <divTitle>{metric.name}</h3>
+                <div>
+                  <h3>{metric.name}</h3>
                   <divDescription>{metric.description}</CardDescription>
                 </div>
                 <div className="space-y-2">
@@ -262,8 +262,8 @@ export default function EducationSection() {
 
         <div className="space-y-4">
           <div className="border-gray-700">
-            <divHeader>
-              <divTitle className="flex items-center gap-2">
+            <div>
+              <h3 className="flex items-center gap-2">
                 <Shield className="w-5 h-5 text-cyan-400" />
                 Risk Management Rules
               </h3>
