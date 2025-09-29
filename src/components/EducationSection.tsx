@@ -135,15 +135,15 @@ export default function EducationSection() {
         <p className="text-gray-400">Master the strategies that generate consistent income</p>
       </div>
 
-      <div defaultValue="strategies" className="space-y-4">
+      <div className="space-y-4">
         <div className="grid w-full grid-cols-4 bg-gray-800">
-          <button value="strategies">Strategies</button>
-          <button value="greeks">Greeks</button>
-          <button value="metrics">Metrics</button>
-          <button value="risk">Risk Management</button>
+          <button>Strategies</button>
+          <button>Greeks</button>
+          <button>Metrics</button>
+          <button>Risk Management</button>
         </div>
 
-        <div value="strategies" className="space-y-4">
+        <div className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             {strategies.map(s => (
               <div 
@@ -216,7 +216,7 @@ export default function EducationSection() {
           )}
         </div>
 
-        <div value="greeks" className="space-y-4">
+        <div className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {greeks.map(greek => (
               <div key={greek.name} className="border-gray-700">
@@ -239,7 +239,7 @@ export default function EducationSection() {
           </div>
         </div>
 
-        <div value="metrics" className="space-y-4">
+        <div className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {metrics.map(metric => (
               <div key={metric.name} className="border-gray-700">
@@ -260,7 +260,7 @@ export default function EducationSection() {
           </div>
         </div>
 
-        <div value="risk" className="space-y-4">
+        <div className="space-y-4">
           <div className="border-gray-700">
             <divHeader>
               <divTitle className="flex items-center gap-2">
