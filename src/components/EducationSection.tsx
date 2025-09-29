@@ -146,7 +146,7 @@ export default function EducationSection() {
         <divContent value="strategies" className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             {strategies.map(s => (
-              <Card 
+              <div 
                 key={s.id}
                 className={`cursor-pointer transition-all ${
                   selectedStrategy === s.id 
@@ -155,9 +155,9 @@ export default function EducationSection() {
                 }`}
                 onClick={() => setSelectedStrategy(s.id)}
               >
-                <CardHeader className="pb-3">
+                <divHeader className="pb-3">
                   <div className="flex justify-between items-start">
-                    <CardTitle className="text-lg">{s.name}</CardTitle>
+                    <divTitle className="text-lg">{s.name}</h3>
                     <Badge variant={
                       s.difficulty === 'Beginner' ? 'default' :
                       s.difficulty === 'Intermediate' ? 'secondary' : 'destructive'
@@ -165,20 +165,20 @@ export default function EducationSection() {
                       {s.difficulty}
                     </Badge>
                   </div>
-                  <CardDescription className="text-xs">
+                  <divDescription className="text-xs">
                     {s.description}
                   </CardDescription>
-                </CardHeader>
-              </Card>
+                </div>
+              </div>
             ))}
           </div>
 
           {strategy && (
-            <Card className="border-gray-700">
-              <CardHeader>
-                <CardTitle>{strategy.name} Strategy</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
+            <div className="border-gray-700">
+              <divHeader>
+                <divTitle>{strategy.name} Strategy</h3>
+              </div>
+              <divContent className="space-y-4">
                 <div>
                   <h4 className="font-semibold text-cyan-400 mb-2">Overview</h4>
                   <p className="text-gray-300 text-sm">{strategy.content.overview}</p>
@@ -211,20 +211,20 @@ export default function EducationSection() {
                   <h4 className="font-semibold text-yellow-400 mb-2">Example</h4>
                   <p className="text-gray-300 text-sm font-mono">{strategy.content.example}</p>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           )}
         </div>
 
         <divContent value="greeks" className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {greeks.map(greek => (
-              <Card key={greek.name} className="border-gray-700">
-                <CardHeader>
-                  <CardTitle className="text-xl">{greek.name}</CardTitle>
-                  <CardDescription>{greek.description}</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-2">
+              <div key={greek.name} className="border-gray-700">
+                <divHeader>
+                  <divTitle className="text-xl">{greek.name}</h3>
+                  <divDescription>{greek.description}</CardDescription>
+                </div>
+                <divContent className="space-y-2">
                   <div>
                     <span className="text-gray-500 text-sm">Range: </span>
                     <span className="text-gray-300 text-sm">{greek.range}</span>
@@ -233,8 +233,8 @@ export default function EducationSection() {
                     <span className="text-yellow-400 text-sm">Example: </span>
                     <span className="text-gray-300 text-sm">{greek.example}</span>
                   </div>
-                </CardContent>
-              </Card>
+                </div>
+              </div>
             ))}
           </div>
         </div>
@@ -242,33 +242,33 @@ export default function EducationSection() {
         <divContent value="metrics" className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {metrics.map(metric => (
-              <Card key={metric.name} className="border-gray-700">
-                <CardHeader>
-                  <CardTitle>{metric.name}</CardTitle>
-                  <CardDescription>{metric.description}</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-2">
+              <div key={metric.name} className="border-gray-700">
+                <divHeader>
+                  <divTitle>{metric.name}</h3>
+                  <divDescription>{metric.description}</CardDescription>
+                </div>
+                <divContent className="space-y-2">
                   <div className="p-2 bg-gray-800 rounded font-mono text-cyan-400">
                     {metric.formula}
                   </div>
                   <div className="text-gray-300 text-sm">
                     {metric.example}
                   </div>
-                </CardContent>
-              </Card>
+                </div>
+              </div>
             ))}
           </div>
         </div>
 
         <divContent value="risk" className="space-y-4">
-          <Card className="border-gray-700">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+          <div className="border-gray-700">
+            <divHeader>
+              <divTitle className="flex items-center gap-2">
                 <Shield className="w-5 h-5 text-cyan-400" />
                 Risk Management Rules
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
+              </h3>
+            </div>
+            <divContent className="space-y-4">
               <div className="space-y-3">
                 <div className="flex items-start gap-3">
                   <div className="w-8 h-8 rounded-full bg-cyan-500/20 flex items-center justify-center flex-shrink-0">
@@ -322,8 +322,8 @@ export default function EducationSection() {
                   </div>
                 </div>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         </div>
       </div>
     </div>
