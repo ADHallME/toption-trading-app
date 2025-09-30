@@ -39,7 +39,7 @@ echo -e "${GREEN}✅ Build successful${NC}"
 
 # Step 3: Deploy to Vercel
 echo -e "${YELLOW}🚀 Deploying to Vercel...${NC}"
-vercel --prod --yes
+npx vercel --prod --yes
 
 if [ $? -ne 0 ]; then
   echo -e "${RED}❌ Deployment failed!${NC}"
@@ -54,12 +54,12 @@ echo "===================================="
 echo -e "${GREEN}🎉 LAUNCH COMPLETE!${NC}"
 echo "===================================="
 echo ""
-echo "📍 Your app is live at: https://toption-app.vercel.app"
+echo "📍 Your app is live at: https://toption-app.npx vercel.app"
 echo ""
 echo "🔥 IMMEDIATE NEXT STEPS:"
-echo "1. Test the site: https://toption-app.vercel.app"
-echo "2. Check pricing page: https://toption-app.vercel.app/pricing"
-echo "3. Test dashboard: https://toption-app.vercel.app/dashboard"
+echo "1. Test the site: https://toption-app.npx vercel.app"
+echo "2. Check pricing page: https://toption-app.npx vercel.app/pricing"
+echo "3. Test dashboard: https://toption-app.npx vercel.app/dashboard"
 echo ""
 echo "💳 STRIPE SETUP (if not done):"
 echo "1. Go to https://dashboard.stripe.com"

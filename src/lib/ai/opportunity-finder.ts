@@ -57,16 +57,16 @@ class AIOpportunityFinder {
         strategy: 'csp', // Default to cash secured puts
         minDTE: 7,
         maxDTE: 45,
-        minROI: 0.5,
-        minPoP: 70,
-        maxCapital: 100000,
-        limit: limit * 2 // Get extra to filter
+        minROI: 0.2,  // Lowered from 0.5 to get more results
+        minPoP: 50,   // Lowered from 70 to get more results
+        maxCapital: 200000, // Raised from 100k
+        limit: limit * 3 // Get extra to filter
       })
       
       // Convert scan results to AI opportunities
       const opportunities: AIOpportunity[] = scanResults
         .map(result => this.convertToAIOpportunity(result))
-        .filter(opp => opp.aiScore >= 60) // Min AI score
+        .filter(opp => opp.aiScore >= 40) // Lowered min AI score to show more results
         .sort((a, b) => b.aiScore - a.aiScore)
         .slice(0, limit)
       

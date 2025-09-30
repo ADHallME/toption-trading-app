@@ -14,17 +14,26 @@ export default function PricingCards() {
       const res = await fetch('/api/stripe/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ priceId, couponCode })
+        body: JSON.stringify({ 
+          priceId, 
+          planType: planId,
+          couponCode 
+        })
       })
       
-      const { url } = await res.json()
+      const data = await res.json()
       
-      if (url) {
-        window.location.href = url
+      if (data.error) {
+        throw new Error(data.error)
+      }
+      
+      if (data.url) {
+        // Redirect to Stripe Checkout
+        window.location.href = data.url
       }
     } catch (error) {
       console.error('Checkout error:', error)
-      alert('Payment system is being set up. Please try again in a few minutes or contact support@toptiontrade.com')
+      alert('Unable to start checkout. Please try again or contact support@toptiontrade.com')
     } finally {
       setLoading(null)
     }

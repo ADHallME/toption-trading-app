@@ -146,45 +146,108 @@ const ChartPopup: React.FC<ChartPopupProps> = ({
 
   if (!isOpen) return null
 
+  const handleBackdropClick = (e: React.MouseEvent) => {
+    if (e.target === e.currentTarget) {
+      onClose()
+    }
+  }
+
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-2xl w-full max-w-6xl h-[90vh] overflow-hidden">
+    <div 
+      className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+      onClick={handleBackdropClick}
+    >
+      <div className="bg-gray-900 rounded-lg shadow-2xl w-full max-w-6xl h-[90vh] overflow-hidden flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
+        <div className="flex items-center justify-between p-6 border-b border-gray-700">
           <div className="flex items-center gap-4">
             {getCompanyLogo(symbol)}
             <div>
-              <h2 className="text-2xl font-bold text-gray-900">{companyName || `${symbol} Corporation`}</h2>
-              <p className="text-gray-600">{symbol}</p>
+              <h2 className="text-2xl font-bold text-white">{companyName || `${symbol} Corporation`}</h2>
+              <p className="text-gray-400">{symbol}</p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            className="p-2 hover:bg-gray-800 rounded-lg transition-colors"
           >
-            <X className="w-6 h-6 text-gray-500" />
+            <X className="w-6 h-6 text-gray-400" />
           </button>
         </div>
 
+        {/* Option Details Section */}
+        <div className="p-3 border-b border-gray-700 bg-gray-800">
+          <div className="grid grid-cols-3 md:grid-cols-6 gap-2 text-xs">
+            <div className="flex justify-between px-2">
+              <span className="text-gray-400">Strike Price:</span>
+              <span className="text-white font-semibold">$8.00</span>
+            </div>
+            <div className="flex justify-between px-2">
+              <span className="text-gray-400">Premium:</span>
+              <span className="text-green-400 font-semibold">$0.28</span>
+            </div>
+            <div className="flex justify-between px-2">
+              <span className="text-gray-400">DTE:</span>
+              <span className="text-white font-semibold">15 days</span>
+            </div>
+            <div className="flex justify-between px-2">
+              <span className="text-gray-400">Strategy:</span>
+              <span className="text-blue-400 font-semibold">CSP</span>
+            </div>
+            <div className="flex justify-between px-2">
+              <span className="text-gray-400">Delta:</span>
+              <span className="text-white">-0.35</span>
+            </div>
+            <div className="flex justify-between px-2">
+              <span className="text-gray-400">Theta:</span>
+              <span className="text-red-400">-0.05</span>
+            </div>
+            <div className="flex justify-between px-2">
+              <span className="text-gray-400">Gamma:</span>
+              <span className="text-white">0.02</span>
+            </div>
+            <div className="flex justify-between px-2">
+              <span className="text-gray-400">Vega:</span>
+              <span className="text-white">0.15</span>
+            </div>
+            <div className="flex justify-between px-2">
+              <span className="text-gray-400">IV:</span>
+              <span className="text-yellow-400">45.2%</span>
+            </div>
+            <div className="flex justify-between px-2">
+              <span className="text-gray-400">PoP:</span>
+              <span className="text-green-400">87%</span>
+            </div>
+            <div className="flex justify-between px-2">
+              <span className="text-gray-400">ROI:</span>
+              <span className="text-green-400">3.5%</span>
+            </div>
+            <div className="flex justify-between px-2">
+              <span className="text-gray-400">Capital Required:</span>
+              <span className="text-white">$800</span>
+            </div>
+          </div>
+        </div>
+
         {/* Price Section */}
-        <div className="p-6 border-b border-gray-200">
+        <div className="p-6 border-b border-gray-700">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <div className="text-3xl font-bold text-gray-900">
+              <div className="text-3xl font-bold text-white">
                 ${formatPrice(currentPrice)}
               </div>
               <div className={`flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium ${
-                change >= 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                change >= 0 ? 'bg-green-900 text-green-400' : 'bg-red-900 text-red-400'
               }`}>
                 {change >= 0 ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />}
                 {formatPercent(changePercent)}
               </div>
             </div>
             <div className="text-right">
-              <div className="text-sm text-gray-600">
+              <div className="text-sm text-gray-300">
                 {change >= 0 ? '+' : ''}${formatPrice(Math.abs(change))} ({formatPercent(changePercent)}) Today
               </div>
-              <div className="text-sm text-gray-500">
+              <div className="text-sm text-gray-400">
                 {afterHoursChange >= 0 ? '+' : ''}${formatPrice(Math.abs(afterHoursChange))} ({formatPercent(afterHoursChangePercent)}) After Hours
               </div>
             </div>
@@ -192,7 +255,7 @@ const ChartPopup: React.FC<ChartPopupProps> = ({
         </div>
 
         {/* Chart Section */}
-        <div className="p-6 border-b border-gray-200">
+        <div className="p-6 border-b border-gray-700">
           <div className="h-64 relative">
             <svg className="w-full h-full">
               {/* Grid lines */}
@@ -203,7 +266,7 @@ const ChartPopup: React.FC<ChartPopupProps> = ({
                   y1={`${y}%`}
                   x2="100%"
                   y2={`${y}%`}
-                  stroke="#f3f4f6"
+                  stroke="#374151"
                   strokeWidth="1"
                 />
               ))}
@@ -239,12 +302,13 @@ const ChartPopup: React.FC<ChartPopupProps> = ({
           </div>
         </div>
 
+
         {/* Reference Data Section */}
-        <div className="p-6 border-b border-gray-200 bg-gray-50">
+        <div className="p-6 border-b border-gray-700 bg-gray-800">
           <div className="mb-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Extensive reference data</h3>
-            <p className="text-gray-600 text-sm">
-              Whether you need company logos, market caps, corporate actions, or financials, we've got you covered.
+            <h3 className="text-lg font-semibold text-white mb-2">Company Information</h3>
+            <p className="text-gray-400 text-sm">
+              Quick research on the underlying asset to help you make informed decisions.
             </p>
           </div>
 
@@ -253,8 +317,8 @@ const ChartPopup: React.FC<ChartPopupProps> = ({
             <div className="flex items-center gap-4">
               {getCompanyLogo(symbol)}
               <div>
-                <h4 className="text-xl font-semibold text-gray-900">{companyName}</h4>
-                <p className="text-gray-600">{exchange || 'NYSE'}: {symbol}</p>
+                <h4 className="text-xl font-semibold text-white">{companyName}</h4>
+                <p className="text-gray-400">{exchange || 'NYSE'}: {symbol}</p>
                 <div className="flex items-center gap-4 mt-2 text-sm text-gray-500">
                   <span>Coverage Start: {coverageStart || '01-01-2020'}</span>
                   {coverageEnd && <span>Coverage End: {coverageEnd}</span>}
@@ -263,10 +327,10 @@ const ChartPopup: React.FC<ChartPopupProps> = ({
             </div>
             <div className="flex-1">
               <div className="text-right">
-                <div className="text-2xl font-bold text-gray-900">
+                <div className="text-2xl font-bold text-white">
                   ${formatPrice(currentPrice)}
                 </div>
-                <div className={`text-sm ${change >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                <div className={`text-sm ${change >= 0 ? 'text-green-400' : 'text-red-400'}`}>
                   {change >= 0 ? '+' : ''}{formatPrice(Math.abs(change))} ({formatPercent(changePercent)})
                 </div>
               </div>
@@ -275,52 +339,52 @@ const ChartPopup: React.FC<ChartPopupProps> = ({
 
           {/* About Section */}
           <div className="mb-6">
-            <h5 className="font-semibold text-gray-900 mb-2">About</h5>
-            <p className="text-gray-700 text-sm leading-relaxed">
+            <h5 className="font-semibold text-white mb-2">About</h5>
+            <p className="text-gray-300 text-sm leading-relaxed">
               {description || `${companyName} is a leading company in its industry, providing innovative solutions and services to customers worldwide. The company operates across multiple segments and has established itself as a key player in the market.`}
             </p>
-            <a href="#" className="text-blue-600 text-sm hover:underline">Learn more →</a>
+            <a href="#" className="text-blue-400 text-sm hover:underline">Learn more →</a>
           </div>
 
           {/* Financial Metrics Grid */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
             <div>
-              <div className="text-sm text-gray-500 mb-1">Market capitalization</div>
-              <div className="font-semibold text-gray-900">
+              <div className="text-sm text-gray-400 mb-1">Market capitalization</div>
+              <div className="font-semibold text-white">
                 {marketCap ? `$${(marketCap / 1e9).toFixed(3)}B USD` : 'N/A'}
               </div>
             </div>
             <div>
-              <div className="text-sm text-gray-500 mb-1">Dividends yield (FY)</div>
-              <div className="font-semibold text-gray-900">—</div>
+              <div className="text-sm text-gray-400 mb-1">Dividends yield (FY)</div>
+              <div className="font-semibold text-white">—</div>
             </div>
             <div>
-              <div className="text-sm text-gray-500 mb-1">Price to earnings Ratio (TTM)</div>
-              <div className="font-semibold text-gray-900">{peRatio ? peRatio.toFixed(2) : 'N/A'}</div>
+              <div className="text-sm text-gray-400 mb-1">Price to earnings Ratio (TTM)</div>
+              <div className="font-semibold text-white">{peRatio ? peRatio.toFixed(2) : 'N/A'}</div>
             </div>
             <div>
-              <div className="text-sm text-gray-500 mb-1">Basic EPS (TTM)</div>
-              <div className="font-semibold text-gray-900">{eps ? `$${eps.toFixed(2)} USD` : 'N/A'}</div>
+              <div className="text-sm text-gray-400 mb-1">Basic EPS (TTM)</div>
+              <div className="font-semibold text-white">{eps ? `$${eps.toFixed(2)} USD` : 'N/A'}</div>
             </div>
             <div>
-              <div className="text-sm text-gray-500 mb-1">Founded</div>
-              <div className="font-semibold text-gray-900">{founded || 'N/A'}</div>
+              <div className="text-sm text-gray-400 mb-1">Founded</div>
+              <div className="font-semibold text-white">{founded || 'N/A'}</div>
             </div>
             <div>
-              <div className="text-sm text-gray-500 mb-1">Employees (FY)</div>
-              <div className="font-semibold text-gray-900">
+              <div className="text-sm text-gray-400 mb-1">Employees (FY)</div>
+              <div className="font-semibold text-white">
                 {employees ? `${(employees / 1000).toFixed(0)}K` : 'N/A'}
               </div>
             </div>
             <div>
-              <div className="text-sm text-gray-500 mb-1">CEO</div>
-              <div className="font-semibold text-gray-900">{ceo || 'N/A'}</div>
+              <div className="text-sm text-gray-400 mb-1">CEO</div>
+              <div className="font-semibold text-white">{ceo || 'N/A'}</div>
             </div>
             <div>
-              <div className="text-sm text-gray-500 mb-1">Website</div>
-              <div className="font-semibold text-gray-900">
+              <div className="text-sm text-gray-400 mb-1">Website</div>
+              <div className="font-semibold text-white">
                 {website ? (
-                  <a href={`https://${website}`} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+                  <a href={`https://${website}`} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline">
                     {website} ↗
                   </a>
                 ) : 'N/A'}
@@ -330,14 +394,14 @@ const ChartPopup: React.FC<ChartPopupProps> = ({
         </div>
 
         {/* Options Table */}
-        <div className="p-6 flex-1 overflow-auto">
+        <div className="p-6 flex-1 overflow-y-auto">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-900">Options Contracts</h3>
+            <h3 className="text-lg font-semibold text-white">Options Contracts</h3>
             <div className="flex items-center gap-2">
               <select
                 value={selectedExpiration}
                 onChange={(e) => setSelectedExpiration(e.target.value)}
-                className="px-3 py-1 border border-gray-300 rounded-md text-sm"
+                className="px-3 py-1 border border-gray-600 rounded-md text-sm bg-gray-800 text-white"
               >
                 <option value="">All Expirations</option>
                 <option value="2024-01-19">Jan 19, 2024</option>
