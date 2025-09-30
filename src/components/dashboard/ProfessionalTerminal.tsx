@@ -66,6 +66,8 @@ import AnalyticsTabFixed from './AnalyticsTabFixed'
 import EducationTabEnhanced from './EducationTabEnhanced'
 import HistoricalTab from './HistoricalTab'
 import ChartPopup from './ChartPopup'
+import { ChartPopout } from './ChartPopout'
+import { OpportunitiesService } from '@/lib/opportunitiesService'
 import { OpportunitiesFinal } from './OpportunitiesFinal'
 import TickerSearch from './TickerSearch'
 import StrategyCardFixed from './StrategyCardFixed'
@@ -89,6 +91,9 @@ export default function ProfessionalTerminal() {
   const [selectedChart, setSelectedChart] = useState<{ ticker: string; data: any } | null>(null)
   const [showChartPopup, setShowChartPopup] = useState(false)
   const [marketPrices, setMarketPrices] = useState<{[key: string]: {price: number, change: number, changePercent: number}}>({})
+  const [showChartPopout, setShowChartPopout] = useState(false)
+  const [selectedSymbol, setSelectedSymbol] = useState('')
+  const [opportunities, setOpportunities] = useState<any[]>([])
 
   // Close dropdowns when clicking outside
   useEffect(() => {
@@ -163,6 +168,19 @@ export default function ProfessionalTerminal() {
     const interval = setInterval(fetchMarketData, 30000) // Update every 30 seconds
     return () => clearInterval(interval)
   }, [activeMarket])
+
+  // Fetch opportunities with proper sorting
+  useEffect(() => {
+    const loadOpportunities = async () => {
+      const service = OpportunitiesService.getInstance()
+      const opps = await service.getOpportunities(undefined, 50)
+      setOpportunities(opps)
+    }
+    
+    loadOpportunities()
+    const interval = setInterval(loadOpportunities, 30000)
+    return () => clearInterval(interval)
+  }, [])
 
   const toggleSection = (section: keyof typeof expandedSections) => {
     setExpandedSections(prev => ({
@@ -881,6 +899,14 @@ export default function ProfessionalTerminal() {
           change={selectedChart.data?.change || 0}
           changePercent={selectedChart.data?.changePercent || 0}
           onClose={() => setSelectedChart(null)}
+        />
+      )}
+
+      {/* Chart Popout */}
+      {showChartPopout && (
+        <ChartPopout 
+          symbol={selectedSymbol} 
+          onClose={() => setShowChartPopout(false)} 
         />
       )}
     </div>
