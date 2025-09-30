@@ -468,7 +468,7 @@ const OptionsScreenerEnhanced: React.FC<{ marketType?: 'equity' | 'index' | 'fut
                   const roi = (estimatedPremium / strike) * 100
                   const distance = Math.abs((100 - strike) / 100) * 100
                   
-                  return {
+                  const result = {
                     symbol: option.ticker,
                     underlying: ticker,
                     strike: strike,
@@ -496,8 +496,20 @@ const OptionsScreenerEnhanced: React.FC<{ marketType?: 'equity' | 'index' | 'fut
                     strategy: filters.strategy,
                     source: 'fallback'
                   }
+                  
+                  console.log(`Generated fallback option for ${ticker}:`, {
+                    symbol: result.symbol,
+                    roiPerDay: result.roiPerDay,
+                    pop: result.pop,
+                    distance: result.distance,
+                    dte: result.dte,
+                    openInterest: result.openInterest
+                  })
+                  
+                  return result
                 })
                 
+                console.log(`Fallback results for ${ticker}:`, fallbackResults.length, 'options')
                 allResults.push(...fallbackResults)
                 continue
               }
