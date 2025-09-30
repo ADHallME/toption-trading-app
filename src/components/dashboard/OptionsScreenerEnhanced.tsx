@@ -411,8 +411,10 @@ const OptionsScreenerEnhanced: React.FC<{ marketType?: 'equity' | 'index' | 'fut
       const allResults: ScreenerResult[] = []
       
       // Fetch options for each ticker
+      console.log('Starting screener for tickers:', filters.tickers)
       for (const ticker of filters.tickers) {
         try {
+          console.log(`Processing ticker: ${ticker}`)
           // Determine option type based on strategy and option_type filter
           let optionType = 'both'
           if (filters.option_type !== 'both') {
@@ -563,6 +565,9 @@ const OptionsScreenerEnhanced: React.FC<{ marketType?: 'equity' | 'index' | 'fut
       // Sort results
       const sorted = sortResults(allResults, sortBy, sortDirection)
       setResults(sorted.slice(0, 50)) // Limit to top 50
+      
+      console.log('Screener completed. Total results:', allResults.length)
+      console.log('All results:', allResults)
       
       if (allResults.length === 0) {
         setError('No options found matching your criteria. Try adjusting filters or adding more liquid tickers like SPY, QQQ, AAPL.')

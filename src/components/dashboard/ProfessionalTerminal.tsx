@@ -559,7 +559,7 @@ export default function ProfessionalTerminal() {
                     <div className="p-2">
                       <button 
                         onClick={() => {
-                          console.log('AI Calibration Settings clicked')
+                          alert('AI Calibration Settings: Adjust AI scoring parameters, risk thresholds, and opportunity criteria')
                           setShowSettings(false)
                         }}
                         className="w-full text-left px-3 py-2 hover:bg-gray-700 rounded text-white flex items-center gap-2"
@@ -569,7 +569,7 @@ export default function ProfessionalTerminal() {
                       </button>
                       <button 
                         onClick={() => {
-                          console.log('Screener Preferences clicked')
+                          alert('Screener Preferences: Customize default filters, saved searches, and display options')
                           setShowSettings(false)
                         }}
                         className="w-full text-left px-3 py-2 hover:bg-gray-700 rounded text-white flex items-center gap-2"
@@ -579,7 +579,7 @@ export default function ProfessionalTerminal() {
                       </button>
                       <button 
                         onClick={() => {
-                          console.log('Alert Thresholds clicked')
+                          alert('Alert Thresholds: Set up price alerts, IV spikes, and opportunity notifications')
                           setShowSettings(false)
                         }}
                         className="w-full text-left px-3 py-2 hover:bg-gray-700 rounded text-white flex items-center gap-2"
@@ -589,7 +589,7 @@ export default function ProfessionalTerminal() {
                       </button>
                       <button 
                         onClick={() => {
-                          console.log('Display Options clicked')
+                          alert('Display Options: Customize chart colors, table columns, and layout preferences')
                           setShowSettings(false)
                         }}
                         className="w-full text-left px-3 py-2 hover:bg-gray-700 rounded text-white flex items-center gap-2"

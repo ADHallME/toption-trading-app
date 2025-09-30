@@ -157,7 +157,7 @@ const ChartPopup: React.FC<ChartPopupProps> = ({
       className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
       onClick={handleBackdropClick}
     >
-      <div className="bg-gray-900 rounded-lg shadow-2xl w-full max-w-6xl h-[90vh] overflow-hidden flex flex-col">
+      <div className="bg-gray-900 rounded-lg shadow-2xl w-full max-w-6xl h-[90vh] flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-700">
           <div className="flex items-center gap-4">
@@ -394,7 +394,7 @@ const ChartPopup: React.FC<ChartPopupProps> = ({
         </div>
 
         {/* Options Table */}
-        <div className="p-6 flex-1 overflow-y-auto">
+        <div className="p-6 flex-1 overflow-y-auto max-h-96">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold text-white">Options Contracts</h3>
             <div className="flex items-center gap-2">
