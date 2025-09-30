@@ -100,7 +100,7 @@ export default function StrategyCardFixed({
         </div>
       </div>
       
-      <div className="p-3 space-y-2 max-h-96 overflow-y-auto">
+      <div className="p-3 space-y-2">
         {opportunities.slice(0, 5).map((opp, idx) => {
           const id = `${opp.ticker}-${opp.strike}-${opp.dte}`
           const isWatchlisted = watchlist.has(id)
