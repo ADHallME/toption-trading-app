@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 
-const POLYGON_API_KEY = 'geKtXXWPX3aHDqmrcYhYbouXkfhXsaVp'
+const POLYGON_API_KEY = process.env.NEXT_PUBLIC_POLYGON_API_KEY || 'geKtXXWPX3aHDqmrcYhYbouXkfhXsaVp'
 
 // Rate limiting: track requests per minute
 let requestCount = 0
