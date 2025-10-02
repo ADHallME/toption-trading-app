@@ -1,12 +1,5 @@
 {
   "buildCommand": "npm run build",
   "outputDirectory": ".next",
-  "framework": "nextjs",
-  "crons": [
-    // Temporarily disabled
-    // {
-    //   "path": "/api/cron/scan-opportunities",
-    //   "schedule": "0 9 * * *"
-    // }
-  ]
+  "framework": "nextjs"
 }
