@@ -165,8 +165,9 @@ export class PolygonOptionsService {
   
   /**
    * Convert raw option data to opportunity format
+   * PUBLIC: Used by server-side scanner
    */
-  private async convertToOpportunity(
+  async convertToOpportunity(
     option: PolygonOptionSnapshot,
     stockPrice: number,
     category: OptionsOpportunity['category']

@@ -1,13 +1,11 @@
-// REAL DATA - Using Polygon API for actual options opportunities
+// UPDATED: Multi-market support - Equities, Indexes, Futures
+// Client now fetches from server API with market type parameter
 // src/components/dashboard/OpportunitiesFinal.tsx
 
 'use client'
 
 import { useState, useEffect } from 'react'
 import { ChevronDown, ChevronUp, X, TrendingUp, Activity, Shield, Calendar } from 'lucide-react'
-import { PolygonOptionsService } from '@/lib/polygon/optionsSnapshot'
-import { EQUITY_UNIVERSE, INDEX_UNIVERSE, FUTURES_UNIVERSE, FALLBACK_EQUITY_LIST, fetchAllOptionableEquities } from '@/lib/polygon/allTickers'
-import ProfessionalLoadingBar from './ProfessionalLoadingBar'
 import SimpleFooterStatus from './SimpleFooterStatus'
 
 export function OpportunitiesFinal({ marketType }: { marketType: 'equity' | 'index' | 'futures' }) {
@@ -16,107 +14,52 @@ export function OpportunitiesFinal({ marketType }: { marketType: 'equity' | 'ind
   const [opportunities, setOpportunities] = useState<any>({})
 
   const [loading, setLoading] = useState(true)
-  const [allEquityTickers, setAllEquityTickers] = useState<string[]>([])
-  
-  // Progressive loading state
-  const [isInitialLoadComplete, setIsInitialLoadComplete] = useState(false)
-  const [isBackgroundScanning, setIsBackgroundScanning] = useState(false)
   const [scanStatus, setScanStatus] = useState<'idle' | 'scanning' | 'complete' | 'error'>('idle')
-  const [totalTickersToScan, setTotalTickersToScan] = useState(0)
+  const [lastScanTime, setLastScanTime] = useState<string>('')
   const [tickersScanned, setTickersScanned] = useState(0)
+  const [totalOpportunities, setTotalOpportunities] = useState(0)
 
-  // Fetch complete universe of tickers based on market type
+  // Fetch opportunities from server API
   useEffect(() => {
-    const loadTickerUniverse = async () => {
-      const apiKey = process.env.NEXT_PUBLIC_POLYGON_API_KEY || ''
-      
-      // For equities, fetch ALL optionable stocks from Polygon
-      if (marketType === 'equity') {
-        const tickers = await fetchAllOptionableEquities(apiKey)
-        console.log(`Loaded ${tickers.length} optionable equities from Polygon`)
-        const tickerList = tickers.length > 0 ? tickers : FALLBACK_EQUITY_LIST
-        setAllEquityTickers(tickerList)
-        setTotalTickersToScan(tickerList.length)
-      } else if (marketType === 'index') {
-        setTotalTickersToScan(INDEX_UNIVERSE.length)
-      } else if (marketType === 'futures') {
-        setTotalTickersToScan(FUTURES_UNIVERSE.length)
-      }
-    }
-    
-    loadTickerUniverse()
-  }, [])
-
-  // Load REAL opportunities from Polygon API
-  useEffect(() => {
-    const loadRealOpportunities = async () => {
+    const fetchOpportunities = async () => {
       setLoading(true)
-      const service = PolygonOptionsService.getInstance()
+      setScanStatus('scanning')
       
       try {
-        // Get appropriate ticker universe based on market type
-        let tickersToScan: string[] = []
+        // Pass market type as query parameter
+        const response = await fetch(`/api/opportunities?marketType=${marketType}`)
+        const result = await response.json()
         
-        switch (marketType) {
-          case 'equity':
-            // Use ALL optionable equities (3000-5000 tickers)
-            tickersToScan = allEquityTickers.length > 0 ? allEquityTickers : FALLBACK_EQUITY_LIST
-            console.log(`Scanning ${tickersToScan.length} equity tickers...`)
-            break
-          case 'index':
-            // Use all indexes
-            tickersToScan = INDEX_UNIVERSE
-            console.log(`Scanning ${tickersToScan.length} index tickers...`)
-            break
-          case 'futures':
-            // Use all futures
-            tickersToScan = FUTURES_UNIVERSE
-            console.log(`Scanning ${tickersToScan.length} futures tickers...`)
-            break
+        if (!result.success) {
+          throw new Error(result.error || 'Failed to fetch opportunities')
         }
         
-        // Set scanning status
-        setScanStatus('scanning')
-        setTotalTickersToScan(tickersToScan.length)
+        const { data } = result
         
-        // Fetch all opportunities with progress callback
-        const allOpps = await service.getOpportunitiesForTickers(
-          tickersToScan, 
-          {
-            minOI: 10,
-            minDTE: 1,
-            maxDTE: 60,
-            minROIPerDay: 0.01 // 0.01% minimum
-          },
-          (scanned, total) => {
-            // Update progress in real-time
-            setTickersScanned(scanned)
-            setTotalTickersToScan(total)
-          }
-        )
+        // Format opportunities for display
+        const formattedCategories = {
+          'market-movers': data.categorized['market-movers'].map(formatOpportunity),
+          'high-iv': data.categorized['high-iv'].map(formatOpportunity),
+          'conservative': data.categorized['conservative'].map(formatOpportunity),
+          'earnings': data.categorized['earnings'].map(formatOpportunity)
+        }
         
+        setOpportunities(formattedCategories)
+        setLastScanTime(data.metadata.lastScan)
+        setTickersScanned(data.metadata.tickersScanned)
+        setTotalOpportunities(data.metadata.totalOpportunities)
         setScanStatus('complete')
         
-        // Categorize opportunities
-        const categorized = {
-          'market-movers': allOpps.filter(o => o.category === 'market-movers').slice(0, 50),
-          'high-iv': allOpps.filter(o => o.category === 'high-iv').slice(0, 45),
-          'conservative': allOpps.filter(o => o.category === 'conservative').slice(0, 40),
-          'earnings': allOpps.filter(o => o.category === 'earnings').slice(0, 35)
-        }
+        console.log(`[CLIENT] Loaded ${marketType} opportunities:`, {
+          lastScan: data.metadata.lastScan,
+          tickersScanned: data.metadata.tickersScanned,
+          totalOpportunities: data.metadata.totalOpportunities,
+          scanDuration: `${(data.metadata.scanDurationMs / 1000).toFixed(1)}s`
+        })
         
-        // Format for display
-        const formattedOpps = {
-          'market-movers': categorized['market-movers'].map(formatOpportunity),
-          'high-iv': categorized['high-iv'].map(formatOpportunity),
-          'conservative': categorized['conservative'].map(formatOpportunity),
-          'earnings': categorized['earnings'].map(formatOpportunity)
-        }
-        
-        console.log('Loaded REAL Polygon opportunities:', formattedOpps)
-        setOpportunities(formattedOpps)
       } catch (error) {
-        console.error('Error loading opportunities:', error)
+        console.error(`[CLIENT] Error fetching ${marketType} opportunities:`, error)
+        setScanStatus('error')
         setOpportunities({
           'market-movers': [],
           'high-iv': [],
@@ -128,8 +71,14 @@ export function OpportunitiesFinal({ marketType }: { marketType: 'equity' | 'ind
       }
     }
     
-    loadRealOpportunities()
-  }, [marketType, allEquityTickers])
+    // Initial fetch
+    fetchOpportunities()
+    
+    // Refresh every 30 seconds to check for new data
+    const refreshInterval = setInterval(fetchOpportunities, 30000)
+    
+    return () => clearInterval(refreshInterval)
+  }, [marketType])
   
   // Format opportunity for display
   const formatOpportunity = (opp: any) => ({
@@ -151,6 +100,33 @@ export function OpportunitiesFinal({ marketType }: { marketType: 'equity' | 'ind
     earningsExpected: opp.category === 'earnings' ? (Math.random() > 0.5 ? 'Beat' : 'Miss') : null,
     riskLevel: opp.risk === 'low' ? 'Low' : opp.risk === 'medium' ? 'Med' : 'High'
   })
+  
+  // Calculate time since last scan
+  const getTimeSinceLastScan = () => {
+    if (!lastScanTime) return 'Never'
+    const now = new Date()
+    const scanTime = new Date(lastScanTime)
+    const diffMs = now.getTime() - scanTime.getTime()
+    const diffMins = Math.floor(diffMs / 60000)
+    
+    if (diffMins < 1) return 'Just now'
+    if (diffMins === 1) return '1 min ago'
+    if (diffMins < 60) return `${diffMins} mins ago`
+    const diffHours = Math.floor(diffMins / 60)
+    return `${diffHours}h ${diffMins % 60}m ago`
+  }
+  
+  // Get market-specific subtitle
+  const getMarketSubtitle = () => {
+    switch (marketType) {
+      case 'equity':
+        return 'All US Stocks with Options'
+      case 'index':
+        return 'SPX, QQQ, Sector ETFs & More'
+      case 'futures':
+        return 'ES, NQ, CL, GC & More'
+    }
+  }
 
   const categories = [
     {
@@ -181,21 +157,45 @@ export function OpportunitiesFinal({ marketType }: { marketType: 'equity' | 'ind
 
   return (
     <>
-      {/* Professional Loading Bar */}
+      {/* Loading State */}
       {loading && (
-        <ProfessionalLoadingBar
-          totalTickers={totalTickersToScan}
-          scannedTickers={tickersScanned}
-          currentTicker={allEquityTickers[tickersScanned] || ''}
-          phase={scanStatus === 'error' ? 'complete' : scanStatus === 'idle' ? 'fetching' : scanStatus}
-        />
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+            <p className="text-gray-400">Loading {marketType} opportunities from server...</p>
+            <p className="text-xs text-gray-500 mt-2">{getMarketSubtitle()}</p>
+          </div>
+        </div>
       )}
       
       {!loading && (
         <>
-          {/* Debug Info */}
-          <div className="text-xs text-gray-500 mb-2">
-            Market Type: {marketType} | Total Opportunities: {Object.values(opportunities).flat().length} (REAL Polygon Data)
+          {/* Stats Bar */}
+          <div className="flex items-center justify-between mb-4 p-3 bg-gray-800 rounded-lg border border-gray-700">
+            <div className="flex items-center gap-6">
+              <div>
+                <span className="text-xs text-gray-500">Market Type</span>
+                <p className="text-sm font-semibold text-white capitalize">{marketType}</p>
+              </div>
+              <div>
+                <span className="text-xs text-gray-500">Last Scan</span>
+                <p className="text-sm font-semibold text-white">{getTimeSinceLastScan()}</p>
+              </div>
+              <div>
+                <span className="text-xs text-gray-500">Tickers Scanned</span>
+                <p className="text-sm font-semibold text-white">{tickersScanned.toLocaleString()}</p>
+              </div>
+              <div>
+                <span className="text-xs text-gray-500">Total Opportunities</span>
+                <p className="text-sm font-semibold text-green-400">{totalOpportunities.toLocaleString()}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className={`w-2 h-2 rounded-full ${scanStatus === 'complete' ? 'bg-green-500' : scanStatus === 'error' ? 'bg-red-500' : 'bg-yellow-500 animate-pulse'}`} />
+              <span className="text-xs text-gray-400">
+                {scanStatus === 'complete' ? 'Live Data' : scanStatus === 'error' ? 'Error' : 'Updating...'}
+              </span>
+            </div>
           </div>
       
       {/* 4-wide grid */}
@@ -255,7 +255,7 @@ export function OpportunitiesFinal({ marketType }: { marketType: 'equity' | 'ind
                         </div>
                         <div className="flex justify-between">
                           <span className="text-gray-500">ROI</span>
-                          <span className="font-bold text-white">{opp.roi}%</span>
+                          <span className="font-bold text-white">{opp.roi.toFixed(2)}%</span>
                         </div>
                         <div className="flex justify-between">
                           <span className="text-gray-500">PoP</span>
@@ -263,7 +263,7 @@ export function OpportunitiesFinal({ marketType }: { marketType: 'equity' | 'ind
                         </div>
                         <div className="flex justify-between">
                           <span className="text-gray-500">Distance</span>
-                          <span className="text-yellow-400">{opp.distance}%</span>
+                          <span className="text-yellow-400">{opp.distance.toFixed(1)}%</span>
                         </div>
                         
                         {/* Category specific context */}
@@ -310,11 +310,11 @@ export function OpportunitiesFinal({ marketType }: { marketType: 'equity' | 'ind
                         <div className="grid grid-cols-2 gap-1 text-xs">
                           <div>
                             <span className="text-gray-500">ROI/Day: </span>
-                            <span className="text-blue-400">{opp.roiPerDay}%</span>
+                            <span className="text-blue-400">{(opp.roiPerDay * 100).toFixed(3)}%</span>
                           </div>
                           <div>
                             <span className="text-gray-500">Annual: </span>
-                            <span>{opp.roiAnnualized}%</span>
+                            <span>{(opp.roiAnnualized * 100).toFixed(1)}%</span>
                           </div>
                           <div>
                             <span className="text-gray-500">OI: </span>
@@ -392,10 +392,10 @@ export function OpportunitiesFinal({ marketType }: { marketType: 'equity' | 'ind
                       <td className="p-3">${opp.strike}</td>
                       <td className="p-3">{opp.dte}</td>
                       <td className="p-3 text-green-400">${opp.premium}</td>
-                      <td className="p-3 font-bold bg-green-900/20">{opp.roi}%</td>
-                      <td className="p-3 text-blue-400">{opp.roiPerDay}%</td>
+                      <td className="p-3 font-bold bg-green-900/20">{opp.roi.toFixed(2)}%</td>
+                      <td className="p-3 text-blue-400">{(opp.roiPerDay * 100).toFixed(3)}%</td>
                       <td className="p-3">{opp.pop.toFixed(0)}%</td>
-                      <td className="p-3 text-yellow-400">{opp.distance}%</td>
+                      <td className="p-3 text-yellow-400">{opp.distance.toFixed(1)}%</td>
                       <td className="p-3">{opp.volume?.toLocaleString()}</td>
                       <td className="p-3">{opp.openInterest?.toLocaleString()}</td>
                       {showMoreModal === 'earnings' && (
@@ -421,9 +421,9 @@ export function OpportunitiesFinal({ marketType }: { marketType: 'equity' | 'ind
       
       {/* Footer Status Bar */}
       <SimpleFooterStatus
-        status={loading ? 'scanning' : scanStatus === 'idle' ? 'complete' : scanStatus}
+        status={loading ? 'scanning' : scanStatus}
         scannedTickers={tickersScanned}
-        totalTickers={totalTickersToScan}
+        totalTickers={tickersScanned}
       />
     </>
   )
