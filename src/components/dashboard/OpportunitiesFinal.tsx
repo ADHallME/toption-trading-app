@@ -8,6 +8,7 @@ import { ChevronDown, ChevronUp, X, TrendingUp, Activity, Shield, Calendar } fro
 import { PolygonOptionsService } from '@/lib/polygon/optionsSnapshot'
 import { EQUITY_UNIVERSE, INDEX_UNIVERSE, FUTURES_UNIVERSE, FALLBACK_EQUITY_LIST, fetchAllOptionableEquities } from '@/lib/polygon/allTickers'
 import ProfessionalLoadingBar from './ProfessionalLoadingBar'
+import SimpleFooterStatus from './SimpleFooterStatus'
 
 export function OpportunitiesFinal({ marketType }: { marketType: 'equity' | 'index' | 'futures' }) {
   const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set())
@@ -20,7 +21,7 @@ export function OpportunitiesFinal({ marketType }: { marketType: 'equity' | 'ind
   // Progressive loading state
   const [isInitialLoadComplete, setIsInitialLoadComplete] = useState(false)
   const [isBackgroundScanning, setIsBackgroundScanning] = useState(false)
-  const [scanStatus, setCanStatus] = useState<'idle' | 'scanning' | 'complete' | 'error'>('idle')
+  const [scanStatus, setScanStatus] = useState<'idle' | 'scanning' | 'complete' | 'error'>('idle')
   const [totalTickersToScan, setTotalTickersToScan] = useState(0)
   const [tickersScanned, setTickersScanned] = useState(0)
 
@@ -74,13 +75,27 @@ export function OpportunitiesFinal({ marketType }: { marketType: 'equity' | 'ind
             break
         }
         
-        // Fetch all opportunities
-        const allOpps = await service.getOpportunitiesForTickers(tickersToScan, {
-          minOI: 10,
-          minDTE: 1,
-          maxDTE: 60,
-          minROIPerDay: 0.01 // 0.01% minimum
-        })
+        // Set scanning status
+        setScanStatus('scanning')
+        setTotalTickersToScan(tickersToScan.length)
+        
+        // Fetch all opportunities with progress callback
+        const allOpps = await service.getOpportunitiesForTickers(
+          tickersToScan, 
+          {
+            minOI: 10,
+            minDTE: 1,
+            maxDTE: 60,
+            minROIPerDay: 0.01 // 0.01% minimum
+          },
+          (scanned, total) => {
+            // Update progress in real-time
+            setTickersScanned(scanned)
+            setTotalTickersToScan(total)
+          }
+        )
+        
+        setScanStatus('complete')
         
         // Categorize opportunities
         const categorized = {
@@ -403,6 +418,13 @@ export function OpportunitiesFinal({ marketType }: { marketType: 'equity' | 'ind
       )}
         </>
       )}
+      
+      {/* Footer Status Bar */}
+      <SimpleFooterStatus
+        status={loading ? 'scanning' : scanStatus}
+        scannedTickers={tickersScanned}
+        totalTickers={totalTickersToScan}
+      />
     </>
   )
 }

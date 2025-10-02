@@ -114,6 +114,8 @@ export class PolygonOptionsService {
       const data = await response.json()
       const results = data.results || []
       
+      console.log(`[DEBUG] ${ticker}: Polygon returned ${results.length} options`)
+      
       // Cache the results
       this.cache.set(cacheKey, {
         data: results,
@@ -172,14 +174,18 @@ export class PolygonOptionsService {
     const dte = this.calculateDTE(option.details.expiration_date)
     
     // Skip if expired or too far out
-    if (dte <= 0 || dte > 60) return null
+    if (dte <= 0 || dte > 60) {
+      return null
+    }
     
     // Calculate premium (midpoint of bid/ask)
     const bid = option.last_quote.bid || 0
     const ask = option.last_quote.ask || 0
     
-    // Skip if BOTH bid and ask are 0
-    if (bid === 0 && ask === 0) return null
+    // Skip if BOTH bid and ask are 0 (but warn about it)
+    if (bid === 0 && ask === 0) {
+      return null
+    }
     
     const premium = (bid + ask) / 2
     
@@ -247,7 +253,8 @@ export class PolygonOptionsService {
       minDTE?: number
       maxDTE?: number
       minROIPerDay?: number
-    } = {}
+    } = {},
+    onProgress?: (scanned: number, total: number) => void
   ): Promise<OptionsOpportunity[]> {
     const {
       minOI = 10,
@@ -258,17 +265,24 @@ export class PolygonOptionsService {
     
     const allOpportunities: OptionsOpportunity[] = []
     
+    console.log(`[DEBUG] Starting scan with filters: minOI=${minOI}, DTE=${minDTE}-${maxDTE}, minROIPerDay=${minROIPerDay}`)
+    
     // Fetch options for each ticker
-    for (const ticker of tickers) {
+    for (let i = 0; i < tickers.length; i++) {
+      const ticker = tickers[i]
+      let tickerStats = { total: 0, passedOI: 0, passedDTE: 0, passedBidAsk: 0, opportunities: 0 }
+      
       try {
         const stockPrice = await this.getStockPrice(ticker)
         if (stockPrice === 0) continue
         
         const options = await this.fetchOptionsChain(ticker)
+        tickerStats.total = options.length
         
         for (const option of options) {
           // Filter by open interest
           if (option.open_interest < minOI) continue
+          tickerStats.passedOI++
           
           // Determine category based on characteristics
           let category: OptionsOpportunity['category'] = 'conservative'
@@ -284,14 +298,27 @@ export class PolygonOptionsService {
           const opportunity = await this.convertToOpportunity(option, stockPrice, category)
           
           if (opportunity) {
+            tickerStats.opportunities++
             allOpportunities.push(opportunity)
           }
+        }
+        
+        // Log stats if this ticker had any options
+        if (tickerStats.total > 0) {
+          console.log(`[DEBUG] ${ticker}: ${tickerStats.total} total → ${tickerStats.passedOI} passed OI → ${tickerStats.opportunities} opportunities`)
         }
       } catch (error) {
         console.error(`Error processing ${ticker}:`, error)
         continue
+      } finally {
+        // Report progress after each ticker
+        if (onProgress) {
+          onProgress(i + 1, tickers.length)
+        }
       }
     }
+    
+    console.log(`[DEBUG] SCAN COMPLETE: Found ${allOpportunities.length} total opportunities from ${tickers.length} tickers`)
     
     // Sort by ROI per day (highest first)
     return allOpportunities.sort((a, b) => b.roiPerDay - a.roiPerDay)
