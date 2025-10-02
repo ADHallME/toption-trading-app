@@ -1,416 +1,278 @@
-'use client'
+import React, { useEffect, useState } from 'react';
+import { TrendingUp, MessageSquare, Hash, Users } from 'lucide-react';
 
-import React, { useState, useEffect } from 'react'
-import { 
-  MessageSquare, Twitter, Hash, TrendingUp, TrendingDown,
-  ThumbsUp, ThumbsDown, BarChart3, PieChart, Activity,
-  Clock, Filter, RefreshCw, AlertCircle, Zap, Eye,
-  Users, MessageCircle, Heart, Repeat2, BookmarkIcon,
-  ArrowUpRight, ArrowDownRight, Gauge
-} from 'lucide-react'
-
-interface SentimentData {
-  platform: 'reddit' | 'twitter' | 'stocktwits'
-  score: number
-  change: number
-  mentions: number
-  bullish: number
-  bearish: number
-  neutral: number
+interface SocialPost {
+  id: string;
+  platform: 'stocktwits' | 'reddit' | 'twitter';
+  author: string;
+  content: string;
+  sentiment: 'bullish' | 'bearish' | 'neutral';
+  timestamp: Date;
+  likes: number;
+  url: string;
 }
 
-interface TrendingPost {
-  platform: 'reddit' | 'twitter' | 'stocktwits'
-  author: string
-  content: string
-  sentiment: 'bullish' | 'bearish' | 'neutral'
-  engagement: number
-  time: string
-  metrics: {
-    likes?: number
-    comments?: number
-    retweets?: number
-    upvotes?: number
-  }
-}
+export const AnalyticsTab: React.FC<{ symbol: string }> = ({ symbol }) => {
+  const [posts, setPosts] = useState<SocialPost[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [sentiment, setSentiment] = useState({ bullish: 0, bearish: 0, neutral: 0 });
 
-interface SentimentMetrics {
-  overall: number
-  trend: 'up' | 'down' | 'stable'
-  volume: number
-  volumeChange: number
-  topEmotions: string[]
-}
+  useEffect(() => {
+    fetchSocialData();
+  }, [symbol]);
 
-const AnalyticsTab: React.FC = () => {
-  const [selectedSymbol, setSelectedSymbol] = useState('AAPL')
-  const [timeframe, setTimeframe] = useState<'1h' | '24h' | '7d' | '30d'>('24h')
-  const [selectedPlatform, setSelectedPlatform] = useState<'all' | 'reddit' | 'twitter' | 'stocktwits'>('all')
-  const [loading, setLoading] = useState(false)
-  
-  // Sample sentiment data
-  const sentimentData: SentimentData[] = [
-    {
-      platform: 'reddit',
-      score: 72,
-      change: 5.2,
-      mentions: 1847,
-      bullish: 65,
-      bearish: 20,
-      neutral: 15
-    },
-    {
-      platform: 'twitter',
-      score: 68,
-      change: -2.1,
-      mentions: 5234,
-      bullish: 58,
-      bearish: 25,
-      neutral: 17
-    },
-    {
-      platform: 'stocktwits',
-      score: 75,
-      change: 8.3,
-      mentions: 892,
-      bullish: 70,
-      bearish: 18,
-      neutral: 12
+  const fetchSocialData = async () => {
+    try {
+      // StockTwits API (FREE and works immediately)
+      const stocktwitsResponse = await fetch(
+        `https://api.stocktwits.com/api/2/streams/symbol/${symbol}.json`
+      );
+      
+      if (stocktwitsResponse.ok) {
+        const data = await stocktwitsResponse.json();
+        const stocktwitsPosts: SocialPost[] = data.messages.map((msg: any) => ({
+          id: msg.id,
+          platform: 'stocktwits',
+          author: msg.user.username,
+          content: msg.body,
+          sentiment: msg.entities?.sentiment?.basic || 'neutral',
+          timestamp: new Date(msg.created_at),
+          likes: msg.likes?.total || 0,
+          url: msg.permalink
+        }));
+        
+        setPosts(stocktwitsPosts);
+        
+        // Calculate sentiment
+        const bullCount = stocktwitsPosts.filter(p => p.sentiment === 'bullish').length;
+        const bearCount = stocktwitsPosts.filter(p => p.sentiment === 'bearish').length;
+        const neutralCount = stocktwitsPosts.filter(p => p.sentiment === 'neutral').length;
+        const total = stocktwitsPosts.length;
+        
+        setSentiment({
+          bullish: (bullCount / total) * 100,
+          bearish: (bearCount / total) * 100,
+          neutral: (neutralCount / total) * 100
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching social data:', error);
+      // Use fallback data
+      generateMockSocialData();
+    } finally {
+      setLoading(false);
     }
-  ]
-  
-  const overallSentiment: SentimentMetrics = {
-    overall: 71.6,
-    trend: 'up',
-    volume: 7973,
-    volumeChange: 12.5,
-    topEmotions: ['🚀', '💎', '🙌', '📈', '🔥']
-  }
-  
-  const trendingPosts: TrendingPost[] = [
-    {
-      platform: 'reddit',
-      author: 'DeepValue2024',
-      content: 'AAPL breaking out of the wedge pattern. Strong support at $192, looking for $205 by end of week. Options flow is incredibly bullish! 🚀',
-      sentiment: 'bullish',
-      engagement: 892,
-      time: '15 min ago',
-      metrics: { upvotes: 234, comments: 89 }
-    },
-    {
-      platform: 'twitter',
-      author: '@TechTrader',
-      content: 'Apple AI announcement next week could be a game changer. Institutional buying picking up. $AAPL 🍎📈',
-      sentiment: 'bullish',
-      engagement: 1250,
-      time: '1 hour ago',
-      metrics: { likes: 450, retweets: 125, comments: 67 }
-    },
-    {
-      platform: 'stocktwits',
-      author: 'BullRunner45',
-      content: '$AAPL Massive call volume on the Feb $200 strikes. Smart money is positioning. Following the flow here.',
-      sentiment: 'bullish',
-      engagement: 567,
-      time: '2 hours ago',
-      metrics: { likes: 234 }
-    },
-    {
-      platform: 'reddit',
-      author: 'OptionsGuru',
-      content: 'Caution on AAPL here. RSI overbought, due for a pullback to $188-190 range before next leg up.',
-      sentiment: 'bearish',
-      engagement: 445,
-      time: '3 hours ago',
-      metrics: { upvotes: 125, comments: 67 }
+  };
+
+  const generateMockSocialData = () => {
+    // Fallback mock data if APIs fail
+    const mockPosts: SocialPost[] = [
+      {
+        id: '1',
+        platform: 'stocktwits',
+        author: 'BullTrader2024',
+        content: `$${symbol} looking strong above 200MA. Loading up on calls here.`,
+        sentiment: 'bullish',
+        timestamp: new Date(Date.now() - 1000 * 60 * 5),
+        likes: 45,
+        url: '#'
+      },
+      {
+        id: '2',
+        platform: 'reddit',
+        author: 'wsb_veteran',
+        content: `DD: ${symbol} has massive option flow coming in. 10k contracts at $100 strike.`,
+        sentiment: 'bullish',
+        timestamp: new Date(Date.now() - 1000 * 60 * 30),
+        likes: 234,
+        url: '#'
+      },
+      {
+        id: '3',
+        platform: 'twitter',
+        author: 'OptionsFlowPro',
+        content: `Unusual activity alert: ${symbol} seeing 5x normal volume on weekly puts. Be careful.`,
+        sentiment: 'bearish',
+        timestamp: new Date(Date.now() - 1000 * 60 * 60),
+        likes: 89,
+        url: '#'
+      }
+    ];
+    
+    setPosts(mockPosts);
+    setSentiment({ bullish: 50, bearish: 30, neutral: 20 });
+  };
+
+  const getSentimentColor = (sentiment: string) => {
+    switch (sentiment) {
+      case 'bullish': return 'text-emerald-400';
+      case 'bearish': return 'text-red-400';
+      default: return 'text-gray-400';
     }
-  ]
-  
-  const getSentimentColor = (score: number) => {
-    if (score >= 70) return 'text-emerald-400'
-    if (score >= 40) return 'text-yellow-400'
-    return 'text-red-400'
-  }
-  
-  const getSentimentLabel = (score: number) => {
-    if (score >= 70) return 'Bullish'
-    if (score >= 40) return 'Neutral'
-    return 'Bearish'
-  }
-  
+  };
+
   const getPlatformIcon = (platform: string) => {
-    switch(platform) {
-      case 'reddit': return <MessageSquare className="w-4 h-4" />
-      case 'twitter': return <Twitter className="w-4 h-4" />
-      case 'stocktwits': return <Hash className="w-4 h-4" />
-      default: return <MessageCircle className="w-4 h-4" />
+    switch (platform) {
+      case 'stocktwits': return '$';
+      case 'reddit': return 'R/';
+      case 'twitter': return 'X';
+      default: return '#';
     }
-  }
+  };
 
   return (
     <div className="space-y-6">
-      {/* Header Controls */}
-      <div className="bg-slate-900/50 backdrop-blur-sm border border-slate-700/50 rounded-xl p-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <input
-              type="text"
-              value={selectedSymbol}
-              onChange={(e) => setSelectedSymbol(e.target.value.toUpperCase())}
-              className="bg-slate-800 border border-slate-600 rounded px-3 py-2 text-white font-semibold text-lg w-24 focus:border-emerald-500 focus:outline-none"
-              placeholder="Symbol"
-            />
-            
-            {/* Timeframe Selector */}
-            <div className="flex space-x-2">
-              {(['1h', '24h', '7d', '30d'] as const).map(tf => (
-                <button
-                  key={tf}
-                  onClick={() => setTimeframe(tf)}
-                  className={`px-3 py-1 rounded text-sm font-semibold transition-colors ${
-                    timeframe === tf
-                      ? 'bg-emerald-500 text-white'
-                      : 'bg-slate-700 text-gray-300 hover:bg-slate-600'
-                  }`}
-                >
-                  {tf}
-                </button>
-              ))}
-            </div>
-            
-            {/* Platform Filter */}
-            <div className="flex space-x-2">
-              {(['all', 'reddit', 'twitter', 'stocktwits'] as const).map(platform => (
-                <button
-                  key={platform}
-                  onClick={() => setSelectedPlatform(platform)}
-                  className={`px-3 py-1 rounded text-sm font-semibold transition-colors flex items-center space-x-1 ${
-                    selectedPlatform === platform
-                      ? 'bg-blue-500 text-white'
-                      : 'bg-slate-700 text-gray-300 hover:bg-slate-600'
-                  }`}
-                >
-                  {platform !== 'all' && getPlatformIcon(platform)}
-                  <span>{platform.charAt(0).toUpperCase() + platform.slice(1)}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-          
-          <button className="p-2 bg-slate-700 hover:bg-slate-600 rounded text-white transition-colors">
-            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-          </button>
-        </div>
-      </div>
-      
-      {/* Overall Sentiment Score */}
-      <div className="bg-slate-900/50 backdrop-blur-sm border border-slate-700/50 rounded-xl p-6">
-        <div className="flex items-center justify-between mb-6">
-          <h3 className="text-lg font-semibold text-white flex items-center">
-            <Gauge className="w-5 h-5 mr-2 text-purple-400" />
-            AI Sentiment Analysis
-          </h3>
-          <div className="flex items-center space-x-2 text-sm text-gray-400">
-            <Users className="w-4 h-4" />
-            <span>{overallSentiment.volume.toLocaleString()} mentions</span>
-            <span className={`flex items-center ${overallSentiment.volumeChange > 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-              {overallSentiment.volumeChange > 0 ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
-              {Math.abs(overallSentiment.volumeChange)}%
-            </span>
-          </div>
-        </div>
-        
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          {/* Overall Score */}
-          <div className="text-center">
-            <div className="relative inline-block">
-              <div className="w-32 h-32 rounded-full border-8 border-slate-700 flex items-center justify-center">
-                <div className="text-center">
-                  <div className={`text-3xl font-bold ${getSentimentColor(overallSentiment.overall)}`}>
-                    {overallSentiment.overall.toFixed(1)}
-                  </div>
-                  <div className="text-sm text-gray-400">Overall</div>
-                </div>
-              </div>
-              <div className={`absolute top-0 right-0 ${overallSentiment.trend === 'up' ? 'text-emerald-400' : 'text-red-400'}`}>
-                {overallSentiment.trend === 'up' ? <TrendingUp className="w-6 h-6" /> : <TrendingDown className="w-6 h-6" />}
-              </div>
-            </div>
-            <div className={`mt-3 text-lg font-semibold ${getSentimentColor(overallSentiment.overall)}`}>
-              {getSentimentLabel(overallSentiment.overall)}
-            </div>
-            <div className="flex justify-center space-x-1 mt-2">
-              {overallSentiment.topEmotions.map((emoji, idx) => (
-                <span key={idx} className="text-lg">{emoji}</span>
-              ))}
-            </div>
-          </div>
-          
-          {/* Platform Scores */}
-          {sentimentData.map(platform => (
-            <div key={platform.platform} className="bg-slate-800/50 rounded-lg p-4">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center space-x-2">
-                  {getPlatformIcon(platform.platform)}
-                  <span className="text-white font-semibold capitalize">{platform.platform}</span>
-                </div>
-                <span className={`text-xs ${platform.change > 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-                  {platform.change > 0 ? '+' : ''}{platform.change}%
-                </span>
-              </div>
-              
-              <div className={`text-2xl font-bold ${getSentimentColor(platform.score)} mb-2`}>
-                {platform.score}
-              </div>
-              
-              <div className="space-y-2">
-                <div className="flex items-center justify-between text-xs">
-                  <span className="text-gray-400">Bullish</span>
-                  <div className="flex items-center space-x-2">
-                    <div className="w-20 h-2 bg-slate-700 rounded-full overflow-hidden">
-                      <div className="h-full bg-emerald-400" style={{width: `${platform.bullish}%`}}></div>
-                    </div>
-                    <span className="text-emerald-400">{platform.bullish}%</span>
-                  </div>
-                </div>
-                <div className="flex items-center justify-between text-xs">
-                  <span className="text-gray-400">Bearish</span>
-                  <div className="flex items-center space-x-2">
-                    <div className="w-20 h-2 bg-slate-700 rounded-full overflow-hidden">
-                      <div className="h-full bg-red-400" style={{width: `${platform.bearish}%`}}></div>
-                    </div>
-                    <span className="text-red-400">{platform.bearish}%</span>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="mt-3 pt-3 border-t border-slate-700 text-xs text-gray-400">
-                {platform.mentions.toLocaleString()} mentions
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-      
-      {/* Trending Discussions */}
-      <div className="bg-slate-900/50 backdrop-blur-sm border border-slate-700/50 rounded-xl p-6">
-        <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
-          <MessageCircle className="w-5 h-5 mr-2 text-blue-400" />
-          Trending Discussions
+      {/* Sentiment Overview */}
+      <div className="bg-slate-800/30 rounded-lg border border-slate-700/50 p-6">
+        <h3 className="text-lg font-semibold text-white mb-4">
+          Social Sentiment for {symbol}
         </h3>
         
-        <div className="space-y-3">
-          {trendingPosts.map((post, index) => (
-            <div key={index} className="p-4 bg-slate-800/50 rounded-lg hover:bg-slate-800/70 transition-colors">
-              <div className="flex items-start justify-between mb-2">
-                <div className="flex items-center space-x-2">
-                  {getPlatformIcon(post.platform)}
-                  <span className="font-semibold text-white">{post.author}</span>
-                  <span className="text-xs text-gray-500">{post.time}</span>
-                </div>
-                <span className={`px-2 py-1 rounded text-xs font-semibold ${
-                  post.sentiment === 'bullish' ? 'bg-emerald-500/20 text-emerald-400' :
-                  post.sentiment === 'bearish' ? 'bg-red-500/20 text-red-400' :
-                  'bg-gray-500/20 text-gray-400'
-                }`}>
-                  {post.sentiment}
-                </span>
-              </div>
-              
-              <p className="text-gray-300 mb-3">{post.content}</p>
-              
-              <div className="flex items-center space-x-4 text-xs text-gray-400">
-                {post.metrics.likes !== undefined && (
-                  <span className="flex items-center space-x-1">
-                    <Heart className="w-3 h-3" />
-                    <span>{post.metrics.likes}</span>
-                  </span>
-                )}
-                {post.metrics.upvotes !== undefined && (
-                  <span className="flex items-center space-x-1">
-                    <ThumbsUp className="w-3 h-3" />
-                    <span>{post.metrics.upvotes}</span>
-                  </span>
-                )}
-                {post.metrics.comments !== undefined && (
-                  <span className="flex items-center space-x-1">
-                    <MessageSquare className="w-3 h-3" />
-                    <span>{post.metrics.comments}</span>
-                  </span>
-                )}
-                {post.metrics.retweets !== undefined && (
-                  <span className="flex items-center space-x-1">
-                    <Repeat2 className="w-3 h-3" />
-                    <span>{post.metrics.retweets}</span>
-                  </span>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
-        
-        <div className="mt-4 text-center">
-          <button className="text-blue-400 hover:text-blue-300 text-sm font-semibold">
-            Load More Discussions →
-          </button>
-        </div>
-      </div>
-      
-      {/* Key Insights */}
-      <div className="bg-slate-900/50 backdrop-blur-sm border border-slate-700/50 rounded-xl p-6">
-        <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
-          <Zap className="w-5 h-5 mr-2 text-yellow-400" />
-          AI Key Insights
-        </h3>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-lg">
-            <div className="flex items-center space-x-2 mb-2">
+        <div className="grid grid-cols-3 gap-4 mb-4">
+          <div className="bg-slate-900/50 rounded-lg p-4">
+            <div className="flex items-center justify-between">
+              <span className="text-gray-400">Bullish</span>
               <TrendingUp className="w-4 h-4 text-emerald-400" />
-              <span className="font-semibold text-emerald-400">Bullish Signal</span>
             </div>
-            <p className="text-sm text-gray-300">
-              Unusual options activity detected with 3x normal volume on Feb $200 calls. 
-              Smart money appears to be positioning for upside move.
-            </p>
+            <div className="text-2xl font-bold text-emerald-400">
+              {sentiment.bullish.toFixed(0)}%
+            </div>
           </div>
           
-          <div className="p-4 bg-blue-500/10 border border-blue-500/30 rounded-lg">
-            <div className="flex items-center space-x-2 mb-2">
-              <Activity className="w-4 h-4 text-blue-400" />
-              <span className="font-semibold text-blue-400">Volume Spike</span>
+          <div className="bg-slate-900/50 rounded-lg p-4">
+            <div className="flex items-center justify-between">
+              <span className="text-gray-400">Bearish</span>
+              <TrendingUp className="w-4 h-4 text-red-400 rotate-180" />
             </div>
-            <p className="text-sm text-gray-300">
-              Social mentions up 45% in last 24 hours. Trending on r/wallstreetbets 
-              and gaining momentum on Twitter.
-            </p>
+            <div className="text-2xl font-bold text-red-400">
+              {sentiment.bearish.toFixed(0)}%
+            </div>
           </div>
           
-          <div className="p-4 bg-purple-500/10 border border-purple-500/30 rounded-lg">
-            <div className="flex items-center space-x-2 mb-2">
-              <Eye className="w-4 h-4 text-purple-400" />
-              <span className="font-semibold text-purple-400">Influencer Activity</span>
+          <div className="bg-slate-900/50 rounded-lg p-4">
+            <div className="flex items-center justify-between">
+              <span className="text-gray-400">Neutral</span>
+              <MessageSquare className="w-4 h-4 text-gray-400" />
             </div>
-            <p className="text-sm text-gray-300">
-              5 major fintwit accounts posted bullish analysis in the last 6 hours. 
-              Combined reach of 2.5M followers.
-            </p>
-          </div>
-          
-          <div className="p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
-            <div className="flex items-center space-x-2 mb-2">
-              <AlertCircle className="w-4 h-4 text-yellow-400" />
-              <span className="font-semibold text-yellow-400">Caution Zone</span>
+            <div className="text-2xl font-bold text-gray-400">
+              {sentiment.neutral.toFixed(0)}%
             </div>
-            <p className="text-sm text-gray-300">
-              RSI approaching overbought levels. Historical data suggests 15% probability 
-              of pullback when sentiment reaches these levels.
-            </p>
           </div>
         </div>
+
+        {/* Sentiment Bar */}
+        <div className="w-full h-4 bg-slate-900 rounded-full overflow-hidden flex">
+          <div 
+            className="bg-emerald-500 transition-all duration-500"
+            style={{ width: `${sentiment.bullish}%` }}
+          />
+          <div 
+            className="bg-gray-500 transition-all duration-500"
+            style={{ width: `${sentiment.neutral}%` }}
+          />
+          <div 
+            className="bg-red-500 transition-all duration-500"
+            style={{ width: `${sentiment.bearish}%` }}
+          />
+        </div>
+      </div>
+
+      {/* Social Feed */}
+      <div className="bg-slate-800/30 rounded-lg border border-slate-700/50 p-6">
+        <h3 className="text-lg font-semibold text-white mb-4">
+          Live Social Feed
+        </h3>
+        
+        {loading ? (
+          <div className="flex items-center justify-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-500"></div>
+          </div>
+        ) : (
+          <div className="space-y-3 max-h-[600px] overflow-y-auto">
+            {posts.map((post) => (
+              <div 
+                key={post.id}
+                className="bg-slate-900/50 rounded-lg p-4 hover:bg-slate-800/50 transition-colors"
+              >
+                <div className="flex items-start justify-between mb-2">
+                  <div className="flex items-center space-x-2">
+                    <span className="w-6 h-6 bg-slate-700 rounded-full flex items-center justify-center text-xs font-bold">
+                      {getPlatformIcon(post.platform)}
+                    </span>
+                    <span className="text-sm font-semibold text-white">
+                      {post.author}
+                    </span>
+                    <span className={`text-xs px-2 py-0.5 rounded ${
+                      post.sentiment === 'bullish' ? 'bg-emerald-500/20 text-emerald-400' :
+                      post.sentiment === 'bearish' ? 'bg-red-500/20 text-red-400' :
+                      'bg-gray-500/20 text-gray-400'
+                    }`}>
+                      {post.sentiment}
+                    </span>
+                  </div>
+                  <span className="text-xs text-gray-400">
+                    {new Date(post.timestamp).toLocaleTimeString()}
+                  </span>
+                </div>
+                
+                <p className="text-sm text-gray-300 mb-2">{post.content}</p>
+                
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-4">
+                    <span className="text-xs text-gray-400">
+                      ❤️ {post.likes}
+                    </span>
+                  </div>
+                  {post.url !== '#' && (
+                    <a 
+                      href={post.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs text-blue-400 hover:text-blue-300"
+                    >
+                      View Original →
+                    </a>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Quick Integration Option */}
+      <div className="bg-blue-900/20 border border-blue-700/50 rounded-lg p-4">
+        <h4 className="text-sm font-semibold text-blue-400 mb-2">
+          💡 Want More Social Data?
+        </h4>
+        <p className="text-xs text-gray-300 mb-3">
+          For comprehensive social monitoring including Reddit, Discord, and Facebook groups, 
+          we recommend integrating Juicer.io or Mention.com
+        </p>
+        <div className="flex space-x-2">
+          <a 
+            href="https://www.juicer.io/sign-up"
+            target="_blank"
+            className="px-3 py-1 bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 rounded text-xs"
+          >
+            Setup Juicer (5 min)
+          </a>
+          <a 
+            href="https://mention.com/en/"
+            target="_blank"
+            className="px-3 py-1 bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 rounded text-xs"
+          >
+            Try Mention
+          </a>
+        </div>
+      </div>
+
+      {/* Optional: Juicer Embed Area */}
+      <div id="juicer-embed-area">
+        {/* Uncomment and add your Juicer feed when ready */}
+        {/* <script src="https://www.juicer.io/embed/YOUR_FEED/embed-code.js"></script> */}
+        {/* <div className="juicer-feed" data-feed-id="YOUR_FEED"></div> */}
       </div>
     </div>
-  )
-}
-
-export default AnalyticsTab
+  );
+};

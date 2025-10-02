@@ -8,3 +8,5 @@ export async function GET() {
     message: 'Call /api/market-scan instead'
   }, { status: 410 }) // 410 Gone
 }
+
+
