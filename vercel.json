@@ -3,9 +3,10 @@
   "outputDirectory": ".next",
   "framework": "nextjs",
   "crons": [
-    {
-      "path": "/api/cron/scan-opportunities",
-      "schedule": "0 9 * * *"
-    }
+    // Temporarily disabled
+    // {
+    //   "path": "/api/cron/scan-opportunities",
+    //   "schedule": "0 9 * * *"
+    // }
   ]
 }
