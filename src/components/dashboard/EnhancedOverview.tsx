@@ -590,7 +590,7 @@ const EnhancedOverview: React.FC<EnhancedOverviewProps> = ({ user }) => {
         {/* Other Tabs */}
         {activeTab === 'screener' && <OptionsScreenerEnhanced />}
         {activeTab === 'research' && <ResearchTab />}
-        {activeTab === 'analytics' && <AnalyticsTab />}
+        {activeTab === 'analytics' && <AnalyticsTab symbol="SPY" />}
       </div>
 
       {/* Quick Add Trade Modal */}
