@@ -52,8 +52,8 @@ export class OpportunitiesService {
     const opportunities: Opportunity[] = [];
     
     for (const symbol of symbols) {
-      // Generate 2-4 opportunities per symbol with varying quality
-      const numOpps = Math.floor(Math.random() * 3) + 2;
+      // Generate 4-8 opportunities per symbol (2x increase)
+      const numOpps = Math.floor(Math.random() * 5) + 4;
       
       for (let i = 0; i < numOpps; i++) {
         const strike = 50 + Math.random() * 200;
@@ -68,10 +68,10 @@ export class OpportunitiesService {
         const roi = (premium * 100) / capitalRequired;
         const roiPerDay = roi / dte;
         
-        // Categorize based on characteristics
+        // Categorize based on characteristics (lowered thresholds for realism)
         let category: Opportunity['category'] = 'conservative';
-        if (roiPerDay > 1) category = 'market-movers';
-        else if (roiPerDay > 0.5 && Math.random() > 0.5) category = 'high-iv';
+        if (roiPerDay > 0.3) category = 'market-movers';
+        else if (roiPerDay > 0.15 && Math.random() > 0.5) category = 'high-iv';
         else if (Math.random() > 0.8) category = 'earnings';
         
         opportunities.push({
@@ -104,10 +104,10 @@ export class OpportunitiesService {
 
   private getStrategy(dte: number, roiPerDay: number): string {
     if (dte <= 7) return 'Weekly Put';
-    if (dte <= 14 && roiPerDay > 0.8) return 'Short Iron Condor';
-    if (roiPerDay > 1) return 'High Premium Put';
-    if (roiPerDay > 0.5) return 'Put Credit Spread';
-    if (roiPerDay > 0.3) return 'Iron Condor';
+    if (dte <= 14 && roiPerDay > 0.25) return 'Short Iron Condor';
+    if (roiPerDay > 0.3) return 'High Premium Put';
+    if (roiPerDay > 0.15) return 'Put Credit Spread';
+    if (roiPerDay > 0.08) return 'Iron Condor';
     return 'Cash Secured Put';
   }
 }

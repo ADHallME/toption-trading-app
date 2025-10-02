@@ -149,7 +149,7 @@ const OptionsScreenerEnhanced: React.FC<{ marketType?: 'equity' | 'index' | 'fut
     }
   }
   
-  const defaultTickers = getDefaultTickers(marketType)
+  const defaultTickers: string[] = [] // Empty by default - users search entire market
   
   const [filters, setFilters] = useState<ScreenerFilters>({
     strategy: 'Cash Secured Put',

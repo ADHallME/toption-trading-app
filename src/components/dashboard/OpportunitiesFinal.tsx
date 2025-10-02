@@ -17,16 +17,16 @@ export function OpportunitiesFinal({ marketType }: { marketType: 'equity' | 'ind
   const [loading, setLoading] = useState(true)
   const [allEquityTickers, setAllEquityTickers] = useState<string[]>([])
   
-  // Loading progress tracking
-  const [loadingPhase, setLoadingPhase] = useState<'fetching' | 'scanning' | 'complete'>('fetching')
-  const [totalTickers, setTotalTickers] = useState(0)
-  const [scannedTickers, setScannedTickers] = useState(0)
-  const [currentTicker, setCurrentTicker] = useState<string | undefined>()
+  // Progressive loading state
+  const [isInitialLoadComplete, setIsInitialLoadComplete] = useState(false)
+  const [isBackgroundScanning, setIsBackgroundScanning] = useState(false)
+  const [scanStatus, setCanStatus] = useState<'idle' | 'scanning' | 'complete' | 'error'>('idle')
+  const [totalTickersToScan, setTotalTickersToScan] = useState(0)
+  const [tickersScanned, setTickersScanned] = useState(0)
 
   // Fetch complete universe of tickers based on market type
   useEffect(() => {
     const loadTickerUniverse = async () => {
-      setLoadingPhase('fetching')
       const apiKey = process.env.NEXT_PUBLIC_POLYGON_API_KEY || ''
       
       // For equities, fetch ALL optionable stocks from Polygon
@@ -35,11 +35,11 @@ export function OpportunitiesFinal({ marketType }: { marketType: 'equity' | 'ind
         console.log(`Loaded ${tickers.length} optionable equities from Polygon`)
         const tickerList = tickers.length > 0 ? tickers : FALLBACK_EQUITY_LIST
         setAllEquityTickers(tickerList)
-        setTotalTickers(tickerList.length)
+        setTotalTickersToScan(tickerList.length)
       } else if (marketType === 'index') {
-        setTotalTickers(INDEX_UNIVERSE.length)
+        setTotalTickersToScan(INDEX_UNIVERSE.length)
       } else if (marketType === 'futures') {
-        setTotalTickers(FUTURES_UNIVERSE.length)
+        setTotalTickersToScan(FUTURES_UNIVERSE.length)
       }
     }
     
@@ -169,10 +169,10 @@ export function OpportunitiesFinal({ marketType }: { marketType: 'equity' | 'ind
       {/* Professional Loading Bar */}
       {loading && (
         <ProfessionalLoadingBar
-          totalTickers={totalTickers}
-          scannedTickers={scannedTickers}
-          currentTicker={currentTicker}
-          phase={loadingPhase}
+          totalTickers={totalTickersToScan}
+          scannedTickers={tickersScanned}
+          currentTicker={allEquityTickers[tickersScanned] || ''}
+          phase={scanStatus === 'error' ? 'complete' : scanStatus === 'idle' ? 'fetching' : scanStatus}
         />
       )}
       
