@@ -5,7 +5,7 @@ const POLYGON_API_KEY = 'geKtXXWPX3aHDqmrcYhYbouXkfhXsaVp'
 // Rate limiting: track requests per minute
 let requestCount = 0
 let lastReset = Date.now()
-const MAX_REQUESTS_PER_MINUTE = 5 // Conservative limit
+const MAX_REQUESTS_PER_MINUTE = 2 // Very conservative limit
 
 async function rateLimitedFetch(url: string, retries = 3): Promise<Response> {
   // Reset counter every minute
