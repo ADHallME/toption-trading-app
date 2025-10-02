@@ -178,7 +178,8 @@ export class PolygonOptionsService {
     const bid = option.last_quote.bid || 0
     const ask = option.last_quote.ask || 0
     
-    if (bid === 0 || ask === 0) return null
+    // Skip if BOTH bid and ask are 0
+    if (bid === 0 && ask === 0) return null
     
     const premium = (bid + ask) / 2
     
@@ -192,8 +193,7 @@ export class PolygonOptionsService {
     const roi = (premium * 100) / capitalRequired
     const roiPerDay = roi / dte
     
-    // Skip if ROI too low
-    if (roiPerDay < 0.01) return null // 0.01% per day minimum
+    // No ROI filter - just sort by best ROI later
     
     // Calculate probability of profit (simplified using delta)
     const delta = option.greeks?.delta || 0
@@ -283,7 +283,7 @@ export class PolygonOptionsService {
           
           const opportunity = await this.convertToOpportunity(option, stockPrice, category)
           
-          if (opportunity && opportunity.roiPerDay >= minROIPerDay) {
+          if (opportunity) {
             allOpportunities.push(opportunity)
           }
         }
