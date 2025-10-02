@@ -8,7 +8,7 @@ import { aiEngine, polygonToOpportunity, AIRecommendation } from '@/lib/ai/recom
 // import { sampleOptionsData, sampleQuotes } from '@/lib/polygon/sample-data' // Removed - no more dummy data
 import OptionsScreener from './OptionsScreener'
 import ResearchTab from './ResearchTab'
-import AnalyticsTab from './AnalyticsTab'
+import { AnalyticsTab } from './AnalyticsTab'
 import { 
   TrendingUp, TrendingDown, BarChart3, Target, Brain, Shield, 
   Search, Settings, Bell, User as UserIcon, X, Plus,
@@ -542,7 +542,7 @@ const EnhancedOverview: React.FC<EnhancedOverviewProps> = ({ user }) => {
         {/* Other Tabs */}
         {activeTab === 'screener' && <OptionsScreener />}
         {activeTab === 'research' && <ResearchTab />}
-        {activeTab === 'sentiment' && <AnalyticsTab />}
+        {activeTab === 'sentiment' && <AnalyticsTab symbol="SPY" />}
       </div>
 
       {/* Quick Add Trade Modal with Info */}
