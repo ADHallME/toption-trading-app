@@ -2,6 +2,40 @@ import { NextResponse } from 'next/server'
 
 const POLYGON_API_KEY = process.env.POLYGON_API_KEY || 'geKtXXWPX3aHDqmrcYhYbouXkfhXsaVp'
 
+// Rate limiting: track requests per minute
+let requestCount = 0
+let lastReset = Date.now()
+const MAX_REQUESTS_PER_MINUTE = 3 // Very conservative for options API
+
+async function rateLimitedFetch(url: string, retries = 3): Promise<Response> {
+  // Reset counter every minute
+  if (Date.now() - lastReset > 60000) {
+    requestCount = 0
+    lastReset = Date.now()
+  }
+  
+  // Check rate limit
+  if (requestCount >= MAX_REQUESTS_PER_MINUTE) {
+    const waitTime = 60000 - (Date.now() - lastReset)
+    console.log(`Options API rate limit reached, waiting ${waitTime}ms`)
+    await new Promise(resolve => setTimeout(resolve, waitTime))
+    requestCount = 0
+    lastReset = Date.now()
+  }
+  
+  requestCount++
+  
+  const response = await fetch(url)
+  
+  if (response.status === 429 && retries > 0) {
+    console.log(`Options API rate limited, retrying in 5 seconds... (${retries} retries left)`)
+    await new Promise(resolve => setTimeout(resolve, 5000))
+    return rateLimitedFetch(url, retries - 1)
+  }
+  
+  return response
+}
+
 // Helper function to calculate probability using delta as proxy
 function calculateProbabilityOfProfit(delta: number, optionType: 'call' | 'put'): number {
   // For CSPs (cash secured puts), we want OTM probability
@@ -141,7 +175,7 @@ export async function GET(request: Request) {
   try {
     // First, get the current stock price
     const stockPriceUrl = `https://api.polygon.io/v2/aggs/ticker/${symbol}/prev?adjusted=true&apiKey=${POLYGON_API_KEY}`
-    const stockResponse = await fetch(stockPriceUrl)
+    const stockResponse = await rateLimitedFetch(stockPriceUrl)
     
     let currentStockPrice = 100 // Default fallback
     if (stockResponse.ok) {
@@ -193,7 +227,7 @@ async function fetchContractsEndpoint(
     url += `&expiration_date.gte=${today}`
     url += `&apiKey=${POLYGON_API_KEY}`
     
-    const response = await fetch(url)
+    const response = await rateLimitedFetch(url)
     const data = await response.json()
     
     // Return basic contract data without individual quote fetching for now
