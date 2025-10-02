@@ -421,7 +421,7 @@ export function OpportunitiesFinal({ marketType }: { marketType: 'equity' | 'ind
       
       {/* Footer Status Bar */}
       <SimpleFooterStatus
-        status={loading ? 'scanning' : scanStatus}
+        status={loading ? 'scanning' : scanStatus === 'idle' ? 'complete' : scanStatus}
         scannedTickers={tickersScanned}
         totalTickers={totalTickersToScan}
       />
