@@ -72,6 +72,7 @@ import { OpportunitiesFinal } from './OpportunitiesFinal'
 import TickerSearch from './TickerSearch'
 import StrategyCardFixed from './StrategyCardFixed'
 import { OpportunityCarousel, generateSampleOpportunities } from './OpportunityCard'
+import { SettingsPanel } from './SettingsPanel'
 
 // Main component stays mostly the same but uses fixed components
 export default function ProfessionalTerminal() {
@@ -82,6 +83,7 @@ export default function ProfessionalTerminal() {
   const [watchlist, setWatchlist] = useState<string[]>([])
   const [showNotifications, setShowNotifications] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
+  const [showSettingsPanel, setShowSettingsPanel] = useState(false)
   const [showProfile, setShowProfile] = useState(false)
   const [readNotifications, setReadNotifications] = useState<Set<number>>(new Set())
   const [expandedSections, setExpandedSections] = useState({
@@ -624,43 +626,13 @@ export default function ProfessionalTerminal() {
                     <div className="p-2">
                       <button 
                         onClick={() => {
-                          window.location.href = '/settings?tab=ai-calibration'
-                          setShowSettings(false)
-                        }}
-                        className="w-full text-left px-3 py-2 hover:bg-gray-700 rounded text-white flex items-center gap-2 transition-colors"
-                      >
-                        <Target className="w-4 h-4" />
-                        AI Calibration Settings
-                      </button>
-                      <button 
-                        onClick={() => {
-                          window.location.href = '/settings?tab=screener'
-                          setShowSettings(false)
-                        }}
-                        className="w-full text-left px-3 py-2 hover:bg-gray-700 rounded text-white flex items-center gap-2 transition-colors"
-                      >
-                        <Filter className="w-4 h-4" />
-                        Screener Preferences
-                      </button>
-                      <button 
-                        onClick={() => {
-                          window.location.href = '/settings?tab=alerts'
-                          setShowSettings(false)
-                        }}
-                        className="w-full text-left px-3 py-2 hover:bg-gray-700 rounded text-white flex items-center gap-2 transition-colors"
-                      >
-                        <Bell className="w-4 h-4" />
-                        Alert Thresholds
-                      </button>
-                      <button 
-                        onClick={() => {
-                          window.location.href = '/settings?tab=display'
+                          setShowSettingsPanel(true)
                           setShowSettings(false)
                         }}
                         className="w-full text-left px-3 py-2 hover:bg-gray-700 rounded text-white flex items-center gap-2 transition-colors"
                       >
                         <Settings className="w-4 h-4" />
-                        Display Options
+                        Open Settings Panel
                       </button>
                     </div>
                   </div>
@@ -909,6 +881,12 @@ export default function ProfessionalTerminal() {
           onClose={() => setShowChartPopout(false)} 
         />
       )}
+
+      {/* Settings Panel */}
+      <SettingsPanel 
+        isOpen={showSettingsPanel} 
+        onClose={() => setShowSettingsPanel(false)} 
+      />
     </div>
   )
 }

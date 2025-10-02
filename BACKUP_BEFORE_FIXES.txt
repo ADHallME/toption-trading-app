@@ -1,0 +1,7 @@
+BACKUP POINT - October 1, 2025
+Commit: 4a967df Clean up: Add remaining files and fixes
+Branch: main
+Status: Clean working tree
+
+To rollback if needed:
+git reset --hard 4a967df

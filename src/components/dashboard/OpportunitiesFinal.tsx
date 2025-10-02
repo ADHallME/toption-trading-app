@@ -42,7 +42,8 @@ export function OpportunitiesFinal({ marketType }: { marketType: 'equity' | 'ind
     const opps = []
     console.log('generateHighROI called with tickers:', tickers, 'strategy:', strategy, 'count:', count)
     
-    for (let i = 0; i < count; i++) {
+    // Generate MORE opportunities by cycling through tickers multiple times
+    for (let i = 0; i < count * 2; i++) {
       const ticker = tickers[i % tickers.length]
       console.log(`Generating opportunity ${i+1}/${count} for ticker: ${ticker}`)
       const stockPrice = 20 + Math.random() * 150
@@ -58,8 +59,8 @@ export function OpportunitiesFinal({ marketType }: { marketType: 'equity' | 'ind
       const roi = (premium / (strike * 100)) * 100
       const roiPerDay = roi / dte
       
-      // Include opportunities with decent ROI (>0.01% ROI/Day) - very low threshold
-      if (roiPerDay >= 0.01) {
+      // Include opportunities with decent ROI (>0.2% ROI/Day) - lowered for more results
+      if (roiPerDay >= 0.2) {
         opps.push({
           id: `${ticker}-${strike}-${dte}`,
           ticker,

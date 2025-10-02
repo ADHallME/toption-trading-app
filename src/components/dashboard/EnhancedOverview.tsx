@@ -8,7 +8,7 @@ import { aiEngine, polygonToOpportunity, AIRecommendation } from '@/lib/ai/recom
 // import { sampleOptionsData, sampleQuotes } from '@/lib/polygon/sample-data' // Removed - no more dummy data
 import OptionsScreenerEnhanced from './OptionsScreenerEnhanced'
 import ResearchTab from './ResearchTab'
-import AnalyticsTab from './AnalyticsTab'
+import { AnalyticsTab } from './AnalyticsTab'
 import { 
   TrendingUp, TrendingDown, BarChart3, Target, Brain, Shield, 
   Search, Settings, Bell, User as UserIcon, X, Plus,

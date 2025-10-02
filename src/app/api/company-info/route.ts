@@ -1,140 +1,80 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const companyData: Record<string, any> = {
-  'AAPL': {
-    name: 'Apple Inc.',
-    marketCap: '$3.45T',
-    pe: 32.5,
-    eps: 6.13,
-    website: 'https://apple.com',
-    ceo: 'Tim Cook',
-    description: 'Apple Inc. designs, manufactures, and markets smartphones, personal computers, tablets, wearables, and accessories worldwide.',
-    sector: 'Technology',
-    industry: 'Consumer Electronics'
-  },
-  'MSFT': {
-    name: 'Microsoft Corporation',
-    marketCap: '$2.95T',
-    pe: 35.2,
-    eps: 11.23,
-    website: 'https://microsoft.com',
-    ceo: 'Satya Nadella',
-    description: 'Microsoft Corporation develops, licenses, and supports software, services, devices, and solutions worldwide.',
-    sector: 'Technology',
-    industry: 'Software'
-  },
-  'NVDA': {
-    name: 'NVIDIA Corporation',
-    marketCap: '$1.35T',
-    pe: 65.8,
-    eps: 14.52,
-    website: 'https://nvidia.com',
-    ceo: 'Jensen Huang',
-    description: 'NVIDIA Corporation provides graphics, computing and networking solutions worldwide.',
-    sector: 'Technology',
-    industry: 'Semiconductors'
-  },
-  'TSLA': {
-    name: 'Tesla, Inc.',
-    marketCap: '$785B',
-    pe: 72.3,
-    eps: 3.45,
-    website: 'https://tesla.com',
-    ceo: 'Elon Musk',
-    description: 'Tesla, Inc. designs, develops, manufactures, and sells electric vehicles and energy storage systems.',
-    sector: 'Consumer Cyclical',
-    industry: 'Auto Manufacturers'
-  },
-  'AMD': {
-    name: 'Advanced Micro Devices',
-    marketCap: '$235B',
-    pe: 45.2,
-    eps: 3.21,
-    website: 'https://amd.com',
-    ceo: 'Lisa Su',
-    description: 'AMD is a global semiconductor company offering CPUs, GPUs, and other computing solutions.',
-    sector: 'Technology',
-    industry: 'Semiconductors'
-  },
-  'META': {
-    name: 'Meta Platforms Inc.',
-    marketCap: '$1.25T',
-    pe: 28.9,
-    eps: 14.87,
-    website: 'https://meta.com',
-    ceo: 'Mark Zuckerberg',
-    description: 'Meta builds technologies that help people connect, find communities, and grow businesses.',
-    sector: 'Technology',
-    industry: 'Internet Content'
-  },
-  'GOOGL': {
-    name: 'Alphabet Inc.',
-    marketCap: '$1.75T',
-    pe: 26.5,
-    eps: 5.84,
-    website: 'https://abc.xyz',
-    ceo: 'Sundar Pichai',
-    description: 'Alphabet is the parent company of Google and several other businesses.',
-    sector: 'Technology',
-    industry: 'Internet Content'
-  },
-  'AMZN': {
-    name: 'Amazon.com Inc.',
-    marketCap: '$1.58T',
-    pe: 42.3,
-    eps: 3.24,
-    website: 'https://amazon.com',
-    ceo: 'Andy Jassy',
-    description: 'Amazon is a multinational technology company focusing on e-commerce, cloud computing, and AI.',
-    sector: 'Technology',
-    industry: 'Internet Retail'
-  },
-  'SPY': {
-    name: 'SPDR S&P 500 ETF',
-    marketCap: '$485B AUM',
-    pe: 22.5,
-    eps: 19.45,
-    website: 'https://www.ssga.com/us/en/intermediary/etfs/funds/spdr-sp-500-etf-trust-spy',
-    ceo: 'N/A',
-    description: 'The SPDR S&P 500 ETF tracks the S&P 500 Index.',
-    sector: 'ETF',
-    industry: 'Index Fund'
-  },
-  'QQQ': {
-    name: 'Invesco QQQ Trust',
-    marketCap: '$235B AUM',
-    pe: 28.3,
-    eps: 14.21,
-    website: 'https://www.invesco.com/qqq-etf',
-    ceo: 'N/A',
-    description: 'QQQ tracks the Nasdaq-100 Index of the 100 largest non-financial companies on Nasdaq.',
-    sector: 'ETF',
-    industry: 'Index Fund'
-  }
-};
+const POLYGON_API_KEY = process.env.NEXT_PUBLIC_POLYGON_API_KEY || 'geKtXXWPX3aHDqmrcYhYbouXkfhXsaVp';
 
-export async function GET(req: NextRequest) {
-  const { searchParams } = new URL(req.url);
-  const symbol = searchParams.get('symbol')?.toUpperCase();
-  
+export async function GET(request: NextRequest) {
+  const searchParams = request.nextUrl.searchParams;
+  const symbol = searchParams.get('symbol');
+
   if (!symbol) {
-    return NextResponse.json({ error: 'Symbol required' }, { status: 400 });
+    return NextResponse.json(
+      { error: 'Symbol parameter is required' },
+      { status: 400 }
+    );
   }
-  
-  if (companyData[symbol]) {
-    return NextResponse.json(companyData[symbol]);
+
+  try {
+    // Fetch from Polygon Ticker Details API
+    const response = await fetch(
+      `https://api.polygon.io/v3/reference/tickers/${symbol}?apiKey=${POLYGON_API_KEY}`
+    );
+
+    if (!response.ok) {
+      throw new Error(`Polygon API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    const result = data.results;
+
+    // Format response
+    return NextResponse.json({
+      success: true,
+      name: result?.name || symbol,
+      logo: result?.branding?.logo_url ? `${result.branding.logo_url}?apiKey=${POLYGON_API_KEY}` : null,
+      marketCap: result?.market_cap ? formatMarketCap(result.market_cap) : 'N/A',
+      pe: result?.share_class_shares_outstanding && result?.weighted_shares_outstanding 
+        ? (result.market_cap / result.total_employees).toFixed(2) 
+        : null,
+      eps: null, // Polygon doesn't provide EPS in ticker details
+      website: result?.homepage_url || `https://finance.yahoo.com/quote/${symbol}`,
+      ceo: null, // Polygon doesn't provide CEO in basic tier
+      description: result?.description || `${symbol} is a publicly traded company.`,
+      sector: result?.sic_description || 'N/A',
+      industry: result?.type || 'N/A',
+      employees: result?.total_employees || null,
+      exchange: result?.primary_exchange || 'N/A'
+    });
+
+  } catch (error) {
+    console.error('Error fetching company info:', error);
+    
+    // Fallback data
+    return NextResponse.json({
+      success: false,
+      name: `${symbol} Corporation`,
+      logo: null,
+      marketCap: 'N/A',
+      pe: null,
+      eps: null,
+      website: `https://finance.yahoo.com/quote/${symbol}`,
+      ceo: 'N/A',
+      description: `${symbol} is a publicly traded company. Detailed information is currently unavailable.`,
+      sector: 'N/A',
+      industry: 'N/A',
+      employees: null,
+      exchange: 'N/A'
+    });
   }
-  
-  // Default for unknown symbols
-  return NextResponse.json({
-    name: symbol,
-    marketCap: 'N/A',
-    pe: 0,
-    eps: 0,
-    website: `https://finance.yahoo.com/quote/${symbol}`,
-    ceo: 'N/A',
-    description: `Information for ${symbol}`,
-    sector: 'N/A',
-    industry: 'N/A'
-  });
+}
+
+function formatMarketCap(marketCap: number): string {
+  if (marketCap >= 1e12) {
+    return `$${(marketCap / 1e12).toFixed(2)}T`;
+  } else if (marketCap >= 1e9) {
+    return `$${(marketCap / 1e9).toFixed(2)}B`;
+  } else if (marketCap >= 1e6) {
+    return `$${(marketCap / 1e6).toFixed(2)}M`;
+  } else {
+    return `$${marketCap.toLocaleString()}`;
+  }
 }
