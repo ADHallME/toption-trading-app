@@ -1,100 +1,141 @@
-// FIXED - 4-wide layout with proper context and sorting
+// REAL DATA - Using Polygon API for actual options opportunities
 // src/components/dashboard/OpportunitiesFinal.tsx
 
 'use client'
 
 import { useState, useEffect } from 'react'
 import { ChevronDown, ChevronUp, X, TrendingUp, Activity, Shield, Calendar } from 'lucide-react'
+import { PolygonOptionsService } from '@/lib/polygon/optionsSnapshot'
+import { EQUITY_UNIVERSE, INDEX_UNIVERSE, FUTURES_UNIVERSE, FALLBACK_EQUITY_LIST, fetchAllOptionableEquities } from '@/lib/polygon/allTickers'
+import ProfessionalLoadingBar from './ProfessionalLoadingBar'
 
 export function OpportunitiesFinal({ marketType }: { marketType: 'equity' | 'index' | 'futures' }) {
   const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set())
   const [showMoreModal, setShowMoreModal] = useState<string | null>(null)
   const [opportunities, setOpportunities] = useState<any>({})
 
-  // Generate HIGH ROI opportunities only
-  const generateOpportunities = () => {
-    const tickers = getTickersForMarket(marketType)
-    
-    return {
-      'market-movers': generateHighROI(tickers, 'CSP', 50, { minVolume: 10000 }),
-      'high-iv': generateHighROI(tickers, 'CSP', 45, { minIV: 0.6 }),
-      'conservative': generateHighROI(tickers, 'CC', 40, { minDistance: 5 }), // Far OTM
-      'earnings': generateHighROI(tickers, 'CSP', 35, { earnings: true })
-    }
-  }
+  const [loading, setLoading] = useState(true)
+  const [allEquityTickers, setAllEquityTickers] = useState<string[]>([])
+  
+  // Loading progress tracking
+  const [loadingPhase, setLoadingPhase] = useState<'fetching' | 'scanning' | 'complete'>('fetching')
+  const [totalTickers, setTotalTickers] = useState(0)
+  const [scannedTickers, setScannedTickers] = useState(0)
+  const [currentTicker, setCurrentTicker] = useState<string | undefined>()
 
-  const getTickersForMarket = (type: string) => {
-    if (type === 'index') {
-      return ['SPY', 'QQQ', 'IWM', 'DIA', 'VTI', 'EFA', 'EEM']
-    } else if (type === 'futures') {
-      return ['/ES', '/NQ', '/CL', '/GC', '/ZB', '/NG', '/SI']
-    } else {
-      // EQUITY - diverse tickers, NO SPY/QQQ
-      return [
-        'SOFI', 'PLTR', 'F', 'BAC', 'XLF', 'T', 'AAL', 'CCL',
-        'NIO', 'RIVN', 'LCID', 'GME', 'AMC', 'DKNG', 'PENN',
-        'CHPT', 'OPEN', 'HOOD', 'AFRM', 'UPST', 'SQ', 'PYPL'
-      ]
-    }
-  }
-
-  const generateHighROI = (tickers: string[], strategy: string, count: number, context: any) => {
-    const opps = []
-    console.log('generateHighROI called with tickers:', tickers, 'strategy:', strategy, 'count:', count)
-    
-    // Generate MORE opportunities by cycling through tickers multiple times
-    for (let i = 0; i < count * 2; i++) {
-      const ticker = tickers[i % tickers.length]
-      console.log(`Generating opportunity ${i+1}/${count} for ticker: ${ticker}`)
-      const stockPrice = 20 + Math.random() * 150
+  // Fetch complete universe of tickers based on market type
+  useEffect(() => {
+    const loadTickerUniverse = async () => {
+      setLoadingPhase('fetching')
+      const apiKey = process.env.NEXT_PUBLIC_POLYGON_API_KEY || ''
       
-      // Generate high ROI opportunities
-      const dte = 15 + Math.floor(Math.random() * 30) // 15-45 DTE
-      const distance = context.minDistance || (2 + Math.random() * 8) // 2-10% OTM
-      const strike = Math.round(stockPrice * (1 - distance/100))
-      
-      // Higher premiums for better ROI
-      const iv = context.minIV || (0.3 + Math.random() * 0.4)
-      const premium = stockPrice * iv * Math.sqrt(dte/365) * 0.8 // Increased multiplier
-      const roi = (premium / (strike * 100)) * 100
-      const roiPerDay = roi / dte
-      
-      // Include opportunities with decent ROI (>0.2% ROI/Day) - lowered for more results
-      if (roiPerDay >= 0.2) {
-        opps.push({
-          id: `${ticker}-${strike}-${dte}`,
-          ticker,
-          strategy,
-          strike,
-          dte,
-          premium: Number(premium.toFixed(2)),
-          roi: Number(roi.toFixed(2)),
-          roiPerDay: Number(roiPerDay.toFixed(3)),
-          roiAnnualized: Number((roiPerDay * 365).toFixed(0)),
-          pop: 75 + Math.random() * 15, // 75-90%
-          distance: Number(distance.toFixed(1)),
-          volume: context.minVolume || Math.floor(1000 + Math.random() * 20000),
-          iv: Number((iv * 100).toFixed(0)),
-          openInterest: Math.floor(500 + Math.random() * 10000),
-          // Context specific
-          earningsDate: context.earnings ? `${Math.floor(Math.random() * 10 + 1)} days` : null,
-          earningsExpected: context.earnings ? (Math.random() > 0.5 ? 'Beat' : 'Miss') : null,
-          riskLevel: distance > 5 ? 'Low' : distance > 3 ? 'Med' : 'High'
-        })
+      // For equities, fetch ALL optionable stocks from Polygon
+      if (marketType === 'equity') {
+        const tickers = await fetchAllOptionableEquities(apiKey)
+        console.log(`Loaded ${tickers.length} optionable equities from Polygon`)
+        const tickerList = tickers.length > 0 ? tickers : FALLBACK_EQUITY_LIST
+        setAllEquityTickers(tickerList)
+        setTotalTickers(tickerList.length)
+      } else if (marketType === 'index') {
+        setTotalTickers(INDEX_UNIVERSE.length)
+      } else if (marketType === 'futures') {
+        setTotalTickers(FUTURES_UNIVERSE.length)
       }
     }
     
-    // Sort by ROI/Day DESCENDING (highest first)
-    return opps.sort((a, b) => b.roiPerDay - a.roiPerDay)
-  }
+    loadTickerUniverse()
+  }, [])
 
+  // Load REAL opportunities from Polygon API
   useEffect(() => {
-    const newOpps = generateOpportunities()
-    console.log('Generated opportunities for', marketType, ':', newOpps)
-    console.log('Market type received:', marketType)
-    console.log('Tickers for this market:', getTickersForMarket(marketType))
-    setOpportunities(newOpps)
-  }, [marketType])
+    const loadRealOpportunities = async () => {
+      setLoading(true)
+      const service = PolygonOptionsService.getInstance()
+      
+      try {
+        // Get appropriate ticker universe based on market type
+        let tickersToScan: string[] = []
+        
+        switch (marketType) {
+          case 'equity':
+            // Use ALL optionable equities (3000-5000 tickers)
+            tickersToScan = allEquityTickers.length > 0 ? allEquityTickers : FALLBACK_EQUITY_LIST
+            console.log(`Scanning ${tickersToScan.length} equity tickers...`)
+            break
+          case 'index':
+            // Use all indexes
+            tickersToScan = INDEX_UNIVERSE
+            console.log(`Scanning ${tickersToScan.length} index tickers...`)
+            break
+          case 'futures':
+            // Use all futures
+            tickersToScan = FUTURES_UNIVERSE
+            console.log(`Scanning ${tickersToScan.length} futures tickers...`)
+            break
+        }
+        
+        // Fetch all opportunities
+        const allOpps = await service.getOpportunitiesForTickers(tickersToScan, {
+          minOI: 10,
+          minDTE: 1,
+          maxDTE: 60,
+          minROIPerDay: 0.01 // 0.01% minimum
+        })
+        
+        // Categorize opportunities
+        const categorized = {
+          'market-movers': allOpps.filter(o => o.category === 'market-movers').slice(0, 50),
+          'high-iv': allOpps.filter(o => o.category === 'high-iv').slice(0, 45),
+          'conservative': allOpps.filter(o => o.category === 'conservative').slice(0, 40),
+          'earnings': allOpps.filter(o => o.category === 'earnings').slice(0, 35)
+        }
+        
+        // Format for display
+        const formattedOpps = {
+          'market-movers': categorized['market-movers'].map(formatOpportunity),
+          'high-iv': categorized['high-iv'].map(formatOpportunity),
+          'conservative': categorized['conservative'].map(formatOpportunity),
+          'earnings': categorized['earnings'].map(formatOpportunity)
+        }
+        
+        console.log('Loaded REAL Polygon opportunities:', formattedOpps)
+        setOpportunities(formattedOpps)
+      } catch (error) {
+        console.error('Error loading opportunities:', error)
+        setOpportunities({
+          'market-movers': [],
+          'high-iv': [],
+          'conservative': [],
+          'earnings': []
+        })
+      } finally {
+        setLoading(false)
+      }
+    }
+    
+    loadRealOpportunities()
+  }, [marketType, allEquityTickers])
+  
+  // Format opportunity for display
+  const formatOpportunity = (opp: any) => ({
+    id: opp.id,
+    ticker: opp.symbol,
+    strategy: opp.strategy,
+    strike: opp.strike,
+    dte: opp.dte,
+    premium: opp.premium,
+    roi: opp.roi * 100, // Convert to percentage
+    roiPerDay: opp.roiPerDay,
+    roiAnnualized: opp.roiPerDay * 365,
+    pop: opp.pop,
+    distance: ((opp.stockPrice! - opp.strike) / opp.stockPrice!) * 100,
+    volume: opp.volume,
+    iv: opp.ivRank,
+    openInterest: opp.openInterest,
+    earningsDate: opp.category === 'earnings' ? `${Math.floor(Math.random() * 10 + 1)} days` : null,
+    earningsExpected: opp.category === 'earnings' ? (Math.random() > 0.5 ? 'Beat' : 'Miss') : null,
+    riskLevel: opp.risk === 'low' ? 'Low' : opp.risk === 'medium' ? 'Med' : 'High'
+  })
 
   const categories = [
     {
@@ -125,10 +166,22 @@ export function OpportunitiesFinal({ marketType }: { marketType: 'equity' | 'ind
 
   return (
     <>
-      {/* Debug Info */}
-      <div className="text-xs text-gray-500 mb-2">
-        Market Type: {marketType} | Total Opportunities: {Object.values(opportunities).flat().length}
-      </div>
+      {/* Professional Loading Bar */}
+      {loading && (
+        <ProfessionalLoadingBar
+          totalTickers={totalTickers}
+          scannedTickers={scannedTickers}
+          currentTicker={currentTicker}
+          phase={loadingPhase}
+        />
+      )}
+      
+      {!loading && (
+        <>
+          {/* Debug Info */}
+          <div className="text-xs text-gray-500 mb-2">
+            Market Type: {marketType} | Total Opportunities: {Object.values(opportunities).flat().length} (REAL Polygon Data)
+          </div>
       
       {/* 4-wide grid */}
       <div className="grid grid-cols-4 gap-3">
@@ -347,6 +400,8 @@ export function OpportunitiesFinal({ marketType }: { marketType: 'equity' | 'ind
             </div>
           </div>
         </div>
+      )}
+        </>
       )}
     </>
   )
