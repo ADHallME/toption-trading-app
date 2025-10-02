@@ -11,7 +11,7 @@ export async function GET(request: Request) {
   const minROI = parseFloat(searchParams.get('minROI') || '0.5')
   const minPoP = parseFloat(searchParams.get('minPoP') || '70')
   const maxCapital = parseFloat(searchParams.get('maxCapital') || '100000')
-  const limit = parseInt(searchParams.get('limit') || '5') // Very reduced to prevent rate limiting
+  const limit = parseInt(searchParams.get('limit') || '50') // Restored for better UX
   
   try {
     const results = await marketScanner.scanMarket({

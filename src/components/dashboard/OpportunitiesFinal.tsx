@@ -27,7 +27,7 @@ export function OpportunitiesFinal({ marketType }: { marketType: 'equity' | 'ind
       
       try {
         // Pass market type as query parameter
-        const response = await fetch(`/api/opportunities?marketType=${marketType}`)
+        const response = await fetch(`/api/opportunities-fast?marketType=${marketType}`)
         const result = await response.json()
         
         if (!result.success) {
