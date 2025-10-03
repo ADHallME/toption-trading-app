@@ -5,8 +5,9 @@ import {
   TrendingUp, Calendar, FileText, BarChart3, DollarSign, 
   Users, Building2, Globe, AlertCircle, ChevronRight,
   Activity, Target, PieChart, Zap, ArrowUpRight, ArrowDownRight,
-  Clock, Star, Info, BookOpen, Newspaper, TrendingDown
+  Clock, Star, Info, BookOpen, Newspaper, TrendingDown, MessageCircle
 } from 'lucide-react'
+import SocialFeed from '@/components/analysis/SocialFeed'
 
 interface StockFundamentals {
   symbol: string
@@ -41,7 +42,7 @@ interface NewsItem {
 
 const ResearchTab: React.FC = () => {
   const [selectedSymbol, setSelectedSymbol] = useState('AAPL')
-  const [activeSection, setActiveSection] = useState<'fundamentals' | 'earnings' | 'news' | 'technicals'>('fundamentals')
+  const [activeSection, setActiveSection] = useState<'fundamentals' | 'earnings' | 'news' | 'technicals' | 'social'>('fundamentals')
   
   // Sample data
   const fundamentals: StockFundamentals = {
@@ -135,7 +136,7 @@ const ResearchTab: React.FC = () => {
           
           {/* Section Tabs */}
           <div className="flex space-x-2">
-            {(['fundamentals', 'earnings', 'news', 'technicals'] as const).map(section => (
+            {(['fundamentals', 'earnings', 'news', 'technicals', 'social'] as const).map(section => (
               <button
                 key={section}
                 onClick={() => setActiveSection(section)}
@@ -145,7 +146,14 @@ const ResearchTab: React.FC = () => {
                     : 'bg-slate-700 text-gray-300 hover:bg-slate-600'
                 }`}
               >
-                {section.charAt(0).toUpperCase() + section.slice(1)}
+                {section === 'social' ? (
+                  <div className="flex items-center gap-2">
+                    <MessageCircle className="w-4 h-4" />
+                    Social
+                  </div>
+                ) : (
+                  section.charAt(0).toUpperCase() + section.slice(1)
+                )}
               </button>
             ))}
           </div>
@@ -370,6 +378,17 @@ const ResearchTab: React.FC = () => {
               </div>
             </div>
           </div>
+        </div>
+      )}
+      
+      {/* Social Section */}
+      {activeSection === 'social' && (
+        <div className="bg-slate-900/50 backdrop-blur-sm border border-slate-700/50 rounded-xl p-6">
+          <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
+            <MessageCircle className="w-5 h-5 mr-2 text-blue-400" />
+            Social Sentiment & Discussion
+          </h3>
+          <SocialFeed ticker={selectedSymbol} />
         </div>
       )}
     </div>
