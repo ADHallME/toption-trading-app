@@ -125,8 +125,14 @@ export default function StrategyCardFixed({
                       onClick={(e) => {
                         e.stopPropagation()
                         toggleWatchlist(opp)
+                        // Add micro-interaction
+                        const button = e.currentTarget
+                        button.style.transform = 'scale(1.2)'
+                        setTimeout(() => {
+                          button.style.transform = 'scale(1)'
+                        }, 150)
                       }}
-                      className={`p-1 rounded hover:bg-gray-700 transition ${
+                      className={`p-1 rounded hover:bg-gray-700 transition-all duration-150 ${
                         isWatchlisted ? 'text-yellow-400' : 'text-gray-500'
                       }`}
                     >

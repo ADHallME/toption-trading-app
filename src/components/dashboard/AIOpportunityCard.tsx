@@ -82,8 +82,16 @@ export default function AIOpportunityCard({
         </div>
         <div className="flex items-center space-x-2">
           <button
-            onClick={handleStar}
-            className={`p-1 rounded transition-colors ${
+            onClick={(e) => {
+              handleStar()
+              // Add micro-interaction
+              const button = e.currentTarget
+              button.style.transform = 'scale(1.2)'
+              setTimeout(() => {
+                button.style.transform = 'scale(1)'
+              }, 150)
+            }}
+            className={`p-1 rounded transition-all duration-150 ${
               isStarred ? 'text-yellow-400' : 'text-gray-400 hover:text-yellow-400'
             }`}
           >

@@ -1,166 +1,265 @@
 'use client'
 
-import { X, Target, Bell, Filter, Eye } from 'lucide-react'
+import { useState } from 'react'
+import { X } from 'lucide-react'
+
+interface FilterSettings {
+  minROI: number
+  maxROI: number
+  minDTE: number
+  maxDTE: number
+  minPremium: number
+  maxPremium: number
+  minPOP: number
+  maxPOP: number
+  minVolume: number
+  minOI: number
+  strategies: string[]
+  riskLevels: string[]
+}
 
 interface SettingsPanelProps {
   isOpen: boolean
   onClose: () => void
+  onApply: (filters: FilterSettings) => void
+  currentFilters: FilterSettings
 }
 
-export function SettingsPanel({ isOpen, onClose }: SettingsPanelProps) {
+export default function SettingsPanel({ isOpen, onClose, onApply, currentFilters }: SettingsPanelProps) {
+  const [filters, setFilters] = useState<FilterSettings>(currentFilters)
+  
   if (!isOpen) return null
-
+  
+  const handleApply = () => {
+    onApply(filters)
+    onClose()
+  }
+  
+  const handleReset = () => {
+    const defaultFilters: FilterSettings = {
+      minROI: 0,
+      maxROI: 100,
+      minDTE: 0,
+      maxDTE: 90,
+      minPremium: 0,
+      maxPremium: 10000,
+      minPOP: 0,
+      maxPOP: 100,
+      minVolume: 0,
+      minOI: 0,
+      strategies: ['Cash Secured Put', 'Covered Call'],
+      riskLevels: ['low', 'medium', 'high']
+    }
+    setFilters(defaultFilters)
+  }
+  
   return (
-    <>
-      {/* Backdrop */}
-      <div 
-        className="fixed inset-0 bg-black/50 z-40 transition-opacity"
-        onClick={onClose}
-      />
-      
-      {/* Slide-out Panel */}
-      <div className="fixed left-0 top-0 bottom-0 w-96 bg-gray-900 border-r border-gray-800 z-50 overflow-y-auto transform transition-transform">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+      <div className="bg-gray-900 rounded-lg w-full max-w-2xl max-h-[80vh] overflow-y-auto">
         {/* Header */}
-        <div className="sticky top-0 bg-gray-900 border-b border-gray-800 p-4 flex items-center justify-between">
-          <h2 className="text-xl font-bold text-white">Settings</h2>
-          <button
-            onClick={onClose}
-            className="p-2 hover:bg-gray-800 rounded-lg transition-colors"
-          >
+        <div className="flex items-center justify-between p-6 border-b border-gray-800">
+          <h2 className="text-xl font-semibold text-white">Filter Settings</h2>
+          <button onClick={onClose} className="text-gray-400 hover:text-white">
             <X className="w-5 h-5" />
           </button>
         </div>
-
-        {/* Settings Content */}
-        <div className="p-4 space-y-6">
-          {/* AI Calibration */}
+        
+        {/* Content */}
+        <div className="p-6 space-y-6">
+          {/* ROI Range */}
           <div>
-            <div className="flex items-center gap-2 mb-3">
-              <Target className="w-5 h-5 text-purple-400" />
-              <h3 className="font-semibold text-white">AI Calibration</h3>
-            </div>
-            <div className="space-y-3">
+            <label className="block text-sm font-medium text-gray-300 mb-2">ROI Range (%)</label>
+            <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="text-sm text-gray-400 block mb-1">Risk Tolerance</label>
-                <select className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-white">
-                  <option>Conservative</option>
-                  <option>Moderate</option>
-                  <option>Aggressive</option>
-                </select>
-              </div>
-              <div>
-                <label className="text-sm text-gray-400 block mb-1">Min AI Score</label>
-                <input 
-                  type="range" 
-                  min="50" 
-                  max="95" 
-                  defaultValue="70"
-                  className="w-full"
+                <label className="text-xs text-gray-500">Min</label>
+                <input
+                  type="number"
+                  value={filters.minROI}
+                  onChange={(e) => setFilters({...filters, minROI: parseFloat(e.target.value)})}
+                  className="w-full px-3 py-2 bg-gray-800 rounded text-white"
                 />
-                <div className="flex justify-between text-xs text-gray-500">
-                  <span>50</span>
-                  <span className="text-white">70</span>
-                  <span>95</span>
-                </div>
               </div>
               <div>
-                <label className="text-sm text-gray-400 block mb-1">Preferred Strategies</label>
-                <div className="space-y-2">
-                  {['Cash Secured Put', 'Covered Call', 'Iron Condor', 'Credit Spread'].map(strat => (
-                    <label key={strat} className="flex items-center gap-2 text-sm text-white">
-                      <input type="checkbox" defaultChecked className="rounded" />
-                      {strat}
-                    </label>
-                  ))}
-                </div>
+                <label className="text-xs text-gray-500">Max</label>
+                <input
+                  type="number"
+                  value={filters.maxROI}
+                  onChange={(e) => setFilters({...filters, maxROI: parseFloat(e.target.value)})}
+                  className="w-full px-3 py-2 bg-gray-800 rounded text-white"
+                />
               </div>
             </div>
           </div>
-
-          {/* Alert Thresholds */}
+          
+          {/* DTE Range */}
           <div>
-            <div className="flex items-center gap-2 mb-3">
-              <Bell className="w-5 h-5 text-yellow-400" />
-              <h3 className="font-semibold text-white">Alert Thresholds</h3>
-            </div>
-            <div className="space-y-3">
+            <label className="block text-sm font-medium text-gray-300 mb-2">Days to Expiration</label>
+            <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="text-sm text-gray-400 block mb-1">Min ROI/Day (%)</label>
-                <input 
-                  type="number" 
-                  step="0.1"
-                  defaultValue="0.5"
-                  className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-white"
+                <label className="text-xs text-gray-500">Min</label>
+                <input
+                  type="number"
+                  value={filters.minDTE}
+                  onChange={(e) => setFilters({...filters, minDTE: parseInt(e.target.value)})}
+                  className="w-full px-3 py-2 bg-gray-800 rounded text-white"
                 />
               </div>
               <div>
-                <label className="text-sm text-gray-400 block mb-1">Min Probability of Profit (%)</label>
-                <input 
-                  type="number" 
-                  defaultValue="70"
-                  className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-white"
+                <label className="text-xs text-gray-500">Max</label>
+                <input
+                  type="number"
+                  value={filters.maxDTE}
+                  onChange={(e) => setFilters({...filters, maxDTE: parseInt(e.target.value)})}
+                  className="w-full px-3 py-2 bg-gray-800 rounded text-white"
                 />
-              </div>
-              <div>
-                <label className="text-sm text-gray-400 block mb-1">Max DTE (Days)</label>
-                <input 
-                  type="number" 
-                  defaultValue="45"
-                  className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-white"
-                />
-              </div>
-              <div>
-                <label className="text-sm text-gray-400 block mb-1">Alert Methods</label>
-                <div className="space-y-2">
-                  <label className="flex items-center gap-2 text-sm text-white">
-                    <input type="checkbox" defaultChecked className="rounded" />
-                    In-App Notifications
-                  </label>
-                  <label className="flex items-center gap-2 text-sm text-white">
-                    <input type="checkbox" defaultChecked className="rounded" />
-                    Email Alerts
-                  </label>
-                  <label className="flex items-center gap-2 text-sm text-white">
-                    <input type="checkbox" className="rounded" />
-                    Browser Push
-                  </label>
-                </div>
               </div>
             </div>
           </div>
-
-          {/* Display Options */}
+          
+          {/* Premium Range */}
           <div>
-            <div className="flex items-center gap-2 mb-3">
-              <Eye className="w-5 h-5 text-blue-400" />
-              <h3 className="font-semibold text-white">Display Options</h3>
-            </div>
-            <div className="space-y-3">
-              <label className="flex items-center justify-between text-sm text-white">
-                <span>Show Greeks</span>
-                <input type="checkbox" defaultChecked className="rounded" />
-              </label>
-              <label className="flex items-center justify-between text-sm text-white">
-                <span>Show IV Rank</span>
-                <input type="checkbox" defaultChecked className="rounded" />
-              </label>
-              <label className="flex items-center justify-between text-sm text-white">
-                <span>Show AI Scores</span>
-                <input type="checkbox" defaultChecked className="rounded" />
-              </label>
-              <label className="flex items-center justify-between text-sm text-white">
-                <span>Compact View</span>
-                <input type="checkbox" className="rounded" />
-              </label>
+            <label className="block text-sm font-medium text-gray-300 mb-2">Premium Range ($)</label>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-xs text-gray-500">Min</label>
+                <input
+                  type="number"
+                  value={filters.minPremium}
+                  onChange={(e) => setFilters({...filters, minPremium: parseFloat(e.target.value)})}
+                  className="w-full px-3 py-2 bg-gray-800 rounded text-white"
+                />
+              </div>
+              <div>
+                <label className="text-xs text-gray-500">Max</label>
+                <input
+                  type="number"
+                  value={filters.maxPremium}
+                  onChange={(e) => setFilters({...filters, maxPremium: parseFloat(e.target.value)})}
+                  className="w-full px-3 py-2 bg-gray-800 rounded text-white"
+                />
+              </div>
             </div>
           </div>
-
-          {/* Save Button */}
-          <button className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-semibold transition-colors">
-            Save Settings
+          
+          {/* POP Range */}
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">Probability of Profit (%)</label>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-xs text-gray-500">Min</label>
+                <input
+                  type="number"
+                  value={filters.minPOP}
+                  onChange={(e) => setFilters({...filters, minPOP: parseFloat(e.target.value)})}
+                  className="w-full px-3 py-2 bg-gray-800 rounded text-white"
+                />
+              </div>
+              <div>
+                <label className="text-xs text-gray-500">Max</label>
+                <input
+                  type="number"
+                  value={filters.maxPOP}
+                  onChange={(e) => setFilters({...filters, maxPOP: parseFloat(e.target.value)})}
+                  className="w-full px-3 py-2 bg-gray-800 rounded text-white"
+                />
+              </div>
+            </div>
+          </div>
+          
+          {/* Volume & OI */}
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">Minimum Volume</label>
+            <input
+              type="number"
+              value={filters.minVolume}
+              onChange={(e) => setFilters({...filters, minVolume: parseInt(e.target.value)})}
+              className="w-full px-3 py-2 bg-gray-800 rounded text-white"
+            />
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">Minimum Open Interest</label>
+            <input
+              type="number"
+              value={filters.minOI}
+              onChange={(e) => setFilters({...filters, minOI: parseInt(e.target.value)})}
+              className="w-full px-3 py-2 bg-gray-800 rounded text-white"
+            />
+          </div>
+          
+          {/* Strategies */}
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">Strategies</label>
+            <div className="space-y-2">
+              {['Cash Secured Put', 'Covered Call', 'Iron Condor', 'Strangle', 'Straddle'].map(strategy => (
+                <label key={strategy} className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={filters.strategies.includes(strategy)}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        setFilters({...filters, strategies: [...filters.strategies, strategy]})
+                      } else {
+                        setFilters({...filters, strategies: filters.strategies.filter(s => s !== strategy)})
+                      }
+                    }}
+                    className="rounded"
+                  />
+                  <span className="text-sm text-gray-300">{strategy}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+          
+          {/* Risk Levels */}
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">Risk Levels</label>
+            <div className="space-y-2">
+              {['low', 'medium', 'high'].map(risk => (
+                <label key={risk} className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={filters.riskLevels.includes(risk)}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        setFilters({...filters, riskLevels: [...filters.riskLevels, risk]})
+                      } else {
+                        setFilters({...filters, riskLevels: filters.riskLevels.filter(r => r !== risk)})
+                      }
+                    }}
+                    className="rounded"
+                  />
+                  <span className="text-sm text-gray-300 capitalize">{risk}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+        </div>
+        
+        {/* Footer */}
+        <div className="flex items-center justify-between p-6 border-t border-gray-800">
+          <button
+            onClick={handleReset}
+            className="px-4 py-2 text-sm text-gray-400 hover:text-white"
+          >
+            Reset to Defaults
           </button>
+          <div className="flex gap-3">
+            <button
+              onClick={onClose}
+              className="px-4 py-2 text-sm bg-gray-800 hover:bg-gray-700 rounded"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleApply}
+              className="px-4 py-2 text-sm bg-blue-600 hover:bg-blue-700 rounded text-white"
+            >
+              Apply Filters
+            </button>
+          </div>
         </div>
       </div>
-    </>
+    </div>
   )
 }

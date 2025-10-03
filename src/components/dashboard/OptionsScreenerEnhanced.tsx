@@ -770,23 +770,6 @@ const OptionsScreenerEnhanced: React.FC<{ marketType?: 'equity' | 'index' | 'fut
           </div>
         </div>
 
-        {/* Quick Add Popular Tickers */}
-        <div>
-          <label className="text-xs text-gray-400 block mb-1">Quick Add</label>
-          <div className="flex flex-wrap gap-1">
-            {popularTickers.filter(t => !filters.tickers.includes(t.symbol)).map(ticker => (
-              <button
-                key={ticker.symbol}
-                onClick={() => setFilters(prev => ({ ...prev, tickers: [...prev.tickers, ticker.symbol] }))}
-                className="px-2 py-1 bg-gray-800 hover:bg-gray-700 rounded text-xs flex items-center gap-1"
-                title={`${ticker.name} (${ticker.type})`}
-              >
-                <span>{ticker.symbol}</span>
-                <span className="text-gray-500 text-xs">({ticker.type})</span>
-              </button>
-            ))}
-          </div>
-        </div>
 
         {/* Numeric Filters Grid */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">

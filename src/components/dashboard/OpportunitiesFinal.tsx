@@ -5,8 +5,24 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { ChevronDown, ChevronUp, X, TrendingUp, Activity, Shield, Calendar } from 'lucide-react'
+import { ChevronDown, ChevronUp, X, TrendingUp, Activity, Shield, Calendar, Filter } from 'lucide-react'
 import SimpleFooterStatus from './SimpleFooterStatus'
+import SettingsPanel from './SettingsPanel'
+
+interface FilterSettings {
+  minROI: number
+  maxROI: number
+  minDTE: number
+  maxDTE: number
+  minPremium: number
+  maxPremium: number
+  minPOP: number
+  maxPOP: number
+  minVolume: number
+  minOI: number
+  strategies: string[]
+  riskLevels: string[]
+}
 
 export function OpportunitiesFinal({ marketType }: { marketType: 'equity' | 'index' | 'futures' }) {
   const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set())
@@ -18,6 +34,23 @@ export function OpportunitiesFinal({ marketType }: { marketType: 'equity' | 'ind
   const [lastScanTime, setLastScanTime] = useState<string>('')
   const [tickersScanned, setTickersScanned] = useState(0)
   const [totalOpportunities, setTotalOpportunities] = useState(0)
+
+  // Filter state
+  const [filters, setFilters] = useState<FilterSettings>({
+    minROI: 0,
+    maxROI: 100,
+    minDTE: 0,
+    maxDTE: 90,
+    minPremium: 0,
+    maxPremium: 10000,
+    minPOP: 0,
+    maxPOP: 100,
+    minVolume: 0,
+    minOI: 0,
+    strategies: ['Cash Secured Put', 'Covered Call'],
+    riskLevels: ['low', 'medium', 'high']
+  })
+  const [showSettings, setShowSettings] = useState(false)
 
   // Fetch opportunities from server API
   useEffect(() => {
@@ -36,12 +69,12 @@ export function OpportunitiesFinal({ marketType }: { marketType: 'equity' | 'ind
         
         const { data } = result
         
-        // Format opportunities for display
+        // Format opportunities for display and apply filters
         const formattedCategories = {
-          'market-movers': data.categorized['market-movers'].map(formatOpportunity),
-          'high-iv': data.categorized['high-iv'].map(formatOpportunity),
-          'conservative': data.categorized['conservative'].map(formatOpportunity),
-          'earnings': data.categorized['earnings'].map(formatOpportunity)
+          'market-movers': applyFilters(data.categorized['market-movers'].map(formatOpportunity)),
+          'high-iv': applyFilters(data.categorized['high-iv'].map(formatOpportunity)),
+          'conservative': applyFilters(data.categorized['conservative'].map(formatOpportunity)),
+          'earnings': applyFilters(data.categorized['earnings'].map(formatOpportunity))
         }
         
         setOpportunities(formattedCategories)
@@ -80,6 +113,26 @@ export function OpportunitiesFinal({ marketType }: { marketType: 'equity' | 'ind
     return () => clearInterval(refreshInterval)
   }, [marketType])
   
+  // Apply filters to opportunities
+  const applyFilters = (opps: any[]) => {
+    return opps.filter(opp => {
+      return (
+        opp.roi >= filters.minROI &&
+        opp.roi <= filters.maxROI &&
+        opp.dte >= filters.minDTE &&
+        opp.dte <= filters.maxDTE &&
+        opp.premium >= filters.minPremium &&
+        opp.premium <= filters.maxPremium &&
+        opp.pop >= filters.minPOP &&
+        opp.pop <= filters.maxPOP &&
+        opp.volume >= filters.minVolume &&
+        opp.openInterest >= filters.minOI &&
+        filters.strategies.includes(opp.strategy) &&
+        filters.riskLevels.includes(opp.risk)
+      )
+    })
+  }
+
   // Format opportunity for display
   const formatOpportunity = (opp: any) => ({
     id: opp.id,
@@ -191,6 +244,13 @@ export function OpportunitiesFinal({ marketType }: { marketType: 'equity' | 'ind
               </div>
             </div>
             <div className="flex items-center gap-2">
+              <button 
+                onClick={() => setShowSettings(true)}
+                className="flex items-center gap-2 px-3 py-1 bg-gray-700 hover:bg-gray-600 rounded text-sm text-white transition-colors"
+              >
+                <Filter className="w-4 h-4" />
+                Filter Settings
+              </button>
               <div className={`w-2 h-2 rounded-full ${scanStatus === 'complete' ? 'bg-green-500' : scanStatus === 'error' ? 'bg-red-500' : 'bg-yellow-500 animate-pulse'}`} />
               <span className="text-xs text-gray-400">
                 {scanStatus === 'complete' ? 'Live Data' : scanStatus === 'error' ? 'Error' : 'Updating...'}
@@ -424,6 +484,14 @@ export function OpportunitiesFinal({ marketType }: { marketType: 'equity' | 'ind
         status={loading ? 'scanning' : scanStatus === 'idle' ? 'complete' : scanStatus}
         scannedTickers={tickersScanned}
         totalTickers={tickersScanned}
+      />
+
+      {/* Settings Panel */}
+      <SettingsPanel
+        isOpen={showSettings}
+        onClose={() => setShowSettings(false)}
+        onApply={setFilters}
+        currentFilters={filters}
       />
     </>
   )
