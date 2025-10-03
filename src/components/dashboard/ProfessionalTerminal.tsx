@@ -885,7 +885,22 @@ export default function ProfessionalTerminal() {
       {/* Settings Panel */}
       <SettingsPanel 
         isOpen={showSettingsPanel} 
-        onClose={() => setShowSettingsPanel(false)} 
+        onClose={() => setShowSettingsPanel(false)}
+        onApply={() => {}}
+        currentFilters={{
+          minROI: 0,
+          maxROI: 100,
+          minDTE: 0,
+          maxDTE: 90,
+          minPremium: 0,
+          maxPremium: 10000,
+          minPOP: 0,
+          maxPOP: 100,
+          minVolume: 0,
+          minOI: 0,
+          strategies: ['Cash Secured Put', 'Covered Call'],
+          riskLevels: ['low', 'medium', 'high']
+        }}
       />
     </div>
   )
