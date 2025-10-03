@@ -1,115 +1,137 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { headers } from 'next/headers'
 import Stripe from 'stripe'
+import { clerkClient } from '@clerk/nextjs'
 
-const stripe = process.env.STRIPE_SECRET_KEY ? new Stripe(process.env.STRIPE_SECRET_KEY, {
-  apiVersion: '2025-08-27.basil',
-}) : null
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+  apiVersion: '2024-06-20'
+})
 
-// Webhook secret from Stripe Dashboard
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!
 
-export async function POST(req: NextRequest) {
-  if (!stripe) {
-    return NextResponse.json({ error: 'Stripe not configured' }, { status: 500 })
+export async function POST(request: NextRequest) {
+  const body = await request.text()
+  const signature = headers().get('stripe-signature')!
+  
+  let event: Stripe.Event
+  
+  try {
+    event = stripe.webhooks.constructEvent(body, signature, webhookSecret)
+  } catch (error) {
+    console.error('Webhook signature verification failed:', error)
+    return NextResponse.json({ error: 'Invalid signature' }, { status: 400 })
   }
   
   try {
-    const body = await req.text()
-    const signature = req.headers.get('stripe-signature')!
-    
-    let event: Stripe.Event
-    
-    try {
-      // Verify webhook signature
-      event = stripe.webhooks.constructEvent(body, signature, webhookSecret)
-    } catch (err) {
-      console.error('Webhook signature verification failed:', err)
-      return NextResponse.json(
-        { error: 'Invalid signature' },
-        { status: 400 }
-      )
-    }
-    
-    // Handle the event
     switch (event.type) {
       case 'checkout.session.completed': {
         const session = event.data.object as Stripe.Checkout.Session
-        console.log('✅ Checkout completed:', session.id)
+        const userId = session.metadata?.userId || session.client_reference_id
         
-        // Handle successful checkout
-        const userId = session.client_reference_id || session.metadata?.userId
-        
-        if (userId) {
-          // TODO: Update user's subscription status in your database
-          console.log(`User ${userId} subscribed successfully`)
-          
-          // You can integrate with Supabase or your database here
-          // Example:
-          // await updateUserSubscription(userId, {
-          //   subscriptionId: session.subscription,
-          //   status: 'active',
-          //   customerId: session.customer,
-          // })
+        if (!userId) {
+          console.error('No user ID in session metadata')
+          break
         }
+        
+        // Get the subscription
+        const subscription = await stripe.subscriptions.retrieve(
+          session.subscription as string
+        )
+        
+        // Determine tier based on price ID
+        const priceId = subscription.items.data[0].price.id
+        let tier: 'basic' | 'professional' | 'premium' = 'basic'
+        
+        if (priceId === process.env.NEXT_PUBLIC_STRIPE_SOLOTRADER_PRICE_ID) {
+          tier = 'basic'
+        } else if (priceId === process.env.NEXT_PUBLIC_STRIPE_PROFESSIONAL_PRICE_ID) {
+          tier = 'professional'
+        } else if (priceId === process.env.NEXT_PUBLIC_STRIPE_INSTITUTIONAL_PRICE_ID) {
+          tier = 'premium'
+        }
+        
+        // Update user metadata in Clerk
+        await clerkClient.users.updateUserMetadata(userId, {
+          publicMetadata: {
+            subscriptionTier: tier,
+            stripeCustomerId: session.customer as string,
+            stripeSubscriptionId: subscription.id,
+            subscriptionStatus: subscription.status
+          }
+        })
+        
+        console.log(`User ${userId} subscribed to ${tier} tier`)
         break
       }
       
-      case 'customer.subscription.created':
       case 'customer.subscription.updated': {
         const subscription = event.data.object as Stripe.Subscription
-        console.log('📝 Subscription updated:', subscription.id)
+        const customerId = subscription.customer as string
         
-        // Handle subscription updates
-        const userId = subscription.metadata?.userId
-        if (userId) {
-          const status = subscription.status
-          const currentPeriodEnd = new Date((subscription as any).current_period_end * 1000)
-          
-          console.log(`User ${userId} subscription status: ${status}`)
-          // TODO: Update in database
+        // Find user by Stripe customer ID
+        const users = await clerkClient.users.getUserList({
+          limit: 1
+        })
+        
+        const user = users.find(u => 
+          u.publicMetadata?.stripeCustomerId === customerId
+        )
+        
+        if (!user) {
+          console.error('User not found for customer:', customerId)
+          break
         }
+        
+        // Update subscription status
+        await clerkClient.users.updateUserMetadata(user.id, {
+          publicMetadata: {
+            ...user.publicMetadata,
+            subscriptionStatus: subscription.status
+          }
+        })
+        
+        console.log(`Subscription updated for user ${user.id}: ${subscription.status}`)
         break
       }
       
       case 'customer.subscription.deleted': {
         const subscription = event.data.object as Stripe.Subscription
-        console.log('❌ Subscription cancelled:', subscription.id)
+        const customerId = subscription.customer as string
         
-        // Handle cancellation
-        const userId = subscription.metadata?.userId
-        if (userId) {
-          console.log(`User ${userId} cancelled subscription`)
-          // TODO: Update in database
+        // Find user by Stripe customer ID
+        const users = await clerkClient.users.getUserList({
+          limit: 1
+        })
+        
+        const user = users.find(u => 
+          u.publicMetadata?.stripeCustomerId === customerId
+        )
+        
+        if (!user) {
+          console.error('User not found for customer:', customerId)
+          break
         }
-        break
-      }
-      
-      case 'invoice.payment_succeeded': {
-        const invoice = event.data.object as Stripe.Invoice
-        console.log('💰 Payment succeeded:', invoice.id)
-        break
-      }
-      
-      case 'invoice.payment_failed': {
-        const invoice = event.data.object as Stripe.Invoice
-        console.error('💳 Payment failed:', invoice.id)
         
-        // Handle failed payment
-        // You might want to send an email to the customer
+        // Downgrade to free tier
+        await clerkClient.users.updateUserMetadata(user.id, {
+          publicMetadata: {
+            ...user.publicMetadata,
+            subscriptionTier: 'free',
+            subscriptionStatus: 'canceled'
+          }
+        })
+        
+        console.log(`Subscription canceled for user ${user.id}`)
         break
       }
-      
-      default:
-        console.log(`Unhandled event type: ${event.type}`)
     }
     
-    // Return success response
     return NextResponse.json({ received: true })
     
   } catch (error) {
-    console.error('Webhook error:', error)
+    console.error('Webhook processing error:', error)
     return NextResponse.json(
-      { error: 'Webhook handler failed' },
+      { error: 'Webhook processing failed' },
       { status: 500 }
     )
   }

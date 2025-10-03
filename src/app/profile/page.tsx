@@ -41,22 +41,16 @@ export default function ProfilePage() {
   const handleStripePortal = async () => {
     try {
       const response = await fetch('/api/stripe/portal', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        method: 'POST'
       })
       
-      if (response.ok) {
-        const { url } = await response.json()
-        window.location.href = url
-      } else {
-        console.error('Failed to create Stripe portal session')
-      }
+      const { url } = await response.json()
+      window.location.href = url
     } catch (error) {
-      console.error('Error opening Stripe portal:', error)
+      console.error('Portal failed:', error)
     }
   }
+
 
   return (
     <div className="min-h-screen bg-gray-900 text-white">

@@ -57,19 +57,23 @@ export default function PricingPage() {
   ]
   
   const handleSubscribe = async (tier: string) => {
-    // Redirect to Stripe checkout
-    const response = await fetch('/api/stripe/checkout', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        priceId: tier === 'basic' ? process.env.NEXT_PUBLIC_STRIPE_BASIC_PRICE_ID :
-                 tier === 'professional' ? process.env.NEXT_PUBLIC_STRIPE_PRO_PRICE_ID :
-                 process.env.NEXT_PUBLIC_STRIPE_PREMIUM_PRICE_ID
+    try {
+      const priceId = 
+        tier === 'basic' ? process.env.NEXT_PUBLIC_STRIPE_SOLOTRADER_PRICE_ID :
+        tier === 'professional' ? process.env.NEXT_PUBLIC_STRIPE_PROFESSIONAL_PRICE_ID :
+        process.env.NEXT_PUBLIC_STRIPE_INSTITUTIONAL_PRICE_ID
+      
+      const response = await fetch('/api/stripe/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ priceId })
       })
-    })
-    
-    const { url } = await response.json()
-    window.location.href = url
+      
+      const { url } = await response.json()
+      window.location.href = url
+    } catch (error) {
+      console.error('Checkout failed:', error)
+    }
   }
   
   return (
