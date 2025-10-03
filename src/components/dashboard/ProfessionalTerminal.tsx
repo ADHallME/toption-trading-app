@@ -72,7 +72,7 @@ import { OpportunitiesFinal } from './OpportunitiesFinal'
 import TickerSearch from './TickerSearch'
 import StrategyCardFixed from './StrategyCardFixed'
 import { OpportunityCarousel, generateSampleOpportunities } from './OpportunityCard'
-import { SettingsPanel } from './SettingsPanel'
+import SettingsPanel from './SettingsPanel'
 
 // Main component stays mostly the same but uses fixed components
 export default function ProfessionalTerminal() {
