@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Whale, TrendingUp, AlertTriangle } from 'lucide-react'
+import { Fish, TrendingUp, AlertTriangle } from 'lucide-react'
 
 interface WhaleTrade {
   symbol: string
@@ -68,7 +68,7 @@ export default function WhaleTradesWidget() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Whale className="w-5 h-5 text-blue-500" />
+          <Fish className="w-5 h-5 text-blue-500" />
           <h3 className="text-lg font-semibold text-white">Whale Trades</h3>
           <span className="text-xs text-gray-500">(10k+ contracts)</span>
         </div>
