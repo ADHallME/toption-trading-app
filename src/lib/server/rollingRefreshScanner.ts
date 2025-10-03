@@ -34,7 +34,7 @@ export class RollingRefreshScanner {
   private static instance: RollingRefreshScanner
   private polygonService: PolygonOptionsService
   private static readonly TOTAL_BATCHES = 5
-  private static readonly CALL_DELAY_MS = 1000
+  private static readonly CALL_DELAY_MS = 2000 // 2 seconds between calls - more conservative
   
   private constructor() {
     this.polygonService = PolygonOptionsService.getInstance()
@@ -120,7 +120,7 @@ export class RollingRefreshScanner {
         }
         
         if ((i + 1) % 50 === 0) console.log(`[BATCH] ${i + 1}/${tickers.length}`)
-        if (i < tickers.length - 1) await new Promise(r => setTimeout(r, 1000))
+        if (i < tickers.length - 1) await new Promise(r => setTimeout(r, 2000)) // 2 second delay
       } catch (e) {
         continue
       }

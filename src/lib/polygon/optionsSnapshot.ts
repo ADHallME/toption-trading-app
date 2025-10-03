@@ -68,6 +68,8 @@ export class PolygonOptionsService {
   private apiKey: string
   private cache: Map<string, { data: any; timestamp: number }> = new Map()
   private cacheDuration = 5 * 60 * 1000 // 5 minutes
+  private lastCallTime: number = 0
+  private static readonly MIN_CALL_INTERVAL = 1000 // 1 second between calls
   
   private constructor() {
     this.apiKey = process.env.NEXT_PUBLIC_POLYGON_API_KEY || ''
@@ -78,6 +80,23 @@ export class PolygonOptionsService {
       PolygonOptionsService.instance = new PolygonOptionsService()
     }
     return PolygonOptionsService.instance
+  }
+  
+  /**
+   * Rate-limited fetch to prevent 429 errors
+   */
+  private async rateLimitedFetch(url: string): Promise<Response> {
+    const now = Date.now()
+    const timeSinceLastCall = now - this.lastCallTime
+    
+    if (timeSinceLastCall < PolygonOptionsService.MIN_CALL_INTERVAL) {
+      const delay = PolygonOptionsService.MIN_CALL_INTERVAL - timeSinceLastCall
+      console.log(`[RATE LIMIT] Waiting ${delay}ms before next call`)
+      await new Promise(resolve => setTimeout(resolve, delay))
+    }
+    
+    this.lastCallTime = Date.now()
+    return fetch(url)
   }
   
   /**
@@ -103,7 +122,7 @@ export class PolygonOptionsService {
     }
     
     try {
-      const response = await fetch(
+      const response = await this.rateLimitedFetch(
         `https://api.polygon.io/v3/snapshot/options/${ticker}?apiKey=${this.apiKey}`
       )
       
@@ -140,7 +159,7 @@ export class PolygonOptionsService {
     }
     
     try {
-      const response = await fetch(
+      const response = await this.rateLimitedFetch(
         `https://api.polygon.io/v2/aggs/ticker/${ticker}/prev?apiKey=${this.apiKey}`
       )
       
