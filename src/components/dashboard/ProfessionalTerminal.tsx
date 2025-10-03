@@ -59,7 +59,7 @@ import { useAIOpportunities } from '@/hooks/useAIOpportunities'
 import { useMarketData } from '@/hooks/useMarketData'
 import { AIOpportunity } from '@/lib/ai/opportunity-finder'
 
-// Import FIXED components - UPDATE THESE IMPORTS
+// Import LIVE components - REAL DATA
 import OptionsScreenerEnhanced from './OptionsScreenerEnhanced'
 import EnhancedResearchTab from './EnhancedResearchTab'
 import AnalyticsTabFixed from './AnalyticsTabFixed'
@@ -70,7 +70,8 @@ import { ChartPopout } from './ChartPopout'
 import { OpportunitiesService } from '@/lib/opportunitiesService'
 import { OpportunitiesFinal } from './OpportunitiesFinal'
 import TickerSearch from './TickerSearch'
-import StrategyCardFixed from './StrategyCardFixed'
+import AIOpportunitiesLive from './AIOpportunitiesLive'  // NEW LIVE COMPONENT
+import StrategyCardsContainer from './StrategyCardsLive'  // NEW LIVE COMPONENT
 import { OpportunityCarousel, generateSampleOpportunities } from './OpportunityCard'
 import SettingsPanel from './SettingsPanel'
 import FeatureGate from '@/components/paywall/FeatureGate'
@@ -821,7 +822,7 @@ export default function ProfessionalTerminal() {
 
                   {/* Content based on selection */}
                   {selectedOpportunityType === 'ai' ? (
-                    <OpportunitiesFinal marketType={getMarketTypeString(activeMarket)} />
+                    <AIOpportunitiesLive marketType={getMarketTypeString(activeMarket)} />
                   ) : (
                     watchlist.length > 0 ? (
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -867,17 +868,7 @@ export default function ProfessionalTerminal() {
 
               {expandedSections.strategies && (
                 <div className="p-4 pt-0">
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                    {Object.entries(strategyOpportunities).map(([strategy, opportunities]) => (
-                      <StrategyCardFixed
-                        key={strategy}
-                        strategy={strategy}
-                        opportunities={opportunities}
-                        onAddToWatchlist={(opp) => handleAddToWatchlist(opp.ticker)}
-                        onViewDetails={(opp) => handleViewChart(opp.ticker)}
-                      />
-                    ))}
-                  </div>
+                  <StrategyCardsContainer marketType={getMarketTypeString(activeMarket)} />
                 </div>
               )}
       </div>

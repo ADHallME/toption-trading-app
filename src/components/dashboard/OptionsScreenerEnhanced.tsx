@@ -135,6 +135,11 @@ const fuzzySearch = (query: string, items: any[]): any[] => {
 }
 
 const OptionsScreenerEnhanced: React.FC<{ marketType?: 'equity' | 'index' | 'futures' }> = ({ marketType = 'equity' }) => {
+  // State for dynamic ticker universe
+  const [availableTickers, setAvailableTickers] = useState<string[]>([])
+  const [tierLimit, setTierLimit] = useState(0)
+  const [tickersLoading, setTickersLoading] = useState(true)
+  
   // Initialize with high ROI opportunity tickers based on market type
   const getDefaultTickers = (marketType: string) => {
     switch (marketType) {
@@ -150,6 +155,30 @@ const OptionsScreenerEnhanced: React.FC<{ marketType?: 'equity' | 'index' | 'fut
   }
   
   const defaultTickers: string[] = [] // Empty by default - users search entire market
+  
+  // Fetch available tickers based on user tier
+  useEffect(() => {
+    const fetchTickers = async () => {
+      setTickersLoading(true)
+      try {
+        const response = await fetch(`/api/tickers?marketType=${marketType}`)
+        const data = await response.json()
+        
+        if (data.success) {
+          setAvailableTickers(data.tickers)
+          setTierLimit(data.total)
+        }
+      } catch (error) {
+        console.error('Failed to fetch tickers:', error)
+        // Fallback to default tickers
+        setAvailableTickers(getDefaultTickers(marketType))
+      } finally {
+        setTickersLoading(false)
+      }
+    }
+    
+    fetchTickers()
+  }, [marketType])
   
   const [filters, setFilters] = useState<ScreenerFilters>({
     strategy: 'Cash Secured Put',
@@ -410,9 +439,12 @@ const OptionsScreenerEnhanced: React.FC<{ marketType?: 'equity' | 'index' | 'fut
     try {
       const allResults: ScreenerResult[] = []
       
+      // Use available tickers if no specific tickers selected, otherwise use selected tickers
+      const tickersToScan = filters.tickers.length > 0 ? filters.tickers : availableTickers.slice(0, 10)
+      
       // Fetch options for each ticker
-      console.log('Starting screener for tickers:', filters.tickers)
-      for (const ticker of filters.tickers) {
+      console.log('Starting screener for tickers:', tickersToScan)
+      for (const ticker of tickersToScan) {
         try {
           console.log(`Processing ticker: ${ticker}`)
           // Determine option type based on strategy and option_type filter
@@ -675,6 +707,25 @@ const OptionsScreenerEnhanced: React.FC<{ marketType?: 'equity' | 'index' | 'fut
 
   return (
     <div className="space-y-4">
+      {/* Tier Limit Indicator */}
+      {tierLimit > 0 && (
+        <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Info className="w-4 h-4 text-blue-400" />
+              <span className="text-sm text-blue-400">
+                Accessing {availableTickers.length} of {tierLimit} available tickers
+              </span>
+            </div>
+            {tierLimit > availableTickers.length && (
+              <button className="text-xs text-blue-300 hover:text-blue-200">
+                Upgrade to access all tickers
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+      
       {/* Filters Section */}
       <div className="bg-gray-900 rounded-lg p-4 space-y-4">
         {/* Strategy and Tickers Row */}
