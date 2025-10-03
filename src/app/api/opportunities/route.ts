@@ -1,26 +1,10 @@
-import { NextResponse } from 'next/server'
-import { RollingRefreshScanner } from '@/lib/server/rollingRefreshScanner'
+import { NextRequest, NextResponse } from 'next/server'
 
-export const dynamic = 'force-dynamic'
-
-export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url)
-  const marketType = (searchParams.get('marketType') || 'equity') as 'equity' | 'index' | 'futures'
-  
-  const scanner = RollingRefreshScanner.getInstance()
-  const cachedData = scanner.getCachedOpportunities(marketType)
-  
-  if (!cachedData) {
-    return NextResponse.json({
-      success: false,
-      error: 'No data available yet',
-      message: 'First batch scan in progress'
-    }, { status: 503 })
-  }
-  
-  return NextResponse.json({
-    success: true,
-    data: cachedData
-  })
+// EMERGENCY KILL SWITCH - RETURNS IMMEDIATELY
+export async function GET(request: NextRequest) {
+  return NextResponse.json({ 
+    success: false,
+    opportunities: [],
+    error: 'API temporarily disabled for maintenance' 
+  }, { status: 503 })
 }
-
