@@ -70,10 +70,10 @@ export async function POST(request: NextRequest) {
         
         // Find user by Stripe customer ID
         const users = await clerkClient.users.getUserList({
-          limit: 1
+          limit: 100
         })
         
-        const user = users.find(u => 
+        const user = users.data.find(u => 
           u.publicMetadata?.stripeCustomerId === customerId
         )
         
@@ -100,10 +100,10 @@ export async function POST(request: NextRequest) {
         
         // Find user by Stripe customer ID
         const users = await clerkClient.users.getUserList({
-          limit: 1
+          limit: 100
         })
         
-        const user = users.find(u => 
+        const user = users.data.find(u => 
           u.publicMetadata?.stripeCustomerId === customerId
         )
         
