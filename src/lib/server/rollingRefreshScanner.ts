@@ -11,6 +11,13 @@ interface CachedOpportunities {
     'conservative': any[]
     'earnings': any[]
   }
+  byStrategy: {
+    'Cash Secured Put': any[]
+    'Covered Call': any[]
+    'Iron Condor': any[]
+    'Strangle': any[]
+    'Straddle': any[]
+  }
   trending: any[]
   metadata: {
     lastScan: string
@@ -34,7 +41,7 @@ export class RollingRefreshScanner {
   private static instance: RollingRefreshScanner
   private polygonService: PolygonOptionsService
   private static readonly TOTAL_BATCHES = 5
-  private static readonly CALL_DELAY_MS = 2000 // 2 seconds between calls - more conservative
+  private static readonly CALL_DELAY_MS = 1500 // 1.5 seconds between API calls (CRITICAL!)
   
   private constructor() {
     this.polygonService = PolygonOptionsService.getInstance()
@@ -71,10 +78,12 @@ export class RollingRefreshScanner {
     
     const trending = this.detectTrending(newOpportunities)
     const categorized = this.categorizeByType(allOpportunities)
+    const byStrategy = this.categorizeByStrategy(allOpportunities)
     
     const cacheData: CachedOpportunities = {
       opportunities: allOpportunities,
       categorized,
+      byStrategy,
       trending,
       metadata: {
         lastScan: new Date().toISOString(),
@@ -94,13 +103,36 @@ export class RollingRefreshScanner {
   private async scanTickersWithRateLimit(tickers: string[]): Promise<any[]> {
     const opportunities: any[] = []
     
+    console.log(`[SCAN] Starting rate-limited scan of ${tickers.length} tickers`)
+    
     for (let i = 0; i < tickers.length; i++) {
       try {
         const ticker = tickers[i]
-        const stockPrice = await this.polygonService.getStockPrice(ticker)
-        if (stockPrice === 0) continue
         
+        // CRITICAL: Get stock price with delay
+        const stockPrice = await this.polygonService.getStockPrice(ticker)
+        
+        // CRITICAL: Wait 1.5 seconds between EACH API call
+        await new Promise(r => setTimeout(r, RollingRefreshScanner.CALL_DELAY_MS))
+        
+        if (stockPrice === 0) {
+          console.log(`[SCAN] ${ticker}: No price data, skipping`)
+          continue
+        }
+        
+        // CRITICAL: Get options chain with another delay
         const options = await this.polygonService.fetchOptionsChain(ticker)
+        
+        // CRITICAL: Another 1.5 second delay before next ticker
+        await new Promise(r => setTimeout(r, RollingRefreshScanner.CALL_DELAY_MS))
+        
+        if (options.length === 0) {
+          console.log(`[SCAN] ${ticker}: No options data`)
+          continue
+        }
+        
+        // Process options for this ticker
+        let tickerOpps = 0
         for (const option of options) {
           if (option.open_interest < 10) continue
           
@@ -111,6 +143,9 @@ export class RollingRefreshScanner {
           const opp = await this.polygonService.convertToOpportunity(option, stockPrice, category)
           if (opp) {
             opportunities.push(opp)
+            tickerOpps++
+            
+            // Store for trending detection
             previousScanData[`${ticker}_${option.details.strike_price}_${option.details.expiration_date}`] = {
               premium: opp.premium,
               volume: opp.volume,
@@ -119,13 +154,23 @@ export class RollingRefreshScanner {
           }
         }
         
-        if ((i + 1) % 50 === 0) console.log(`[BATCH] ${i + 1}/${tickers.length}`)
-        if (i < tickers.length - 1) await new Promise(r => setTimeout(r, 2000)) // 2 second delay
-      } catch (e) {
+        if (tickerOpps > 0) {
+          console.log(`[SCAN] ${ticker}: Found ${tickerOpps} opportunities`)
+        }
+        
+        // Progress logging
+        if ((i + 1) % 10 === 0) {
+          const elapsed = Date.now() - Date.now()
+          console.log(`[SCAN] Progress: ${i + 1}/${tickers.length} tickers (${opportunities.length} opps so far)`)
+        }
+        
+      } catch (error) {
+        console.error(`[SCAN] Error processing ticker:`, error)
         continue
       }
     }
     
+    console.log(`[SCAN] Complete: ${opportunities.length} opportunities from ${tickers.length} tickers`)
     return opportunities
   }
   
@@ -169,10 +214,21 @@ export class RollingRefreshScanner {
     }
   }
   
+  private categorizeByStrategy(opportunities: any[]): CachedOpportunities['byStrategy'] {
+    return {
+      'Cash Secured Put': opportunities.filter(o => o.strategy === 'Cash Secured Put').sort((a, b) => b.roiPerDay - a.roiPerDay).slice(0, 50),
+      'Covered Call': opportunities.filter(o => o.strategy === 'Covered Call').sort((a, b) => b.roiPerDay - a.roiPerDay).slice(0, 50),
+      'Iron Condor': [],
+      'Strangle': [],
+      'Straddle': []
+    }
+  }
+  
   private getEmptyCache(marketType: MarketType): CachedOpportunities {
     return {
       opportunities: [],
       categorized: { 'market-movers': [], 'high-iv': [], 'conservative': [], 'earnings': [] },
+      byStrategy: { 'Cash Secured Put': [], 'Covered Call': [], 'Iron Condor': [], 'Strangle': [], 'Straddle': [] },
       trending: [],
       metadata: { 
         lastScan: new Date().toISOString(), 
