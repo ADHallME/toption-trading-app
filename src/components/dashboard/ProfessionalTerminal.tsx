@@ -73,6 +73,7 @@ import TickerSearch from './TickerSearch'
 import StrategyCardFixed from './StrategyCardFixed'
 import { OpportunityCarousel, generateSampleOpportunities } from './OpportunityCard'
 import SettingsPanel from './SettingsPanel'
+import FeatureGate from '@/components/paywall/FeatureGate'
 
 // Main component stays mostly the same but uses fixed components
 export default function ProfessionalTerminal() {
@@ -471,22 +472,52 @@ export default function ProfessionalTerminal() {
               >
                 Equities
               </button>
-              <button
+              <FeatureGate
+                feature="hasIndexes"
+                requiredTier="professional"
+                featureName="Index Options"
+                description="Access index options data with Professional plan or higher."
+                fallback={
+                  <button
+                    className="px-3 py-1 rounded text-sm font-medium transition text-gray-400 cursor-not-allowed"
+                    disabled
+                  >
+                    Indexes
+                  </button>
+                }
+              >
+                <button
                   onClick={() => setActiveMarket(MarketType.INDEX_OPTIONS)}
                   className={`px-3 py-1 rounded text-sm font-medium transition ${
                     activeMarket === MarketType.INDEX_OPTIONS ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white'
-                }`}
+                  }`}
+                >
+                  Indexes
+                </button>
+              </FeatureGate>
+              <FeatureGate
+                feature="hasFutures"
+                requiredTier="professional"
+                featureName="Futures Options"
+                description="Access futures options data with Professional plan or higher."
+                fallback={
+                  <button
+                    className="px-3 py-1 rounded text-sm font-medium transition text-gray-400 cursor-not-allowed"
+                    disabled
+                  >
+                    Futures
+                  </button>
+                }
               >
-                Indexes
-              </button>
-              <button
+                <button
                   onClick={() => setActiveMarket(MarketType.FUTURES_OPTIONS)}
                   className={`px-3 py-1 rounded text-sm font-medium transition ${
                     activeMarket === MarketType.FUTURES_OPTIONS ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white'
-                }`}
-              >
-                Futures
-              </button>
+                  }`}
+                >
+                  Futures
+                </button>
+              </FeatureGate>
             </div>
 
               {/* Market Tickers */}
@@ -852,7 +883,14 @@ export default function ProfessionalTerminal() {
       </div>
 
             {/* Options Screener - Use Enhanced Component */}
-            <OptionsScreenerEnhanced marketType={getMarketTypeString(activeMarket)} />
+            <FeatureGate
+              feature="hasAdvancedScreener"
+              requiredTier="basic"
+              featureName="Advanced Options Screener"
+              description="Access the advanced options screener with Basic plan or higher."
+            >
+              <OptionsScreenerEnhanced marketType={getMarketTypeString(activeMarket)} />
+            </FeatureGate>
               </div>
             )}
 

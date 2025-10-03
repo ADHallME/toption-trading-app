@@ -10,6 +10,7 @@ import {
 import SocialFeed from '@/components/analysis/SocialFeed'
 import UnusualVolumeWidget from '@/components/analysis/UnusualVolumeWidget'
 import WhaleTradesWidget from '@/components/analysis/WhaleTradesWidget'
+import FeatureGate from '@/components/paywall/FeatureGate'
 
 interface StockFundamentals {
   symbol: string
@@ -390,28 +391,42 @@ const ResearchTab: React.FC = () => {
       
       {/* Social Section */}
       {activeSection === 'social' && (
-        <div className="bg-slate-900/50 backdrop-blur-sm border border-slate-700/50 rounded-xl p-6">
-          <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
-            <MessageCircle className="w-5 h-5 mr-2 text-blue-400" />
-            Social Sentiment & Discussion
-          </h3>
-          <SocialFeed ticker={selectedSymbol} />
-        </div>
+        <FeatureGate
+          feature="socialFeedLimit"
+          requiredTier="basic"
+          featureName="Social Feed"
+          description="Access real-time social sentiment and discussion data with Basic plan or higher."
+        >
+          <div className="bg-slate-900/50 backdrop-blur-sm border border-slate-700/50 rounded-xl p-6">
+            <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
+              <MessageCircle className="w-5 h-5 mr-2 text-blue-400" />
+              Social Sentiment & Discussion
+            </h3>
+            <SocialFeed ticker={selectedSymbol} />
+          </div>
+        </FeatureGate>
       )}
 
       {/* Analytics Section */}
       {activeSection === 'analytics' && (
-        <div className="space-y-6">
-          {/* Unusual Volume Widget */}
-          <div className="bg-slate-900/50 backdrop-blur-sm border border-slate-700/50 rounded-xl p-6">
-            <UnusualVolumeWidget />
-          </div>
+        <FeatureGate
+          feature="hasUnusualVolume"
+          requiredTier="professional"
+          featureName="Advanced Analytics"
+          description="Unlock unusual volume tracking and whale trades analysis with Professional plan or higher."
+        >
+          <div className="space-y-6">
+            {/* Unusual Volume Widget */}
+            <div className="bg-slate-900/50 backdrop-blur-sm border border-slate-700/50 rounded-xl p-6">
+              <UnusualVolumeWidget />
+            </div>
 
-          {/* Whale Trades Widget */}
-          <div className="bg-slate-900/50 backdrop-blur-sm border border-slate-700/50 rounded-xl p-6">
-            <WhaleTradesWidget />
+            {/* Whale Trades Widget */}
+            <div className="bg-slate-900/50 backdrop-blur-sm border border-slate-700/50 rounded-xl p-6">
+              <WhaleTradesWidget />
+            </div>
           </div>
-        </div>
+        </FeatureGate>
       )}
     </div>
   )
