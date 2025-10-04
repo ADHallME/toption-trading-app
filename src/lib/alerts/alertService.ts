@@ -297,6 +297,15 @@ export class AlertService {
     // This will be implemented when Supabase is properly configured
     console.log(`Marking alert ${alertId} as viewed`)
   }
+
+  /**
+   * Dismiss alert
+   */
+  async dismissAlert(alertId: string): Promise<void> {
+    // For now, do nothing since we don't have database setup
+    // This will be implemented when Supabase is properly configured
+    console.log(`Dismissing alert ${alertId}`)
+  }
 }
 
 // Export singleton instance
