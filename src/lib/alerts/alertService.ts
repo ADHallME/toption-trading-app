@@ -279,6 +279,24 @@ export class AlertService {
     
     return triggeredAlerts
   }
+
+  /**
+   * Get unread alerts for a user
+   */
+  async getUnreadAlerts(userId: string): Promise<Alert[]> {
+    // For now, return empty array since we don't have database setup
+    // This will be implemented when Supabase is properly configured
+    return []
+  }
+
+  /**
+   * Mark alert as viewed
+   */
+  async markAsViewed(alertId: string): Promise<void> {
+    // For now, do nothing since we don't have database setup
+    // This will be implemented when Supabase is properly configured
+    console.log(`Marking alert ${alertId} as viewed`)
+  }
 }
 
 // Export singleton instance
