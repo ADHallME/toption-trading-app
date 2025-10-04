@@ -280,3 +280,6 @@ export class AlertService {
     return triggeredAlerts
   }
 }
+
+// Export singleton instance
+export const alertService = new AlertService()
