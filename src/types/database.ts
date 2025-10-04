@@ -147,6 +147,70 @@ export interface Database {
           updated_at?: string
         }
       }
+      alert_criteria: {
+        Row: {
+          id: string
+          user_id: string
+          name: string
+          enabled: boolean
+          strategies: any
+          min_roi: number
+          max_roi: number
+          min_pop: number
+          tickers: any
+          exclude_tickers: any
+          min_volume: number
+          min_open_interest: number
+          min_iv: number
+          max_iv: number
+          min_dte: number
+          max_dte: number
+          frequency: string
+          created_at?: string
+          updated_at?: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          name: string
+          enabled?: boolean
+          strategies?: any
+          min_roi?: number
+          max_roi?: number
+          min_pop?: number
+          tickers?: any
+          exclude_tickers?: any
+          min_volume?: number
+          min_open_interest?: number
+          min_iv?: number
+          max_iv?: number
+          min_dte?: number
+          max_dte?: number
+          frequency?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          name?: string
+          enabled?: boolean
+          strategies?: any
+          min_roi?: number
+          max_roi?: number
+          min_pop?: number
+          tickers?: any
+          exclude_tickers?: any
+          min_volume?: number
+          min_open_interest?: number
+          min_iv?: number
+          max_iv?: number
+          min_dte?: number
+          max_dte?: number
+          frequency?: string
+          updated_at?: string
+        }
+      }
     }
   }
 } 
