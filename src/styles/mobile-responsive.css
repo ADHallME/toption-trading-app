@@ -1,0 +1,199 @@
+/**
+ * MOBILE RESPONSIVE UTILITIES
+ * Quick mobile fixes for dashboard components
+ * Import in your global CSS or add to tailwind.config.js
+ */
+
+/* Alert Settings Mobile */
+@media (max-width: 768px) {
+  /* Alert Settings Form */
+  .alert-settings-form {
+    padding: 1rem;
+  }
+  
+  .alert-settings-form > div {
+    flex-direction: column;
+  }
+  
+  .alert-settings-grid {
+    grid-template-columns: 1fr !important;
+    gap: 1rem;
+  }
+  
+  .alert-criteria-card {
+    padding: 1rem;
+  }
+  
+  /* Alert Notifications Dropdown */
+  .alert-dropdown {
+    position: fixed;
+    left: 0;
+    right: 0;
+    top: 60px;
+    width: 100vw;
+    max-width: 100vw;
+    border-radius: 0;
+  }
+  
+  .alert-item {
+    padding: 1rem;
+  }
+}
+
+/* AI Recommendations Mobile */
+@media (max-width: 768px) {
+  /* Recommendation Cards */
+  .recommendation-card {
+    padding: 1rem;
+  }
+  
+  .recommendation-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+  
+  .recommendation-metrics {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 0.5rem;
+  }
+  
+  .recommendation-details {
+    grid-template-columns: 1fr !important;
+  }
+  
+  /* Strategy Filter */
+  .strategy-filter {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  
+  .strategy-filter button {
+    flex: 1 1 calc(50% - 0.25rem);
+    min-width: 0;
+    font-size: 0.875rem;
+    padding: 0.5rem;
+  }
+}
+
+/* Dashboard Grid Mobile */
+@media (max-width: 768px) {
+  .dashboard-grid {
+    grid-template-columns: 1fr !important;
+  }
+  
+  .dashboard-sidebar {
+    display: none; /* Hide on mobile or make collapsible */
+  }
+  
+  .opportunities-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* Pricing Cards Mobile */
+@media (max-width: 768px) {
+  .pricing-grid {
+    grid-template-columns: 1fr !important;
+    gap: 2rem;
+  }
+  
+  .pricing-card {
+    max-width: 100%;
+  }
+}
+
+/* Header Mobile */
+@media (max-width: 768px) {
+  .dashboard-header {
+    padding: 1rem;
+    flex-wrap: wrap;
+  }
+  
+  .dashboard-header h1 {
+    font-size: 1.5rem;
+  }
+  
+  .header-actions {
+    width: 100%;
+    justify-content: space-between;
+    margin-top: 1rem;
+  }
+}
+
+/* Tables Mobile */
+@media (max-width: 768px) {
+  .options-table {
+    display: block;
+    overflow-x: auto;
+  }
+  
+  .options-table thead {
+    display: none;
+  }
+  
+  .options-table tbody tr {
+    display: flex;
+    flex-direction: column;
+    border: 1px solid #e5e7eb;
+    margin-bottom: 1rem;
+    padding: 1rem;
+    border-radius: 0.5rem;
+  }
+  
+  .options-table tbody td {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid #f3f4f6;
+  }
+  
+  .options-table tbody td:before {
+    content: attr(data-label);
+    font-weight: 600;
+    color: #6b7280;
+  }
+  
+  .options-table tbody td:last-child {
+    border-bottom: none;
+  }
+}
+
+/* Modal Mobile */
+@media (max-width: 768px) {
+  .modal-content {
+    width: 100vw;
+    height: 100vh;
+    max-width: 100vw;
+    max-height: 100vh;
+    border-radius: 0;
+    margin: 0;
+  }
+  
+  .modal-body {
+    padding: 1rem;
+  }
+}
+
+/* Utility Classes */
+@media (max-width: 768px) {
+  .mobile-hidden {
+    display: none !important;
+  }
+  
+  .mobile-full-width {
+    width: 100% !important;
+  }
+  
+  .mobile-stack {
+    flex-direction: column !important;
+  }
+  
+  .mobile-text-sm {
+    font-size: 0.875rem !important;
+  }
+  
+  .mobile-p-4 {
+    padding: 1rem !important;
+  }
+}
