@@ -4,40 +4,16 @@
   "framework": "nextjs",
   "crons": [
     {
-      "path": "/api/cron/proper-scan?market=equity&batch=1",
-      "schedule": "0 6 * * 1-5"
+      "path": "/api/cron/proper-scan?market=equity",
+      "schedule": "0 9,13 * * 1-5"
     },
     {
-      "path": "/api/cron/proper-scan?market=equity&batch=2",
-      "schedule": "12 6 * * 1-5"
+      "path": "/api/cron/proper-scan?market=index",
+      "schedule": "30 9,15 * * 1-5"
     },
     {
-      "path": "/api/cron/proper-scan?market=equity&batch=3",
-      "schedule": "24 6 * * 1-5"
-    },
-    {
-      "path": "/api/cron/proper-scan?market=equity&batch=4",
-      "schedule": "36 6 * * 1-5"
-    },
-    {
-      "path": "/api/cron/proper-scan?market=equity&batch=5",
-      "schedule": "48 6 * * 1-5"
-    },
-    {
-      "path": "/api/cron/proper-scan?market=index&batch=1",
-      "schedule": "0 7 * * 1-5"
-    },
-    {
-      "path": "/api/cron/proper-scan?market=futures&batch=1",
-      "schedule": "5 7 * * 1-5"
-    },
-    {
-      "path": "/api/cron/market-hours-refresh",
-      "schedule": "30 13,14,15,16,17,18,19 * * 1-5"
-    },
-    {
-      "path": "/api/cron/proper-scan?market=futures&batch=1",
-      "schedule": "0 */4 * * *"
+      "path": "/api/cron/proper-scan?market=futures",
+      "schedule": "0 8,16 * * 1-5"
     }
   ]
 }
