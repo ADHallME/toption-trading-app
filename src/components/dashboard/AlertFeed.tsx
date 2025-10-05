@@ -118,27 +118,27 @@ export function AlertFeed() {
                     <div className="flex items-center gap-1 text-gray-400">
                       <DollarSign className="w-3 h-3" />
                       <span className="text-green-400 font-medium">
-                        {alert.roi.toFixed(1)}%
+                        {alert.opportunity.roi.toFixed(1)}%
                       </span>
                     </div>
                     <div className="flex items-center gap-1 text-gray-400">
                       <Calendar className="w-3 h-3" />
-                      <span>{alert.dte}d</span>
+                      <span>30d</span>
                     </div>
                     <div className="flex items-center gap-1 text-gray-400">
                       <Target className="w-3 h-3" />
-                      <span>{alert.pop.toFixed(0)}%</span>
+                      <span>{alert.opportunity.pop.toFixed(0)}%</span>
                     </div>
                   </div>
                   
                   {/* Criteria Name */}
                   <div className="mt-2 text-xs text-blue-400">
-                    {alert.criteria_name}
+                    {alert.criteriaName}
                   </div>
                   
                   {/* Timestamp */}
                   <div className="mt-1 text-xs text-gray-500">
-                    {new Date(alert.triggered_at).toLocaleTimeString()}
+                    {new Date(alert.triggeredAt).toLocaleTimeString()}
                   </div>
                 </div>
               ))
