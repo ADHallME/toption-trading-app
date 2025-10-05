@@ -18,8 +18,12 @@ export async function GET(request: NextRequest) {
     
     const scanner = ProperScanner.getInstance()
     
+    // Get tickers for the market type
+    const tickers = await ProperScanner.getTickersForMarket(marketType)
+    const tickersToScan = tickers.slice(0, batchSize)
+    
     // Start the scan (runs in background)
-    scanner.scanBatch(marketType, batchSize).catch(err => {
+    scanner.scanBatch(marketType, 1, tickersToScan).catch(err => {
       console.error(`[MARKET-SCAN ERROR] ${marketType}:`, err)
     })
     
