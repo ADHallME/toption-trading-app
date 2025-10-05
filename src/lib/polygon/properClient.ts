@@ -27,10 +27,10 @@ export class PolygonClient {
   private rateLimiters: Map<string, { lastCall: number; tokens: number }> = new Map()
   private circuitBreakers: Map<string, CircuitBreakerState> = new Map()
   
-  // Configuration
+  // Configuration - ULTRA CONSERVATIVE to avoid 429s
   private readonly RATE_LIMIT: RateLimitConfig = {
-    callsPerSecond: 0.5, // One call every 2 seconds (conservative)
-    burstSize: 5 // Allow small bursts
+    callsPerSecond: 0.1, // One call every 10 seconds (very conservative)
+    burstSize: 2 // Minimal burst to avoid rate limits
   }
   
   private readonly CIRCUIT_BREAKER = {

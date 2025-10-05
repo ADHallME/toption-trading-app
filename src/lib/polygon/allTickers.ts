@@ -1,11 +1,66 @@
-// Complete universe of optionable tickers
-// Categorized by asset class for proper filtering
+/**
+ * STATIC TICKER UNIVERSES
+ * No API calls required - instant access
+ * Updated: Oct 2025
+ */
 
-// ALL US EQUITIES WITH OPTIONS (~3000+ tickers)
-// This will be populated dynamically from Polygon API
+// TOP 200 MOST LIQUID EQUITY OPTIONS (Static List - No API Call)
+// This eliminates the failing API call that was causing 429 errors
 export const EQUITY_UNIVERSE = [
-  // Will be fetched from Polygon /v3/reference/options/contracts
-  // For now, placeholder - need to fetch on app startup
+  // Mega-cap Tech (Highest Volume)
+  'AAPL', 'MSFT', 'GOOGL', 'GOOG', 'AMZN', 'NVDA', 'META', 'TSLA', 'AVGO', 'NFLX',
+  
+  // Large Tech
+  'AMD', 'INTC', 'CSCO', 'ORCL', 'CRM', 'ADBE', 'QCOM', 'TXN', 'INTU', 'AMAT',
+  'LRCX', 'KLAC', 'SNPS', 'CDNS', 'MRVL', 'PANW', 'PLTR', 'SNOW', 'CRWD', 'NET',
+  
+  // Financial Services
+  'JPM', 'BAC', 'WFC', 'GS', 'MS', 'C', 'SCHW', 'BLK', 'AXP', 'SPGI',
+  'USB', 'PNC', 'TFC', 'BK', 'STT', 'V', 'MA', 'PYPL', 'SQ', 'COIN',
+  
+  // Healthcare & Pharma
+  'UNH', 'JNJ', 'LLY', 'ABBV', 'MRK', 'TMO', 'ABT', 'PFE', 'DHR', 'BMY',
+  'AMGN', 'GILD', 'VRTX', 'REGN', 'ISRG', 'CVS', 'CI', 'HUM', 'BSX', 'MDT',
+  
+  // Consumer Discretionary
+  'AMZN', 'TSLA', 'HD', 'MCD', 'NKE', 'SBUX', 'LOW', 'TJX', 'BKNG', 'MAR',
+  'CMG', 'ORLY', 'AZO', 'ROST', 'DG', 'DLTR', 'YUM', 'DPZ', 'ULTA', 'RCL',
+  
+  // Consumer Staples
+  'WMT', 'COST', 'PG', 'KO', 'PEP', 'PM', 'MO', 'MDLZ', 'CL', 'KMB',
+  'GIS', 'K', 'HSY', 'STZ', 'TAP', 'CPB', 'CAG', 'SJM', 'HRL', 'TSN',
+  
+  // Energy
+  'XOM', 'CVX', 'COP', 'SLB', 'EOG', 'MPC', 'PSX', 'VLO', 'OXY', 'HAL',
+  'DVN', 'FANG', 'HES', 'MRO', 'APA', 'CTRA', 'BKR', 'NOV', 'FTI', 'RIG',
+  
+  // Industrials
+  'BA', 'CAT', 'GE', 'HON', 'UPS', 'RTX', 'LMT', 'DE', 'MMM', 'UNP',
+  'GD', 'NOC', 'ETN', 'EMR', 'ITW', 'PH', 'FDX', 'CSX', 'NSC', 'WM',
+  
+  // Communication Services
+  'DIS', 'CMCSA', 'T', 'VZ', 'TMUS', 'CHTR', 'EA', 'TTWO', 'NTES', 'MTCH',
+  
+  // Materials
+  'LIN', 'APD', 'ECL', 'SHW', 'FCX', 'NEM', 'GOLD', 'NUE', 'VMC', 'MLM',
+  
+  // Real Estate
+  'AMT', 'PLD', 'CCI', 'EQIX', 'PSA', 'DLR', 'O', 'WELL', 'AVB', 'EQR',
+  
+  // Utilities
+  'NEE', 'DUK', 'SO', 'D', 'AEP', 'EXC', 'SRE', 'XEL', 'WEC', 'ES',
+  
+  // High IV / Popular Trading Stocks
+  'GME', 'AMC', 'RIVN', 'LCID', 'NIO', 'SOFI', 'HOOD', 'RBLX', 'MSTR', 'SMCI',
+  
+  // Cloud/SaaS
+  'NOW', 'DDOG', 'ZS', 'OKTA', 'MDB', 'TEAM', 'WDAY', 'ZM', 'DOCU', 'TWLO',
+  
+  // Semiconductors (Additional)
+  'TSM', 'ASML', 'MU', 'NXPI', 'ADI', 'MCHP', 'ON', 'MPWR', 'SWKS', 'QRVO',
+  
+  // Biotech
+  'MRNA', 'BNTX', 'NVAX', 'CRSP', 'EDIT', 'NTLA', 'BEAM', 'BLUE', 'FOLD', 'ARWR',
 ]
 
 // ALL INDEXES WITH OPTIONS
@@ -13,7 +68,7 @@ export const INDEX_UNIVERSE = [
   // Major Indexes
   'SPX', 'NDX', 'RUT', 'DJX', 'VIX', 'VVIX',
   
-  // Index ETFs
+  // Index ETFs (Most Liquid)
   'SPY', 'QQQ', 'IWM', 'DIA', 'VTI', 'VOO', 'VEA', 'VWO', 'EEM', 'EFA',
   
   // Sector ETFs
@@ -48,105 +103,15 @@ export const FUTURES_UNIVERSE = [
 ]
 
 /**
- * Fetch ALL optionable equities from Polygon
- * This should be called once on app startup and cached
+ * Get all optionable equities (STATIC - NO API CALL)
+ * This replaces the failing Polygon API call with a curated static list
  */
 export async function fetchAllOptionableEquities(apiKey: string): Promise<string[]> {
-  try {
-    const response = await fetch(
-      `https://api.polygon.io/v3/reference/options/contracts?underlying_ticker.gte=A&underlying_ticker.lte=ZZZZ&limit=50000&apiKey=${apiKey}`
-    )
-    
-    if (!response.ok) {
-      throw new Error('Failed to fetch optionable tickers')
-    }
-    
-    const data = await response.json()
-    
-    // Extract unique underlying tickers
-    const tickers = new Set<string>()
-    data.results?.forEach((contract: any) => {
-      if (contract.underlying_ticker) {
-        tickers.add(contract.underlying_ticker)
-      }
-    })
-    
-    return Array.from(tickers).sort()
-  } catch (error) {
-    console.error('Error fetching optionable equities:', error)
-    // Fallback to a basic list if API fails
-    return FALLBACK_EQUITY_LIST
-  }
+  console.log('[TICKERS] Using static equity universe (200 most liquid)')
+  
+  // Return immediately - no API call, no rate limiting, no 429 errors
+  return EQUITY_UNIVERSE
 }
 
-// Fallback list of top ~1000 liquid equities if API fails
-const FALLBACK_EQUITY_LIST = [
-  // Mega-cap
-  'AAPL', 'MSFT', 'GOOGL', 'AMZN', 'NVDA', 'META', 'TSLA', 'BRK.B', 'V', 'UNH',
-  'XOM', 'JNJ', 'WMT', 'JPM', 'MA', 'PG', 'LLY', 'CVX', 'HD', 'MRK',
-  
-  // Large-cap Tech
-  'AMD', 'NFLX', 'INTC', 'CSCO', 'AVGO', 'ORCL', 'CRM', 'ADBE', 'QCOM', 'TXN',
-  'INTU', 'AMAT', 'LRCX', 'KLAC', 'SNPS', 'CDNS', 'MRVL', 'PANW', 'PLTR', 'SNOW',
-  
-  // Financial
-  'BAC', 'WFC', 'GS', 'MS', 'SCHW', 'BLK', 'C', 'AXP', 'SPGI', 'ICE',
-  'CME', 'USB', 'PNC', 'TFC', 'BK', 'STT', 'FITB', 'RF', 'KEY', 'CFG',
-  
-  // Healthcare
-  'UNH', 'JNJ', 'PFE', 'ABBV', 'TMO', 'ABT', 'MRK', 'LLY', 'DHR', 'BMY',
-  'AMGN', 'GILD', 'CVS', 'CI', 'HUM', 'REGN', 'VRTX', 'ISRG', 'SYK', 'BSX',
-  
-  // Consumer
-  'WMT', 'COST', 'HD', 'PG', 'KO', 'PEP', 'MCD', 'NKE', 'SBUX', 'TGT',
-  'LOW', 'TJX', 'DG', 'ROST', 'DLTR', 'YUM', 'CMG', 'ORLY', 'AZO', 'BBY',
-  
-  // Energy
-  'XOM', 'CVX', 'COP', 'SLB', 'EOG', 'MPC', 'PSX', 'VLO', 'OXY', 'HAL',
-  'BKR', 'DVN', 'HES', 'FANG', 'MRO', 'APA', 'CTRA', 'OVV', 'PR', 'RIG',
-  
-  // Industrial
-  'BA', 'CAT', 'GE', 'HON', 'UPS', 'RTX', 'LMT', 'UNP', 'DE', 'MMM',
-  'GD', 'NOC', 'ETN', 'EMR', 'ITW', 'PH', 'FDX', 'NSC', 'CSX', 'WM',
-  
-  // Communication
-  'DIS', 'CMCSA', 'T', 'VZ', 'TMUS', 'CHTR', 'NFLX', 'EA', 'ATVI', 'TTWO',
-  
-  // Retail/E-commerce
-  'AMZN', 'WMT', 'COST', 'HD', 'TGT', 'LOW', 'EBAY', 'ETSY', 'W', 'CHWY',
-  
-  // High IV / Meme
-  'GME', 'AMC', 'PLTR', 'RIVN', 'LCID', 'NIO', 'SOFI', 'HOOD', 'COIN', 'RBLX',
-  'AI', 'SMCI', 'MSTR', 'BBBY', 'BYND', 'TLRY', 'SNDL', 'WKHS', 'RIDE', 'NKLA',
-  
-  // Cloud/SaaS
-  'NOW', 'SNOW', 'DDOG', 'PANW', 'ZS', 'CRWD', 'OKTA', 'NET', 'ESTC', 'MDB',
-  'TEAM', 'WDAY', 'ZM', 'DOCU', 'TWLO', 'GTLB', 'S', 'DBX', 'BOX', 'RNG',
-  
-  // EV/Clean Energy
-  'TSLA', 'NIO', 'RIVN', 'LCID', 'FSR', 'PLUG', 'ENPH', 'SEDG', 'BE', 'NOVA',
-  'BLNK', 'CHPT', 'QS', 'LAZR', 'VLDR', 'OUST', 'GOEV', 'RIDE', 'ARVL', 'NKLA',
-  
-  // Semiconductors
-  'NVDA', 'AMD', 'INTC', 'TSM', 'QCOM', 'AVGO', 'TXN', 'AMAT', 'LRCX', 'KLAC',
-  'ASML', 'MU', 'MRVL', 'NXPI', 'ADI', 'MCHP', 'ON', 'MPWR', 'SWKS', 'QRVO',
-  
-  // Biotech
-  'GILD', 'AMGN', 'REGN', 'VRTX', 'BIIB', 'ILMN', 'ALXN', 'INCY', 'BMRN', 'SGEN',
-  'MRNA', 'BNTX', 'NVAX', 'CRSP', 'EDIT', 'NTLA', 'BEAM', 'BLUE', 'FOLD', 'ARWR',
-  
-  // REITs
-  'PLD', 'AMT', 'CCI', 'EQIX', 'PSA', 'DLR', 'O', 'WELL', 'AVB', 'EQR',
-  'SPG', 'VTR', 'ARE', 'PEAK', 'MAA', 'INVH', 'UDR', 'ESS', 'CPT', 'HST',
-  
-  // Banks (Regional)
-  'USB', 'PNC', 'TFC', 'BK', 'STT', 'FITB', 'RF', 'KEY', 'CFG', 'HBAN',
-  'ZION', 'MTB', 'FHN', 'SIVB', 'SBNY', 'CMA', 'WBS', 'EWBC', 'FCNCA', 'WTFC',
-  
-  // Insurance
-  'BRK.B', 'PGR', 'TRV', 'ALL', 'CB', 'AIG', 'MET', 'PRU', 'AFL', 'HIG',
-  
-  // More sectors... (would continue to ~1000+ tickers)
-]
-
-export { FALLBACK_EQUITY_LIST }
+// Keep this for backward compatibility but it's no longer used as a fallback
+export const FALLBACK_EQUITY_LIST = EQUITY_UNIVERSE

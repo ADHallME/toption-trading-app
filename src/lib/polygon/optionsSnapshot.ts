@@ -69,7 +69,7 @@ export class PolygonOptionsService {
   private cache: Map<string, { data: any; timestamp: number }> = new Map()
   private cacheDuration = 5 * 60 * 1000 // 5 minutes
   private lastCallTime: number = 0
-  private static readonly MIN_CALL_INTERVAL = 1000 // 1 second between calls
+  private static readonly MIN_CALL_INTERVAL = 15000 // 15 seconds between calls - VERY CONSERVATIVE
   
   private constructor() {
     this.apiKey = process.env.NEXT_PUBLIC_POLYGON_API_KEY || ''

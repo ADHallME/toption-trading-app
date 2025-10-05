@@ -216,11 +216,11 @@ export class ServerOpportunityScanner {
   
   /**
    * Scan tickers with rate limiting to respect Polygon API limits
-   * Batches: 20 tickers at a time, 4 second delay between batches
+   * Batches: 5 tickers at a time, 20 second delay between batches - VERY CONSERVATIVE
    */
   private async scanWithRateLimiting(tickers: string[], marketType: MarketType): Promise<any[]> {
-    const BATCH_SIZE = 20
-    const DELAY_MS = 4000 // 4 seconds between batches (5 req/sec limit)
+    const BATCH_SIZE = 5 // Reduced from 20 to 5
+    const DELAY_MS = 20000 // 20 seconds between batches - VERY CONSERVATIVE
     
     const allOpportunities: any[] = []
     const batches = Math.ceil(tickers.length / BATCH_SIZE)
