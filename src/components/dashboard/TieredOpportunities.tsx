@@ -8,6 +8,7 @@
 import { useState, useEffect } from 'react'
 import { useUser } from '@clerk/nextjs'
 import { RefreshCw, TrendingUp } from 'lucide-react'
+import Link from 'next/link'
 import { TIER_ACCESS, getAllowedTickers, type SubscriptionTier } from '@/lib/subscription/tierAccess'
 import { INDEX_UNIVERSE, FUTURES_UNIVERSE } from '@/lib/polygon/allTickers'
 
