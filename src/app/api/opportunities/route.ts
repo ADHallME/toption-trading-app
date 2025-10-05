@@ -11,10 +11,24 @@ export async function GET(request: NextRequest) {
     const scanner = ProperScanner.getInstance()
     const cached = scanner.getCached(marketType)
     
+    // If cache is empty, trigger a scan in the background
     if (!cached || cached.opportunities.length === 0) {
+      console.log(`[OPPORTUNITIES] Cache empty for ${marketType}, triggering background scan...`)
+      
+      // Trigger scan in background (don't await)
+      ProperScanner.getTickersForMarket(marketType).then(tickers => {
+        const tickersToScan = tickers.slice(0, 50)
+        scanner.scanBatch(marketType, 1, tickersToScan).catch(err => {
+          console.error(`[OPPORTUNITIES] Background scan error for ${marketType}:`, err)
+        })
+      })
+      
       return NextResponse.json({
         success: false,
         error: 'No opportunities available yet. First scan in progress.',
+        scanning: true,
+        marketType,
+        message: 'Scan started in background. Refresh in 30-60 seconds.',
         data: {
           opportunities: [],
           categorized: {
