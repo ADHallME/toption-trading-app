@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
     const scanner = ProperScanner.getInstance()
     
     // Start the scan (runs in background)
-    scanner.scanMarket(marketType, batchSize).catch(err => {
+    scanner.scanBatch(marketType, batchSize).catch(err => {
       console.error(`[MARKET-SCAN ERROR] ${marketType}:`, err)
     })
     
