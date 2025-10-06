@@ -1,55 +1,64 @@
 /**
- * PROPERLY ARCHITECTED ROLLING SCANNER
- * Now supports all 3 asset classes: Equities, Indexes, Futures
+ * MINIMAL WORKING SCANNER
+ * No complexity - just scan tickers and cache results
  */
 
 import { PolygonClient } from '../polygon/properClient'
-import { fetchAllOptionableEquities, INDEX_UNIVERSE, FUTURES_UNIVERSE } from '../polygon/allTickers'
+import { EQUITY_UNIVERSE, INDEX_UNIVERSE, FUTURES_UNIVERSE } from '../polygon/allTickers'
 
 type MarketType = 'equity' | 'index' | 'futures'
 
-interface ScanMetrics {
-  totalTickers: number
-  successfulScans: number
-  failedScans: number
-  opportunitiesFound: number
-  startTime: number
-  endTime?: number
-  apiCallsMade: number
-  circuitBreakerTrips: number
+interface Opportunity {
+  id: string
+  symbol: string
+  strategy: string
+  strike: number
+  expiry: string
+  dte: number
+  premium: number
+  roi: number
+  roiPerDay: number
+  volume: number
+  openInterest: number
+  marketType: MarketType
 }
 
 interface CachedData {
-  opportunities: any[]
+  opportunities: Opportunity[]
   byStrategy: {
-    'Cash Secured Put': any[]
-    'Covered Call': any[]
-    'Iron Condor': any[]
-    'Strangle': any[]
-    'Straddle': any[]
+    'Cash Secured Put': Opportunity[]
+    'Covered Call': Opportunity[]
+    'Iron Condor': Opportunity[]
+    'Strangle': Opportunity[]
+    'Straddle': Opportunity[]
   }
   metadata: {
     lastScan: string
     batchNumber: number
     marketType: MarketType
-    metrics: ScanMetrics
+    tickersScanned: number
   }
 }
 
+// Simple in-memory cache
 const cache: Record<MarketType, CachedData | null> = {
   equity: null,
   index: null,
   futures: null
 }
 
+let isScanning: Record<MarketType, boolean> = {
+  equity: false,
+  index: false,
+  futures: false
+}
+
 export class ProperScanner {
   private static instance: ProperScanner
   private client: PolygonClient
-  private metrics: ScanMetrics
   
   private constructor() {
     this.client = PolygonClient.getInstance()
-    this.metrics = this.initMetrics()
   }
   
   static getInstance(): ProperScanner {
@@ -59,125 +68,107 @@ export class ProperScanner {
     return ProperScanner.instance
   }
   
-  private initMetrics(): ScanMetrics {
-    return {
-      totalTickers: 0,
-      successfulScans: 0,
-      failedScans: 0,
-      opportunitiesFound: 0,
-      startTime: Date.now(),
-      apiCallsMade: 0,
-      circuitBreakerTrips: 0
-    }
-  }
-  
   /**
-   * Scan a single ticker properly
+   * Get cached data
    */
-  private async scanTicker(ticker: string, marketType: MarketType): Promise<any[]> {
-    const opportunities: any[] = []
-    
-    try {
-      console.log(`[SCAN] ${ticker}: Fetching stock price...`)
-      const stockPrice = await this.client.getStockPrice(ticker)
-      this.metrics.apiCallsMade++
-      
-      if (stockPrice === 0) {
-        console.log(`[SCAN] ${ticker}: No price data, skipping`)
-        this.metrics.failedScans++
-        return []
-      }
-      
-      console.log(`[SCAN] ${ticker}: Fetching options chain...`)
-      const options = await this.client.getOptionsChain(ticker)
-      this.metrics.apiCallsMade++
-      
-      if (options.length === 0) {
-        console.log(`[SCAN] ${ticker}: No options data`)
-        this.metrics.failedScans++
-        return []
-      }
-      
-      // Process options
-      for (const option of options) {
-        if (option.open_interest < 10) continue
-        
-        const opportunity = this.convertToOpportunity(option, stockPrice, marketType)
-        if (opportunity) {
-          opportunities.push(opportunity)
-        }
-      }
-      
-      this.metrics.successfulScans++
-      this.metrics.opportunitiesFound += opportunities.length
-      console.log(`[SCAN] ${ticker}: Found ${opportunities.length} opportunities`)
-      
-    } catch (error) {
-      this.metrics.failedScans++
-      
-      if (error instanceof Error && error.message.includes('Circuit breaker')) {
-        this.metrics.circuitBreakerTrips++
-        console.error(`[SCAN] ${ticker}: Circuit breaker open, stopping scan`)
-        throw error
-      }
-      
-      console.error(`[SCAN] ${ticker}: Error -`, error)
-    }
-    
-    return opportunities
+  getCached(marketType: MarketType): CachedData | null {
+    return cache[marketType]
   }
   
   /**
-   * Scan a batch of tickers
+   * Check if currently scanning
+   */
+  isScanning(marketType: MarketType): boolean {
+    return isScanning[marketType]
+  }
+  
+  /**
+   * Get tickers for market type
+   */
+  static async getTickersForMarket(marketType: MarketType): Promise<string[]> {
+    if (marketType === 'equity') {
+      return EQUITY_UNIVERSE
+    } else if (marketType === 'index') {
+      return INDEX_UNIVERSE
+    } else {
+      return FUTURES_UNIVERSE
+    }
+  }
+  
+  /**
+   * Scan a batch of tickers - SIMPLIFIED
    */
   async scanBatch(
-    marketType: MarketType, 
+    marketType: MarketType,
     batchNumber: number,
     tickers: string[]
   ): Promise<CachedData> {
-    console.log(`[BATCH ${batchNumber}] Starting ${marketType} scan of ${tickers.length} tickers`)
     
-    this.metrics = this.initMetrics()
-    this.metrics.totalTickers = tickers.length
-    
-    const allOpportunities: any[] = []
-    
-    for (let i = 0; i < tickers.length; i++) {
-      try {
-        const ticker = tickers[i]
-        const tickerOpps = await this.scanTicker(ticker, marketType)
-        allOpportunities.push(...tickerOpps)
-        
-        // Progress logging every 10 tickers
-        if ((i + 1) % 10 === 0) {
-          console.log(`[BATCH ${batchNumber}] Progress: ${i + 1}/${tickers.length}`)
-          console.log(`[METRICS] Success: ${this.metrics.successfulScans}, Failed: ${this.metrics.failedScans}, Opportunities: ${this.metrics.opportunitiesFound}`)
-        }
-        
-      } catch (error) {
-        if (error instanceof Error && error.message.includes('Circuit breaker')) {
-          console.error(`[BATCH ${batchNumber}] Circuit breaker tripped, stopping batch`)
-          break
-        }
-      }
+    if (isScanning[marketType]) {
+      console.log(`[SCANNER] Already scanning ${marketType}, skipping`)
+      return cache[marketType] || this.emptyCache(marketType)
     }
     
-    this.metrics.endTime = Date.now()
-    const duration = this.metrics.endTime - this.metrics.startTime
+    isScanning[marketType] = true
+    console.log(`[SCANNER] Starting ${marketType} scan of ${tickers.length} tickers`)
+    console.log(`[SCANNER] This will take approximately ${Math.round(tickers.length * 30 / 60)} minutes`)
     
-    console.log(`[BATCH ${batchNumber}] Complete in ${duration}ms`)
-    console.log(`[METRICS]`, this.metrics)
+    const allOpportunities: Opportunity[] = []
+    let scannedCount = 0
+    
+    try {
+      for (const ticker of tickers) {
+        try {
+          console.log(`[SCANNER] [${scannedCount + 1}/${tickers.length}] Scanning ${ticker}...`)
+          
+          // Get stock price
+          const stockPrice = await this.client.getStockPrice(ticker)
+          if (stockPrice === 0) {
+            console.log(`[SCANNER] ${ticker}: No price data, skipping`)
+            scannedCount++
+            continue
+          }
+          
+          // Get options chain
+          const options = await this.client.getOptionsChain(ticker)
+          if (options.length === 0) {
+            console.log(`[SCANNER] ${ticker}: No options, skipping`)
+            scannedCount++
+            continue
+          }
+          
+          // Process options
+          for (const option of options) {
+            const opp = this.convertToOpportunity(option, stockPrice, ticker, marketType)
+            if (opp) {
+              allOpportunities.push(opp)
+            }
+          }
+          
+          console.log(`[SCANNER] ${ticker}: Found ${allOpportunities.length} total opportunities so far`)
+          scannedCount++
+          
+        } catch (error) {
+          console.error(`[SCANNER] Error scanning ${ticker}:`, error)
+          scannedCount++
+        }
+      }
+    } finally {
+      isScanning[marketType] = false
+    }
+    
+    console.log(`[SCANNER] Scan complete! Found ${allOpportunities.length} opportunities from ${scannedCount} tickers`)
     
     // Categorize by strategy
     const byStrategy = {
       'Cash Secured Put': allOpportunities
         .filter(o => o.strategy === 'Cash Secured Put')
         .sort((a, b) => b.roiPerDay - a.roiPerDay)
-        .slice(0, 100),
+        .slice(0, 50),
       'Covered Call': allOpportunities
         .filter(o => o.strategy === 'Covered Call')
         .sort((a, b) => b.roiPerDay - a.roiPerDay)
-        .slice(0, 100),
+        .slice(0, 50),
       'Iron Condor': [],
       'Strangle': [],
       'Straddle': []
@@ -190,69 +181,86 @@ export class ProperScanner {
         lastScan: new Date().toISOString(),
         batchNumber,
         marketType,
-        metrics: this.metrics
+        tickersScanned: scannedCount
       }
     }
     
     cache[marketType] = cacheData
+    console.log(`[SCANNER] Cached ${allOpportunities.length} opportunities for ${marketType}`)
+    
     return cacheData
   }
   
-  getCached(marketType: MarketType): CachedData | null {
-    return cache[marketType]
-  }
-  
   /**
-   * Get tickers for a market type
+   * Convert option to opportunity
    */
-  static async getTickersForMarket(marketType: MarketType): Promise<string[]> {
-    const apiKey = process.env.POLYGON_API_KEY || process.env.NEXT_PUBLIC_POLYGON_API_KEY || ''
+  private convertToOpportunity(
+    option: any,
+    stockPrice: number,
+    symbol: string,
+    marketType: MarketType
+  ): Opportunity | null {
     
-    if (marketType === 'equity') {
-      return await fetchAllOptionableEquities(apiKey)
-    } else if (marketType === 'index') {
-      return INDEX_UNIVERSE
-    } else {
-      return FUTURES_UNIVERSE
+    try {
+      const strike = option.details?.strike_price
+      const bid = option.last_quote?.bid || 0
+      const ask = option.last_quote?.ask || 0
+      
+      if (!strike || (bid === 0 && ask === 0)) return null
+      
+      const premium = (bid + ask) / 2
+      if (premium < 0.1) return null // Skip very low premiums
+      
+      const isPut = option.details?.contract_type === 'put'
+      const capital = strike * 100
+      const roi = (premium * 100) / capital
+      
+      const expiry = new Date(option.details?.expiration_date)
+      const today = new Date()
+      const dte = Math.ceil((expiry.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
+      
+      if (dte <= 0 || dte > 60) return null
+      
+      const roiPerDay = roi / dte
+      
+      return {
+        id: `${option.details?.ticker}_${Date.now()}_${Math.random()}`,
+        symbol,
+        strike,
+        expiry: option.details?.expiration_date,
+        dte,
+        premium: Number(premium.toFixed(2)),
+        roi: Number(roi.toFixed(4)),
+        roiPerDay: Number(roiPerDay.toFixed(6)),
+        strategy: isPut ? 'Cash Secured Put' : 'Covered Call',
+        volume: option.day?.volume || 0,
+        openInterest: option.open_interest || 0,
+        marketType
+      }
+    } catch (error) {
+      return null
     }
   }
   
-  private convertToOpportunity(option: any, stockPrice: number, marketType: MarketType): any | null {
-    const strike = option.details.strike_price
-    const bid = option.last_quote?.bid || 0
-    const ask = option.last_quote?.ask || 0
-    
-    if (bid === 0 && ask === 0) return null
-    
-    const premium = (bid + ask) / 2
-    const isPut = option.details.contract_type === 'put'
-    const capital = strike * 100
-    const roi = (premium * 100) / capital
-    
-    const expiry = new Date(option.details.expiration_date)
-    const today = new Date()
-    const dte = Math.ceil((expiry.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
-    
-    if (dte <= 0 || dte > 60) return null
-    
-    const roiPerDay = roi / dte
-    
+  /**
+   * Return empty cache structure
+   */
+  private emptyCache(marketType: MarketType): CachedData {
     return {
-      id: `${option.details.ticker}_${Date.now()}`,
-      symbol: option.underlying_asset.ticker,
-      strike,
-      expiry: option.details.expiration_date,
-      dte,
-      premium: Number(premium.toFixed(2)),
-      roi: Number(roi.toFixed(4)),
-      roiPerDay: Number(roiPerDay.toFixed(4)),
-      strategy: isPut ? 'Cash Secured Put' : 'Covered Call',
-      volume: option.day?.volume || 0,
-      openInterest: option.open_interest,
-      marketType,
-      delta: option.greeks?.delta || 0,
-      theta: option.greeks?.theta || 0,
-      iv: option.implied_volatility || 0
+      opportunities: [],
+      byStrategy: {
+        'Cash Secured Put': [],
+        'Covered Call': [],
+        'Iron Condor': [],
+        'Strangle': [],
+        'Straddle': []
+      },
+      metadata: {
+        lastScan: new Date().toISOString(),
+        batchNumber: 0,
+        marketType,
+        tickersScanned: 0
+      }
     }
   }
 }

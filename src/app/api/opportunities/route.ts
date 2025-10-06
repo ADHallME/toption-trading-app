@@ -8,76 +8,88 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const marketType = (searchParams.get('marketType') || 'equity') as 'equity' | 'index' | 'futures'
     
-    const scanner = ProperScanner.getInstance()
-    const cached = scanner.getCached(marketType)
+    console.log(`[OPPORTUNITIES API] Request for ${marketType}`)
     
-    // If cache is empty, trigger a scan in the background
-    if (!cached || cached.opportunities.length === 0) {
-      console.log(`[OPPORTUNITIES] Cache empty for ${marketType}, triggering background scan...`)
-      
-      // Trigger scan in background (don't await)
-      ProperScanner.getTickersForMarket(marketType).then(tickers => {
-        const tickersToScan = tickers.slice(0, 50)
-        scanner.scanBatch(marketType, 1, tickersToScan).catch(err => {
-          console.error(`[OPPORTUNITIES] Background scan error for ${marketType}:`, err)
-        })
-      })
-      
+    const scanner = ProperScanner.getInstance()
+    
+    // Check if already scanning
+    if (scanner.isScanning(marketType)) {
+      console.log(`[OPPORTUNITIES API] Currently scanning ${marketType}...`)
       return NextResponse.json({
         success: false,
-        error: 'No opportunities available yet. First scan in progress.',
         scanning: true,
-        marketType,
-        message: 'Scan started in background. Refresh in 30-60 seconds.',
+        message: 'Scan currently in progress. Please wait...',
+        data: { opportunities: [], byStrategy: {}, metadata: {} }
+      })
+    }
+    
+    // Get cached data
+    const cached = scanner.getCached(marketType)
+    
+    // If we have cached data, return it
+    if (cached && cached.opportunities.length > 0) {
+      console.log(`[OPPORTUNITIES API] Returning ${cached.opportunities.length} cached opportunities`)
+      
+      return NextResponse.json({
+        success: true,
         data: {
-          opportunities: [],
-          categorized: {
-            'market-movers': [],
-            'high-iv': [],
-            'conservative': [],
-            'earnings': []
-          },
-          byStrategy: {
-            'Cash Secured Put': [],
-            'Covered Call': [],
-            'Iron Condor': [],
-            'Strangle': [],
-            'Straddle': []
-          },
-          trending: [],
+          opportunities: cached.opportunities,
+          byStrategy: cached.byStrategy,
           metadata: {
-            lastScan: new Date().toISOString(),
-            tickersScanned: 0,
-            totalOpportunities: 0,
-            scanDurationMs: 0,
-            marketType
+            ...cached.metadata,
+            source: 'polygon-api-real-data'
           }
         }
       })
     }
     
-    // Categorize by strategy for frontend
-    const byStrategy = {
-      'Cash Secured Put': cached.opportunities.filter(o => o.strategy === 'Cash Secured Put').slice(0, 50),
-      'Covered Call': cached.opportunities.filter(o => o.strategy === 'Covered Call').slice(0, 50),
-      'Iron Condor': [],
-      'Strangle': [],
-      'Straddle': []
-    }
+    // Cache is empty - trigger a NEW scan
+    console.log(`[OPPORTUNITIES API] Cache empty, triggering NEW scan for ${marketType}`)
+    
+    // Start scan in background (don't await - let it run)
+    ProperScanner.getTickersForMarket(marketType)
+      .then(tickers => {
+        const tickersToScan = tickers.slice(0, 5) // Start with just 5 tickers
+        console.log(`[OPPORTUNITIES API] Starting background scan of ${tickersToScan.length} tickers`)
+        return scanner.scanBatch(marketType, 1, tickersToScan)
+      })
+      .then(result => {
+        console.log(`[OPPORTUNITIES API] Background scan complete! Found ${result.opportunities.length} opportunities`)
+      })
+      .catch(err => {
+        console.error(`[OPPORTUNITIES API] Background scan error:`, err)
+      })
     
     return NextResponse.json({
-      success: true,
+      success: false,
+      scanning: true,
+      message: 'First scan started. Refresh in 2-3 minutes.',
       data: {
-        opportunities: cached.opportunities.sort((a, b) => b.roiPerDay - a.roiPerDay),
-        byStrategy,
-        metadata: cached.metadata
+        opportunities: [],
+        byStrategy: {
+          'Cash Secured Put': [],
+          'Covered Call': [],
+          'Iron Condor': [],
+          'Strangle': [],
+          'Straddle': []
+        },
+        metadata: {
+          lastScan: new Date().toISOString(),
+          tickersScanned: 0,
+          marketType,
+          source: 'scanning-started'
+        }
       }
     })
     
-  } catch (error) {
-    console.error('Opportunities API error:', error)
+  } catch (error: any) {
+    console.error('[OPPORTUNITIES API] Error:', error)
     return NextResponse.json(
-      { success: false, error: 'Internal server error' },
+      { 
+        success: false, 
+        error: error.message || 'Internal server error',
+        data: { opportunities: [], byStrategy: {}, metadata: {} }
+      },
       { status: 500 }
     )
   }
