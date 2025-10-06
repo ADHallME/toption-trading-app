@@ -1,0 +1,37 @@
+#!/bin/bash
+
+echo "🧪 TESTING TOPTION APIs"
+echo "======================"
+echo ""
+
+echo "1️⃣ Testing Market Scan Endpoint..."
+echo "curl 'https://www.toptiontrade.com/api/market-scan?market=equity&batch=3'"
+echo ""
+curl -s "https://www.toptiontrade.com/api/market-scan?market=equity&batch=3" | python3 -m json.tool 2>/dev/null || curl -s "https://www.toptiontrade.com/api/market-scan?market=equity&batch=3"
+echo ""
+echo ""
+
+echo "2️⃣ Testing Opportunities Endpoint..."
+echo "curl 'https://www.toptiontrade.com/api/opportunities-fast?marketType=equity'"
+echo ""
+curl -s "https://www.toptiontrade.com/api/opportunities-fast?marketType=equity" | python3 -m json.tool 2>/dev/null || curl -s "https://www.toptiontrade.com/api/opportunities-fast?marketType=equity"
+echo ""
+echo ""
+
+echo "3️⃣ Testing Opportunities (Standard)..."
+echo "curl 'https://www.toptiontrade.com/api/opportunities?marketType=equity'"
+echo ""
+curl -s "https://www.toptiontrade.com/api/opportunities?marketType=equity" | python3 -m json.tool 2>/dev/null || curl -s "https://www.toptiontrade.com/api/opportunities?marketType=equity"
+echo ""
+echo ""
+
+echo "======================"
+echo "✅ Test Complete!"
+echo ""
+echo "Look for:"
+echo "  ✅ \"success\": true"
+echo "  ✅ \"opportunities\": [...]"
+echo "  ✅ \"scanning\": false"
+echo ""
+echo "If scanning=true, wait 2 minutes and run this again."
+echo "======================"
