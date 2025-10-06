@@ -182,3 +182,26 @@ curl "https://www.toptiontrade.com/api/opportunities-fast?marketType=equity"
 
 **Last Updated:** October 5, 2025, 9:00 PM  
 **Next Action:** Check API status after restart
+
+---
+
+## 🔄 **CHAT RESTART PROCESS**
+
+### **For Future Chats:**
+1. **ALWAYS read this file first** - Understand what we've done and current status
+2. **Update this file after each significant change** - Keep it current
+3. **Reference it when troubleshooting** - Avoid repeating mistakes
+4. **Use it to identify patterns** - Learn from our failures
+
+### **File Maintenance:**
+- Update after each major fix or change
+- Add new issues discovered and solutions
+- Track what works vs what doesn't
+- Keep timeline of progress
+- Note any recurring problems
+
+### **Learning from Mistakes:**
+- If we keep hitting the same issues, check this file
+- Look for patterns in our failures
+- Document what NOT to do again
+- Build institutional knowledge
