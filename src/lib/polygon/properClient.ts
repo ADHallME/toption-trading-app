@@ -7,7 +7,7 @@ export class PolygonClient {
   private static instance: PolygonClient
   private apiKey: string
   private lastCallTime: number = 0
-  private readonly MIN_DELAY_MS = 15000 // 15 seconds between calls (ultra safe)
+  private readonly MIN_DELAY_MS = 2000 // 2 seconds between calls (reasonable balance)
   
   private constructor() {
     this.apiKey = process.env.POLYGON_API_KEY || process.env.NEXT_PUBLIC_POLYGON_API_KEY || ''
@@ -53,7 +53,7 @@ export class PolygonClient {
       
       if (response.status === 429) {
         console.warn(`[POLYGON] 429 for ${ticker} - backing off`)
-        await new Promise(resolve => setTimeout(resolve, 30000)) // Wait 30s on 429
+        await new Promise(resolve => setTimeout(resolve, 10000)) // Wait 10s on 429
         return 0
       }
       
@@ -87,7 +87,7 @@ export class PolygonClient {
       
       if (response.status === 429) {
         console.warn(`[POLYGON] 429 for ${ticker} options - backing off`)
-        await new Promise(resolve => setTimeout(resolve, 30000)) // Wait 30s on 429
+        await new Promise(resolve => setTimeout(resolve, 10000)) // Wait 10s on 429
         return []
       }
       
