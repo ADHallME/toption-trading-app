@@ -101,7 +101,7 @@ export async function GET(request: NextRequest) {
           opportunities: cached.opportunities,
           categorized: {
             'market-movers': cached.opportunities.slice(0, 10),
-            'high-iv': cached.opportunities.filter(o => o.iv > 30).slice(0, 10),
+            'high-iv': cached.opportunities.filter(o => (o.iv || 0) > 30).slice(0, 10),
             'conservative': cached.opportunities.filter(o => o.roiPerDay < 0.1).slice(0, 10),
             'earnings': []
           },

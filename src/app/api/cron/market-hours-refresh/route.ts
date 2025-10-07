@@ -83,7 +83,7 @@ export async function GET(request: NextRequest) {
     ])
     
     const totalOpportunities = results.reduce((sum, r) => sum + r.opportunities.length, 0)
-    const totalCalls = results.reduce((sum, r) => sum + r.metadata.metrics.apiCallsMade, 0)
+    const totalCalls = results.reduce((sum, r) => sum + r.metadata.tickersScanned, 0)
     
     console.log('[MARKET REFRESH] Complete!')
     console.log(`[MARKET REFRESH] Found ${totalOpportunities} opportunities`)

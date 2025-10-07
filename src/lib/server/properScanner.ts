@@ -21,6 +21,7 @@ interface Opportunity {
   volume: number
   openInterest: number
   marketType: MarketType
+  iv?: number
 }
 
 interface CachedData {

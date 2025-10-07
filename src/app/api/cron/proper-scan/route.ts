@@ -95,7 +95,7 @@ export async function GET(request: NextRequest) {
     const result = await scanner.scanBatch(marketType, batchNumber, batchTickers)
     
     // Update daily counter
-    dailyCallCount += result.metadata.metrics.apiCallsMade
+    dailyCallCount += result.metadata.tickersScanned
     
     console.log(`[CRON] ${marketType.toUpperCase()} Batch ${batchNumber} complete`)
     console.log(`[CRON] Calls today: ${dailyCallCount}/${DAILY_CALL_BUDGET}`)
