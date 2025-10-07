@@ -21,16 +21,16 @@ export async function GET(request: NextRequest) {
       // No data and not scanning - trigger a scan
       console.log(`[OPPORTUNITIES] No data for ${marketType}, triggering scan`)
       
-      // Trigger scan in background
-      fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'https://www.toptiontrade.com'}/api/market-scan?market=${marketType}&batch=5`)
-        .catch(err => console.error('[OPPORTUNITIES] Failed to trigger scan:', err))
+      // DISABLED: Trigger scan in background - PREVENTS API HAMMERING
+      // fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'https://www.toptiontrade.com'}/api/market-scan?market=${marketType}&batch=5`)
+      //   .catch(err => console.error('[OPPORTUNITIES] Failed to trigger scan:', err))
       
       return NextResponse.json({
         success: false,
-        error: 'No opportunities available yet. First scan in progress.',
-        scanning: true,
+        error: 'No opportunities available. API calls disabled to prevent rate limiting.',
+        scanning: false,
         marketType,
-        message: 'Scan started in background. Refresh in 30-60 seconds.',
+        message: 'API calls disabled to prevent rate limiting. Using cached data only.',
         data: {
           opportunities: [],
           categorized: {
@@ -62,10 +62,10 @@ export async function GET(request: NextRequest) {
       // Currently scanning but no results yet
       return NextResponse.json({
         success: false,
-        error: 'No opportunities available yet. First scan in progress.',
-        scanning: true,
+        error: 'No opportunities available. API calls disabled to prevent rate limiting.',
+        scanning: false,
         marketType,
-        message: 'Scan started in background. Refresh in 30-60 seconds.',
+        message: 'API calls disabled to prevent rate limiting. Using cached data only.',
         data: {
           opportunities: [],
           categorized: {

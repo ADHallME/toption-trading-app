@@ -22,17 +22,22 @@ export async function GET(request: NextRequest) {
     const tickers = await ProperScanner.getTickersForMarket(marketType)
     const tickersToScan = tickers.slice(0, batchSize)
     
-    // Start the scan (runs in background)
-    scanner.scanBatch(marketType, 1, tickersToScan).catch(err => {
-      console.error(`[MARKET-SCAN ERROR] ${marketType}:`, err)
-    })
+    // DISABLED: Start the scan (runs in background) - PREVENTS API HAMMERING
+    // scanner.scanBatch(marketType, 1, tickersToScan).catch(err => {
+    //   console.error(`[MARKET-SCAN ERROR] ${marketType}:`, err)
+    // })
+    
+    // Return cached data instead of triggering new scans
+    const cached = scanner.getCached(marketType)
     
     return NextResponse.json({ 
       success: true,
-      message: `Scan started for ${marketType}`,
+      message: `Market scan disabled to prevent API hammering - returning cached data`,
       marketType,
       batchSize,
-      note: 'Scan running in background. Check /api/opportunities for results.'
+      results: cached?.opportunities || [],
+      cached: true,
+      note: 'API calls disabled to prevent rate limiting. Using cached data only.'
     })
     
   } catch (error: any) {

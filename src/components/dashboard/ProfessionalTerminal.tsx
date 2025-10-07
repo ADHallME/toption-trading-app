@@ -132,45 +132,26 @@ export default function ProfessionalTerminal() {
   const { opportunities: aiOpportunities, loading: aiLoading, error: aiError, refresh: refreshAI } = useAIOpportunities(getMarketTypeString(activeMarket), 300000)
   const { data: marketData, loading: marketLoading } = useMarketData()
 
-  // Market data fetching
+  // Market data fetching - DISABLED TO PREVENT API HAMMERING
   useEffect(() => {
     const fetchMarketData = async () => {
       const tickers = getMarketIndices()
       const prices: {[key: string]: {price: number, change: number, changePercent: number}} = {}
       
+      // Use only mock data to prevent API hammering
       for (const ticker of tickers) {
-        try {
-          const response = await fetch(`/api/polygon/quote?symbol=${ticker}`)
-          if (response.ok) {
-            const data = await response.json()
-            prices[ticker] = {
-              price: data.last?.trade?.p || 100 + Math.random() * 50,
-              change: (Math.random() - 0.5) * 10,
-              changePercent: (Math.random() - 0.5) * 5
-            }
-          } else {
-            // Fallback to realistic mock data
-            prices[ticker] = {
-              price: 100 + Math.random() * 200,
-              change: (Math.random() - 0.5) * 10,
-              changePercent: (Math.random() - 0.5) * 5
-            }
-          }
-        } catch (error) {
-          // Fallback to realistic mock data
-          prices[ticker] = {
-            price: 100 + Math.random() * 200,
-            change: (Math.random() - 0.5) * 10,
-            changePercent: (Math.random() - 0.5) * 5
-          }
+        prices[ticker] = {
+          price: 100 + Math.random() * 200,
+          change: (Math.random() - 0.5) * 10,
+          changePercent: (Math.random() - 0.5) * 5
         }
       }
       setMarketPrices(prices)
     }
     
     fetchMarketData()
-    const interval = setInterval(fetchMarketData, 30000) // Update every 30 seconds
-    return () => clearInterval(interval)
+    // DISABLED: const interval = setInterval(fetchMarketData, 30000) // Update every 30 seconds
+    // DISABLED: return () => clearInterval(interval)
   }, [activeMarket])
 
   // Fetch opportunities with proper sorting
