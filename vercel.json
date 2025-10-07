@@ -1,19 +1,5 @@
 {
   "buildCommand": "npm run build",
   "outputDirectory": ".next",
-  "framework": "nextjs",
-  "crons": [
-    {
-      "path": "/api/cron/proper-scan?market=equity",
-      "schedule": "0 9,13 * * 1-5"
-    },
-    {
-      "path": "/api/cron/proper-scan?market=index",
-      "schedule": "30 9,15 * * 1-5"
-    },
-    {
-      "path": "/api/cron/proper-scan?market=futures",
-      "schedule": "0 8,16 * * 1-5"
-    }
-  ]
+  "framework": "nextjs"
 }

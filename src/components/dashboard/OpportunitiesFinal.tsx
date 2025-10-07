@@ -107,10 +107,9 @@ export function OpportunitiesFinal({ marketType }: { marketType: 'equity' | 'ind
     // Initial fetch
     fetchOpportunities()
     
-    // Refresh every 30 seconds to check for new data
-    const refreshInterval = setInterval(fetchOpportunities, 30000)
-    
-    return () => clearInterval(refreshInterval)
+    // DISABLED: Auto-refresh to prevent rate limiting
+    // const refreshInterval = setInterval(fetchOpportunities, 30000)
+    // return () => clearInterval(refreshInterval)
   }, [marketType])
   
   // Apply filters to opportunities
