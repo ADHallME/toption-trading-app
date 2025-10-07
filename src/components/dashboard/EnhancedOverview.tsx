@@ -226,28 +226,31 @@ const EnhancedOverview: React.FC<EnhancedOverviewProps> = ({ user }) => {
     setLoading(true);
     
     try {
-      // Use real market scanner instead of sample data
-      const response = await fetch('/api/market-scan?limit=20&minROI=1&minPoP=70');
-      const data = await response.json();
+      // DISABLED: Use real market scanner instead of sample data - PREVENTS API HAMMERING
+      // const response = await fetch('/api/market-scan?limit=20&minROI=1&minPoP=70');
+      // const data = await response.json();
+      
+      // Use mock data instead to prevent API calls
+      const data = { results: [] };
       
       if (data.results && userProfile) {
-        // Convert market scan results to opportunities
-        const opportunities = data.results.map((r: any) => ({
-          ticker: r.symbol,
-          strike: r.strike,
-          premium: r.premium,
-          dte: r.dte,
-          monthlyReturn: (r.roi / r.dte) * 30,
-          annualizedReturn: r.roiAnnualized,
-          probabilityOfProfit: r.pop,
-          delta: r.delta,
-          iv: r.iv,
-          strategy: r.type === 'put' ? 'csp' : 'cc'
-        }));
+        // DISABLED: Convert market scan results to opportunities - PREVENTS API HAMMERING
+        // const opportunities = data.results.map((r: any) => ({
+        //   ticker: r.symbol,
+        //   strike: r.strike,
+        //   premium: r.premium,
+        //   dte: r.dte,
+        //   monthlyReturn: (r.roi / r.dte) * 30,
+        //   annualizedReturn: r.roiAnnualized,
+        //   probabilityOfProfit: r.pop,
+        //   delta: r.delta,
+        //   iv: r.iv,
+        //   strategy: r.type === 'put' ? 'csp' : 'cc'
+        // }));
         
-        // Get AI recommendations
-        const recommendations = aiEngine.recommend(opportunities, userProfile, 3);
-        setAiRecommendations(recommendations);
+        // DISABLED: Get AI recommendations - PREVENTS API HAMMERING
+        // const recommendations = aiEngine.recommend(opportunities, userProfile, 3);
+        setAiRecommendations([]);
       }
     } catch (error) {
       console.error('Error generating recommendations:', error);

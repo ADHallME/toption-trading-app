@@ -22,8 +22,8 @@ export async function GET(request: NextRequest) {
       console.log(`[OPPORTUNITIES-FAST] No data for ${marketType}, triggering scan`)
       
       // Trigger scan in background
-      fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'https://www.toptiontrade.com'}/api/market-scan?market=${marketType}&batch=5`)
-        .catch(err => console.error('[OPPORTUNITIES-FAST] Failed to trigger scan:', err))
+      // DISABLED: fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'https://www.toptiontrade.com'}/api/market-scan?market=${marketType}&batch=5`)
+      //   .catch(err => console.error('[OPPORTUNITIES-FAST] Failed to trigger scan:', err))
       
       return NextResponse.json({
         success: false,
