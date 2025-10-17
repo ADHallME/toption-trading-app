@@ -243,45 +243,32 @@ class PolygonClient {
     
     for (const symbol of symbols) {
       try {
-        // Get last trade (real-time)
-        const lastTradeUrl = `${this.baseUrl}/v2/last/trade/${symbol}?apiKey=${this.apiKey}`
-        const lastTradeData = await this.queueRequest(lastTradeUrl)
+        // Get previous day data (this endpoint works with your API tier)
+        const prevDayUrl = `${this.baseUrl}/v2/aggs/ticker/${symbol}/prev?adjusted=true&apiKey=${this.apiKey}`
+        const prevDayData = await this.queueRequest(prevDayUrl)
         
         let price = 0
         let volume = 0
         let timestamp = new Date().toISOString()
-        
-        if (lastTradeData.results) {
-          price = lastTradeData.results.p || 0
-          volume = lastTradeData.results.s || 0
-          timestamp = lastTradeData.results.t ? new Date(lastTradeData.results.t).toISOString() : timestamp
-        }
-        
-        // Get previous day data for change calculations
-        const prevDayUrl = `${this.baseUrl}/v2/aggs/ticker/${symbol}/prev?adjusted=true&apiKey=${this.apiKey}`
-        const prevDayData = await this.queueRequest(prevDayUrl)
-        
-        let prevClose = price
-        let open = price
-        let high = price
-        let low = price
-        let dayVolume = volume
+        let prevClose = 0
+        let open = 0
+        let high = 0
+        let low = 0
         
         if (prevDayData.results && prevDayData.results.length > 0) {
           const prev = prevDayData.results[0]
-          prevClose = prev.c || price
-          open = prev.o || price
-          high = prev.h || price
-          low = prev.l || price
-          dayVolume = prev.v || volume
-          
-          if (price === 0) {
-            price = prevClose
-          }
+          price = prev.c || 0  // Close price as current price
+          volume = prev.v || 0
+          prevClose = prev.c || 0
+          open = prev.o || 0
+          high = prev.h || 0
+          low = prev.l || 0
+          timestamp = prev.t ? new Date(prev.t).toISOString() : timestamp
         }
         
-        const change = price - prevClose
-        const changePercent = prevClose > 0 ? (change / prevClose) * 100 : 0
+        // For now, no change since we're using previous day close as current price
+        const change = 0
+        const changePercent = 0
         
         quotes.push({
           symbol,
@@ -292,7 +279,7 @@ class PolygonClient {
           prevClose: parseFloat(prevClose.toFixed(2)),
           change: parseFloat(change.toFixed(2)),
           changePercent: parseFloat(changePercent.toFixed(2)),
-          volume: dayVolume,
+          volume: volume,
           timestamp,
           source: price > 0 ? 'last_trade' : 'prev_day'
         })
