@@ -7,6 +7,7 @@ import { getPolygonClient } from '@/lib/polygon/client'
 export interface CacheStatus {
   status: 'green' | 'amber' | 'red'
   lastRefresh: string
+  lastRefreshTimestamp: number // Unix timestamp for calculations
   nextRefresh: string
   polygonApiStatus: 'healthy' | 'degraded' | 'down'
   dataAge: number // minutes since last refresh
@@ -46,6 +47,7 @@ class CacheManager {
   private cacheStatus: CacheStatus = {
     status: 'red',
     lastRefresh: '',
+    lastRefreshTimestamp: 0,
     nextRefresh: '',
     polygonApiStatus: 'down',
     dataAge: 999,
@@ -181,7 +183,9 @@ class CacheManager {
       console.log('📊 Fetching options chains...')
       const allOptions: CachedOption[] = []
       
-      for (let i = 0; i < Math.min(stocks.length, 50); i++) { // Limit to 50 for now
+      // Limit to 10 tickers for testing to avoid rate limits
+      const optionsTickerLimit = 10
+      for (let i = 0; i < Math.min(stocks.length, optionsTickerLimit); i++) {
         const ticker = stocks[i]
         try {
           const options = await this.client.getOptionsChain(ticker, 'put', 30)
@@ -193,7 +197,7 @@ class CacheManager {
           allOptions.push(...cachedOptions)
           
           // Update progress
-          const progress = 50 + (i / Math.min(stocks.length, 50)) * 40
+          const progress = 50 + (i / Math.min(stocks.length, optionsTickerLimit)) * 40
           this.cacheStatus.refreshProgress = Math.round(progress)
           
           console.log(`📊 ${ticker}: ${options.length} options found`)
@@ -206,7 +210,8 @@ class CacheManager {
       const endTime = Date.now()
       const duration = Math.round((endTime - startTime) / 1000)
       
-      this.cacheStatus.lastRefresh = new Date().toLocaleString('en-US', {
+      this.cacheStatus.lastRefreshTimestamp = endTime
+      this.cacheStatus.lastRefresh = new Date(endTime).toLocaleString('en-US', {
         timeZone: 'America/New_York',
         weekday: 'long',
         year: 'numeric',
@@ -217,7 +222,7 @@ class CacheManager {
         timeZoneName: 'short'
       })
       
-      this.cacheStatus.nextRefresh = new Date(Date.now() + 24 * 60 * 60 * 1000).toLocaleString('en-US', {
+      this.cacheStatus.nextRefresh = new Date(endTime + 24 * 60 * 60 * 1000).toLocaleString('en-US', {
         timeZone: 'America/New_York',
         weekday: 'long',
         year: 'numeric',
@@ -246,11 +251,11 @@ class CacheManager {
 
   // Get current cache status
   getCacheStatus(): CacheStatus {
-    // Update data age
+    // Update data age using timestamp
     const now = Date.now()
-    const lastRefreshTime = this.cacheStatus.lastRefresh ? 
-      new Date(this.cacheStatus.lastRefresh).getTime() : 0
-    this.cacheStatus.dataAge = Math.round((now - lastRefreshTime) / (1000 * 60))
+    const lastRefreshTime = this.cacheStatus.lastRefreshTimestamp || 0
+    const dataAge = lastRefreshTime > 0 ? Math.round((now - lastRefreshTime) / (1000 * 60)) : 999
+    this.cacheStatus.dataAge = dataAge
     this.cacheStatus.status = this.calculateRAGStatus()
     
     return { ...this.cacheStatus }
