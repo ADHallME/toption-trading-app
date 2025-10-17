@@ -1,15 +1,14 @@
-import { marketScanner } from '@/lib/scanner/market-scanner-simple'
+import { getMarketScanner } from '@/lib/scanner/market-scanner'
 
 export class AIOpportunityFinder {
   async findBestOpportunities(marketType: string, limit = 50) {
-    const scanResults = await marketScanner.scanMarket({
-      // ONLY 3 FILTERS
+    const scanner = getMarketScanner()
+    const result = await scanner.quickScan({
       maxDTE: 45,
-      minROI: 0.5,
-      limit: limit
+      minROI: 0.5
     })
     
-    // Just return sorted by ROI/Day
-    return scanResults.slice(0, limit)
+    // Return top opportunities sorted by ROI
+    return result.opportunities.slice(0, limit)
   }
 }

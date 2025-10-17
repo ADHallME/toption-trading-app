@@ -2,9 +2,12 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import Stripe from 'stripe'
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2025-08-27.basil'
-})
+// Lazy-load Stripe to avoid build-time instantiation errors
+function getStripe() {
+  return new Stripe(process.env.STRIPE_SECRET_KEY || '', {
+    apiVersion: '2025-08-27.basil'
+  })
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -21,6 +24,7 @@ export async function POST(request: NextRequest) {
     }
     
     // Create Stripe checkout session
+    const stripe = getStripe()
     const session = await stripe.checkout.sessions.create({
       mode: 'subscription',
       payment_method_types: ['card'],

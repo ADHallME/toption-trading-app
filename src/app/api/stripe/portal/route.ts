@@ -2,12 +2,16 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth, clerkClient } from '@clerk/nextjs/server'
 import Stripe from 'stripe'
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2025-08-27.basil'
-})
+// Lazy-load Stripe to avoid build-time instantiation errors
+function getStripe() {
+  return new Stripe(process.env.STRIPE_SECRET_KEY || '', {
+    apiVersion: '2025-08-27.basil'
+  })
+}
 
 export async function POST(request: NextRequest) {
   try {
+    const stripe = getStripe()
     const { userId } = auth()
     
     if (!userId) {

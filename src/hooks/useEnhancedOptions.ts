@@ -1,5 +1,11 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { MarketType } from '@/lib/polygon/enhanced-client';
+
+// Market type enum (moved from deleted enhanced-client)
+export enum MarketType {
+  EQUITY_OPTIONS = 'equity_options',
+  INDEX_OPTIONS = 'index_options',
+  FUTURES_OPTIONS = 'futures_options'
+}
 
 interface OptionContract {
   ticker: string;
@@ -327,5 +333,4 @@ export function useIVMetrics(params: UseIVMetricsParams) {
   return { metrics, loading, error };
 }
 
-// Export market type for convenience
-export { MarketType } from '@/lib/polygon/enhanced-client';
+// MarketType already exported at top of file

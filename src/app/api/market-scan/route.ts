@@ -1,28 +1,27 @@
-import { marketScanner } from '@/lib/scanner/market-scanner'
+import { getMarketScanner } from '@/lib/scanner/market-scanner'
 import { NextResponse } from 'next/server'
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
   
   const marketType = searchParams.get('marketType') || 'equity'
-  const strategy = (searchParams.get('strategy') || 'csp') as 'csp' | 'cc' | 'spread'
   const minDTE = parseInt(searchParams.get('minDTE') || '7')
   const maxDTE = parseInt(searchParams.get('maxDTE') || '45')
   const minROI = parseFloat(searchParams.get('minROI') || '0.5')
-  const minPoP = parseFloat(searchParams.get('minPoP') || '70')
-  const maxCapital = parseFloat(searchParams.get('maxCapital') || '100000')
-  const limit = parseInt(searchParams.get('limit') || '50') // Restored for better UX
+  const minVolume = parseInt(searchParams.get('minVolume') || '10')
+  const minOI = parseInt(searchParams.get('minOI') || '50')
   
   try {
-    const results = await marketScanner.scanMarket({
-      strategy,
+    const scanner = getMarketScanner()
+    const result = await scanner.quickScan({
+      minROI,
       minDTE,
       maxDTE,
-      minROI,
-      minPoP,
-      maxCapital,
-      limit
+      minVolume,
+      minOpenInterest: minOI
     })
+    
+    const results = result.opportunities
     
     // Filter results by market type
     const filteredResults = results.filter(opportunity => {
