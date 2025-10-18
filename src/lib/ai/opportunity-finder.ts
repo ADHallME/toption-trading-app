@@ -1,7 +1,7 @@
 // AI-Powered Opportunity Finder
 // Uses REAL market scanner for best opportunities
 
-import { marketScanner } from '@/lib/scanner/market-scanner'
+import { getMarketScanner } from '@/lib/scanner/market-scanner'
 
 export interface AIOpportunity {
   id: string
@@ -53,19 +53,18 @@ class AIOpportunityFinder {
   ): Promise<AIOpportunity[]> {
     try {
       // Use real market scanner
-      const scanResults = await marketScanner.scanMarket({
-        strategy: 'csp', // Default to cash secured puts
+      const scanner = getMarketScanner()
+      const result = await scanner.quickScan({
         minDTE: 7,
         maxDTE: 45,
         minROI: 0.2,  // Lowered from 0.5 to get more results
-        minPoP: 50,   // Lowered from 70 to get more results
-        maxCapital: 200000, // Raised from 100k
-        limit: limit * 3 // Get extra to filter
+        minVolume: 10,
+        minOpenInterest: 50
       })
       
       // Convert scan results to AI opportunities
-      const opportunities: AIOpportunity[] = scanResults
-        .map(result => this.convertToAIOpportunity(result))
+      const opportunities: AIOpportunity[] = result.opportunities
+        .map(opp => this.convertToAIOpportunity(opp))
         .filter(opp => opp.aiScore >= 40) // Lowered min AI score to show more results
         .sort((a, b) => b.aiScore - a.aiScore)
         .slice(0, limit)

@@ -2,7 +2,17 @@
 // Provides real-time data from Polygon API
 
 import { useState, useEffect, useCallback } from 'react'
-import { unifiedPolygonClient, StockQuote, OptionContract, MarketTicker } from '@/lib/polygon/unified-client'
+import { StockQuote, OptionContract } from '@/lib/polygon/client'
+
+// MarketTicker type (for popular tickers display)
+export interface MarketTicker {
+  symbol: string
+  name: string
+  price: number
+  change: number
+  changePercent: number
+  type: 'Stock' | 'ETF' | 'Index' | 'Future'
+}
 
 // Hook for real-time stock quotes
 export function useStockQuotes(symbols: string[], refreshInterval: number = 30000) {

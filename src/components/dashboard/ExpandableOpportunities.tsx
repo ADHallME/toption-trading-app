@@ -6,7 +6,7 @@ import {
   TrendingUp, DollarSign, Clock, Shield, Brain 
 } from 'lucide-react'
 import SortableOpportunityTable from './SortableOpportunityTable'
-import { getMarketOpportunities } from '@/lib/polygon/market-client'
+// Using API route instead of direct client access
 
 interface ExpandableOpportunitiesProps {
   marketType: 'equity' | 'index' | 'futures'
@@ -44,13 +44,17 @@ export default function ExpandableOpportunities({
   const fetchOpportunities = async () => {
     setLoading(true)
     try {
-      const data = await getMarketOpportunities(marketType)
+      // Call API route which uses the scanner
+      const response = await fetch(`/api/opportunities?marketType=${marketType}`)
+      if (!response.ok) throw new Error(`HTTP ${response.status}`)
+      const result = await response.json()
+      const data = result.opportunities || []
       
       // Categorize opportunities
       const categorized = {
-        'high-roi': data.filter(o => parseFloat(o.roi) > 20).slice(0, 20),
-        'safe-picks': data.filter(o => parseFloat(o.pop || '85') > 80).slice(0, 20),
-        'weekly': data.filter(o => o.dte <= 7).slice(0, 20),
+        'high-roi': data.filter((o: any) => parseFloat(o.roi) > 20).slice(0, 20),
+        'safe-picks': data.filter((o: any) => parseFloat(o.pop || '85') > 80).slice(0, 20),
+        'weekly': data.filter((o: any) => o.dte <= 7).slice(0, 20),
         'ai-recommended': applyAIFilters(data, aiSpecs).slice(0, 20)
       }
       
