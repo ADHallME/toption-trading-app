@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { CacheManager } from '@/lib/cache/manager'
+import { getCacheManager } from '@/lib/cache/manager'
 
 export const dynamic = 'force-dynamic'
 
@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
     
     console.log(`[OPPORTUNITIES] Getting opportunities for ${marketType}`)
     
-    const cacheManager = CacheManager.getInstance()
+    const cacheManager = getCacheManager()
     const opportunities = await cacheManager.getOpportunities(marketType)
     
     if (opportunities.length === 0) {
@@ -35,9 +35,12 @@ export async function GET(request: NextRequest) {
           byStrategy: {
             'Cash Secured Put': refreshedOpportunities.filter(o => o.strategy === 'Cash Secured Put'),
             'Covered Call': refreshedOpportunities.filter(o => o.strategy === 'Covered Call'),
+            'Bull Put Spread': refreshedOpportunities.filter(o => o.strategy === 'Bull Put Spread'),
+            'Bear Call Spread': refreshedOpportunities.filter(o => o.strategy === 'Bear Call Spread'),
             'Iron Condor': refreshedOpportunities.filter(o => o.strategy === 'Iron Condor'),
+            'Straddle': refreshedOpportunities.filter(o => o.strategy === 'Straddle'),
             'Strangle': refreshedOpportunities.filter(o => o.strategy === 'Strangle'),
-            'Straddle': refreshedOpportunities.filter(o => o.strategy === 'Straddle')
+            'Calendar Spread': refreshedOpportunities.filter(o => o.strategy === 'Calendar Spread')
           },
           trending: refreshedOpportunities.slice(0, 5),
           metadata: {
@@ -68,9 +71,12 @@ export async function GET(request: NextRequest) {
         byStrategy: {
           'Cash Secured Put': opportunities.filter(o => o.strategy === 'Cash Secured Put'),
           'Covered Call': opportunities.filter(o => o.strategy === 'Covered Call'),
+          'Bull Put Spread': opportunities.filter(o => o.strategy === 'Bull Put Spread'),
+          'Bear Call Spread': opportunities.filter(o => o.strategy === 'Bear Call Spread'),
           'Iron Condor': opportunities.filter(o => o.strategy === 'Iron Condor'),
+          'Straddle': opportunities.filter(o => o.strategy === 'Straddle'),
           'Strangle': opportunities.filter(o => o.strategy === 'Strangle'),
-          'Straddle': opportunities.filter(o => o.strategy === 'Straddle')
+          'Calendar Spread': opportunities.filter(o => o.strategy === 'Calendar Spread')
         },
         trending: opportunities.slice(0, 5),
         metadata: {

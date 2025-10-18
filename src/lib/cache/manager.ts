@@ -295,6 +295,26 @@ class CacheManager {
     
     return `Data stale (${dataAge}min old) - Last refreshed: ${lastRefresh}`
   }
+
+  // Get cached stocks
+  async getStocks(marketType: string): Promise<CachedStock[]> {
+    // For now, return empty array - this would be populated by the cache refresh
+    // In a real implementation, this would return cached stock data
+    return []
+  }
+
+  // Get cached opportunities
+  async getOpportunities(marketType: string): Promise<any[]> {
+    // For now, return empty array - this would be populated by the cache refresh
+    // In a real implementation, this would return cached opportunity data
+    return []
+  }
+
+  // Refresh opportunities
+  async refreshOpportunities(marketType: string): Promise<void> {
+    // Trigger a cache refresh
+    await this.performFullRefresh()
+  }
 }
 
 // Export singleton
