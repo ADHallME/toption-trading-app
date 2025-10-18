@@ -1,126 +1,87 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { ProperScanner } from '@/lib/server/properScanner'
+import { CacheManager } from '@/lib/cache/manager'
 
 export const dynamic = 'force-dynamic'
 
 /**
- * Main opportunities endpoint that returns cached opportunities
+ * Main opportunities endpoint that returns cached opportunities from Phase 4 system
  */
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
     const marketType = (searchParams.get('marketType') || 'equity') as 'equity' | 'index' | 'futures'
     
-    console.log(`[OPPORTUNITIES] Getting cached data for ${marketType}`)
+    console.log(`[OPPORTUNITIES] Getting opportunities for ${marketType}`)
     
-    const scanner = ProperScanner.getInstance()
-    const cached = scanner.getCached(marketType)
-    const isScanning = scanner.isScanning(marketType)
+    const cacheManager = CacheManager.getInstance()
+    const opportunities = await cacheManager.getOpportunities(marketType)
     
-    if (!cached && !isScanning) {
-      // No data and not scanning - trigger a scan
-      console.log(`[OPPORTUNITIES] No data for ${marketType}, triggering scan`)
-      
-      // DISABLED: Trigger scan in background - PREVENTS API HAMMERING
-      // fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'https://www.toptiontrade.com'}/api/market-scan?market=${marketType}&batch=5`)
-      //   .catch(err => console.error('[OPPORTUNITIES] Failed to trigger scan:', err))
-      
-      return NextResponse.json({
-        success: false,
-        error: 'No opportunities available. API calls disabled to prevent rate limiting.',
-        scanning: false,
-        marketType,
-        message: 'API calls disabled to prevent rate limiting. Using cached data only.',
-        data: {
-          opportunities: [],
-          categorized: {
-            'market-movers': [],
-            'high-iv': [],
-            'conservative': [],
-            'earnings': []
-          },
-          byStrategy: {
-            'Cash Secured Put': [],
-            'Covered Call': [],
-            'Iron Condor': [],
-            'Strangle': [],
-            'Straddle': []
-          },
-          trending: [],
-          metadata: {
-            lastScan: new Date().toISOString(),
-            tickersScanned: 0,
-            totalOpportunities: 0,
-            scanDurationMs: 0,
-            marketType
-          }
-        }
-      })
-    }
-    
-    if (isScanning && !cached) {
-      // Currently scanning but no results yet
-      return NextResponse.json({
-        success: false,
-        error: 'No opportunities available. API calls disabled to prevent rate limiting.',
-        scanning: false,
-        marketType,
-        message: 'API calls disabled to prevent rate limiting. Using cached data only.',
-        data: {
-          opportunities: [],
-          categorized: {
-            'market-movers': [],
-            'high-iv': [],
-            'conservative': [],
-            'earnings': []
-          },
-          byStrategy: {
-            'Cash Secured Put': [],
-            'Covered Call': [],
-            'Iron Condor': [],
-            'Strangle': [],
-            'Straddle': []
-          },
-          trending: [],
-          metadata: {
-            lastScan: new Date().toISOString(),
-            tickersScanned: 0,
-            totalOpportunities: 0,
-            scanDurationMs: 0,
-            marketType
-          }
-        }
-      })
-    }
-    
-    if (cached) {
-      // Return cached data
-      console.log(`[OPPORTUNITIES] Returning ${cached.opportunities.length} cached opportunities for ${marketType}`)
+    if (opportunities.length === 0) {
+      // Try to refresh cache if empty
+      console.log(`[OPPORTUNITIES] No cached data for ${marketType}, refreshing...`)
+      await cacheManager.refreshOpportunities(marketType)
+      const refreshedOpportunities = await cacheManager.getOpportunities(marketType)
       
       return NextResponse.json({
         success: true,
         data: {
-          opportunities: cached.opportunities,
+          opportunities: refreshedOpportunities,
           categorized: {
-            'market-movers': cached.opportunities.slice(0, 10),
-            'high-iv': cached.opportunities.filter(o => (o.iv || 0) > 30).slice(0, 10),
-            'conservative': cached.opportunities.filter(o => o.roiPerDay < 0.1).slice(0, 10),
+            'market-movers': refreshedOpportunities.slice(0, 10),
+            'high-iv': refreshedOpportunities.filter(o => (o.iv || 0) > 30).slice(0, 10),
+            'conservative': refreshedOpportunities.filter(o => o.roiPerDay < 0.1).slice(0, 10),
             'earnings': []
           },
-          byStrategy: cached.byStrategy,
-          trending: cached.opportunities.slice(0, 5),
+          byStrategy: {
+            'Cash Secured Put': refreshedOpportunities.filter(o => o.strategy === 'Cash Secured Put'),
+            'Covered Call': refreshedOpportunities.filter(o => o.strategy === 'Covered Call'),
+            'Iron Condor': refreshedOpportunities.filter(o => o.strategy === 'Iron Condor'),
+            'Strangle': refreshedOpportunities.filter(o => o.strategy === 'Strangle'),
+            'Straddle': refreshedOpportunities.filter(o => o.strategy === 'Straddle')
+          },
+          trending: refreshedOpportunities.slice(0, 5),
           metadata: {
-            ...cached.metadata,
+            lastScan: new Date().toISOString(),
+            tickersScanned: refreshedOpportunities.length,
+            totalOpportunities: refreshedOpportunities.length,
+            scanDurationMs: 0,
+            marketType,
             source: 'polygon-api-real-data'
           }
         }
       })
     }
     
+    // Return cached data
+    console.log(`[OPPORTUNITIES] Returning ${opportunities.length} opportunities for ${marketType}`)
+    
     return NextResponse.json({
-      success: false,
-      error: 'Unknown state',
-      data: { opportunities: [] }
+      success: true,
+      data: {
+        opportunities: opportunities,
+        categorized: {
+          'market-movers': opportunities.slice(0, 10),
+          'high-iv': opportunities.filter(o => (o.iv || 0) > 30).slice(0, 10),
+          'conservative': opportunities.filter(o => o.roiPerDay < 0.1).slice(0, 10),
+          'earnings': []
+        },
+        byStrategy: {
+          'Cash Secured Put': opportunities.filter(o => o.strategy === 'Cash Secured Put'),
+          'Covered Call': opportunities.filter(o => o.strategy === 'Covered Call'),
+          'Iron Condor': opportunities.filter(o => o.strategy === 'Iron Condor'),
+          'Strangle': opportunities.filter(o => o.strategy === 'Strangle'),
+          'Straddle': opportunities.filter(o => o.strategy === 'Straddle')
+        },
+        trending: opportunities.slice(0, 5),
+        metadata: {
+          lastScan: new Date().toISOString(),
+          tickersScanned: opportunities.length,
+          totalOpportunities: opportunities.length,
+          scanDurationMs: 0,
+          marketType,
+          source: 'polygon-api-real-data'
+        }
+      }
     })
     
   } catch (error: any) {
