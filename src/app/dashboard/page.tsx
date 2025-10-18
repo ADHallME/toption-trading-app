@@ -108,7 +108,7 @@ export default function DashboardPage() {
           {activeTab === 'opportunities' && (
             <div>
               <h2 className="text-xl font-semibold mb-4">AI-Generated Opportunities</h2>
-              <RecommendedForYou marketType={marketType} />
+              <RecommendedForYou />
             </div>
           )}
           
