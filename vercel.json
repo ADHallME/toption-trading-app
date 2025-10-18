@@ -7,6 +7,11 @@
       "path": "/api/cron/cache-warmup", 
       "schedule": "0 5 * * *",
       "timezone": "America/New_York"
+    },
+    { 
+      "path": "/api/cron/morning-alerts", 
+      "schedule": "0 7 * * *",
+      "timezone": "America/New_York"
     }
   ]
 }
