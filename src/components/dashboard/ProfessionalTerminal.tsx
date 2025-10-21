@@ -28,7 +28,7 @@ import { useEnhancedOptions, MarketType } from '@/hooks/useEnhancedOptions'
 // Import existing components to preserve functionality
 import OptionsScreenerEnhanced from './OptionsScreenerEnhanced'
 import ResearchTab from './ResearchTab'
-import AnalyticsTab from './AnalyticsTab'
+import { AnalyticsTab } from './AnalyticsTab'
 
 // Workspace layout types
 type PanelSize = 'minimized' | 'normal' | 'maximized'
@@ -589,7 +589,7 @@ export default function ProfessionalTerminal() {
                   <h3 className="text-sm font-semibold text-white">Analytics</h3>
                 </div>
                 <div className="p-4">
-                  <AnalyticsTab />
+                  <AnalyticsTab symbol="AAPL" />
                 </div>
               </div>
             </div>
