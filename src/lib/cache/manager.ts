@@ -38,6 +38,18 @@ export interface CachedOption {
   volume: number
   openInterest: number
   roi: number
+  roiPerDay: number
+  roiAnnualized: number
+  stockPrice: number
+  distance: number
+  breakeven: number
+  pop: number
+  capital: number
+  delta?: number | null
+  gamma?: number | null
+  theta?: number | null
+  vega?: number | null
+  iv?: number | null
   timestamp: string
 }
 
@@ -257,19 +269,68 @@ class CacheManager {
             
             // Convert to CachedOption format
             const cachedPuts: CachedOption[] = puts.map(put => ({
-              ...put,
+              symbol: put.symbol,
+              underlying: put.underlying,
+              strike: put.strike,
+              expiration: put.expiration,
+              dte: put.dte,
+              type: put.type,
+              bid: put.bid,
+              ask: put.ask,
+              mid: put.mid,
+              premium: put.premium,
+              volume: put.volume,
+              openInterest: put.openInterest,
+              roi: put.roi,
+              roiPerDay: put.roiPerDay,
+              roiAnnualized: put.roiAnnualized,
+              stockPrice: put.stockPrice,
+              distance: put.distance,
+              breakeven: put.breakeven,
+              pop: put.pop,
+              capital: put.capital,
+              delta: put.delta,
+              gamma: put.gamma,
+              theta: put.theta,
+              vega: put.vega,
+              iv: put.iv,
               timestamp: new Date().toISOString()
             }))
             
             const cachedCalls: CachedOption[] = calls.map(call => ({
-              ...call,
+              symbol: call.symbol,
+              underlying: call.underlying,
+              strike: call.strike,
+              expiration: call.expiration,
+              dte: call.dte,
+              type: call.type,
+              bid: call.bid,
+              ask: call.ask,
+              mid: call.mid,
+              premium: call.premium,
+              volume: call.volume,
+              openInterest: call.openInterest,
+              roi: call.roi,
+              roiPerDay: call.roiPerDay,
+              roiAnnualized: call.roiAnnualized,
+              stockPrice: call.stockPrice,
+              distance: call.distance,
+              breakeven: call.breakeven,
+              pop: call.pop,
+              capital: call.capital,
+              delta: call.delta,
+              gamma: call.gamma,
+              theta: call.theta,
+              vega: call.vega,
+              iv: call.iv,
               timestamp: new Date().toISOString()
             }))
             
             allOptions.push(...cachedPuts, ...cachedCalls)
             
             // Generate single-leg opportunities
-            [...cachedPuts, ...cachedCalls].forEach(option => {
+            const allOptionsForTicker = [...cachedPuts, ...cachedCalls]
+            allOptionsForTicker.forEach(option => {
               if (option.premium > 0) {
                 opportunities.push({
                   strategy: this.determineStrategy(option, stockPrice),
@@ -297,7 +358,7 @@ class CacheManager {
             })
             
             // Generate multi-leg opportunities
-            const multiLegStrategies = this.detectMultiLegStrategies([...cachedPuts, ...cachedCalls], stockPrice)
+            const multiLegStrategies = this.detectMultiLegStrategies(allOptionsForTicker, stockPrice)
             opportunities.push(...multiLegStrategies)
             
           } catch (error) {

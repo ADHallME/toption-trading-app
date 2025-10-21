@@ -3,9 +3,11 @@ import { headers } from 'next/headers'
 import Stripe from 'stripe'
 import { clerkClient } from '@clerk/nextjs/server'
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2025-08-27.basil'
-})
+function getStripe() {
+  return new Stripe(process.env.STRIPE_SECRET_KEY!, {
+    apiVersion: '2025-08-27.basil'
+  })
+}
 
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!
 
@@ -16,6 +18,7 @@ export async function POST(request: NextRequest) {
   let event: Stripe.Event
   
   try {
+    const stripe = getStripe()
     event = stripe.webhooks.constructEvent(body, signature, webhookSecret)
   } catch (error) {
     console.error('Webhook signature verification failed:', error)
@@ -34,6 +37,7 @@ export async function POST(request: NextRequest) {
         }
         
         // Get the subscription
+        const stripe = getStripe()
         const subscription = await stripe.subscriptions.retrieve(
           session.subscription as string
         )

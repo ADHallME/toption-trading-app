@@ -6,6 +6,8 @@ interface Request {
   url: string
   id: string
   timestamp: number
+  resolve: (value: any) => void
+  reject: (reason?: any) => void
 }
 
 interface CircuitBreaker {
@@ -109,14 +111,16 @@ class PolygonClient {
       }
     }
 
-    const request: Request = {
-      url,
-      id: Math.random().toString(36).substr(2, 9),
-      timestamp: Date.now()
-    }
-
     return new Promise((resolve, reject) => {
-      this.requestQueue.push({ ...request, resolve, reject })
+      const request: Request = {
+        url,
+        id: Math.random().toString(36).substr(2, 9),
+        timestamp: Date.now(),
+        resolve,
+        reject
+      }
+      
+      this.requestQueue.push(request)
       
       if (!this.isProcessing) {
         this.processQueue()
