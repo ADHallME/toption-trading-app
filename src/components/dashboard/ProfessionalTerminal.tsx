@@ -33,6 +33,7 @@ import ResearchTab from './ResearchTab'
 import { AnalyticsTab } from './AnalyticsTab'
 import ExpandableOpportunities from './ExpandableOpportunities'
 import AIOpportunitiesLive from './AIOpportunitiesLive'
+import RAGStatusBar from '../status/RAGStatusBar'
 
 // Workspace layout types
 type PanelSize = 'minimized' | 'normal' | 'maximized'
@@ -656,18 +657,7 @@ export default function ProfessionalTerminal() {
       </div>
 
       {/* Status Bar */}
-      <footer className="bg-gray-900 border-t border-gray-800 px-4 py-1">
-        <div className="flex items-center justify-between text-xs text-gray-500">
-          <div className="flex items-center gap-4">
-            <span>Connected</span>
-            <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-              </div>
-          <div className="flex items-center gap-4">
-            <span>Last Update: {new Date().toLocaleTimeString()}</span>
-            <span>Data: Polygon.io</span>
-          </div>
-        </div>
-      </footer>
+      <RAGStatusBar />
     </div>
   )
 }
