@@ -437,192 +437,36 @@ const OptionsScreenerEnhanced: React.FC<{ marketType?: 'equity' | 'index' | 'fut
     setError(null)
     
     try {
-      const allResults: ScreenerResult[] = []
+      console.log('Running screener with filters:', filters)
       
-      // Use available tickers if no specific tickers selected, otherwise use selected tickers
-      const tickersToScan = filters.tickers.length > 0 ? filters.tickers : availableTickers.slice(0, 10)
+      // Call our screener API with all filters
+      const response = await fetch('/api/screener', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(filters)
+      })
       
-      // Fetch options for each ticker
-      console.log('Starting screener for tickers:', tickersToScan)
-      for (const ticker of tickersToScan) {
-        try {
-          console.log(`Processing ticker: ${ticker}`)
-          // Determine option type based on strategy and option_type filter
-          let optionType = 'both'
-          if (filters.option_type !== 'both') {
-            optionType = filters.option_type
-          } else if (filters.strategy.toLowerCase().includes('put')) {
-            optionType = 'put'
-          } else if (filters.strategy.toLowerCase().includes('call')) {
-            optionType = 'call'
-          }
-          
-          // Build API URL with parameters
-          const params = new URLSearchParams({
-            symbol: ticker,
-            type: optionType,
-            minDTE: filters.dte_min.toString(),
-            maxDTE: filters.dte_max.toString()
-          })
-          
-          const response = await fetch(`/api/polygon/options?${params}`)
-          
-          if (!response.ok) {
-            console.error(`Failed to fetch ${ticker} from main API:`, response.status)
-          }
-          
-          // Always try fallback to debug-screener API
-          try {
-            console.log(`Trying fallback API for ${ticker}`)
-            const fallbackResponse = await fetch(`/api/debug-screener?symbol=${ticker}`)
-            
-            if (fallbackResponse.ok) {
-              const fallbackData = await fallbackResponse.json()
-              console.log(`Fallback API returned data for ${ticker}:`, fallbackData)
-              
-              // Process the fallback data
-              if (fallbackData.optionsTest?.data?.results?.length > 0) {
-                const fallbackResults = fallbackData.optionsTest.data.results
-                  .filter((option: any) => {
-                    // Filter by option type if not 'both'
-                    if (optionType !== 'both' && option.contract_type !== optionType) {
-                      return false
-                    }
-                    return true
-                  })
-                  .slice(0, 5).map((option: any) => {
-                  const strike = option.strike_price
-                  const dte = Math.max(1, Math.ceil((new Date(option.expiration_date).getTime() - new Date().getTime()) / (1000 * 3600 * 24)))
-                  const contractType = option.contract_type
-                  
-                  // Use estimated pricing - ensure minimum ROI per day
-                  const estimatedPremium = Math.max(0.15, Math.abs(100 - strike) * 0.15) // Higher premium for better ROI
-                  const roi = (estimatedPremium / strike) * 100
-                  const roiPerDay = Math.max(0.2, roi / dte) // Ensure minimum 0.2% ROI per day
-                  const distance = Math.abs((100 - strike) / 100) * 100
-                  
-                  const result = {
-                    symbol: option.ticker,
-                    underlying: ticker,
-                    strike: strike,
-                    expiration: option.expiration_date,
-                    dte: dte,
-                    type: contractType,
-                    bid: estimatedPremium,
-                    ask: estimatedPremium * 1.1,
-                    premium: estimatedPremium,
-                    roi: parseFloat(roi.toFixed(2)),
-                    roiPerDay: parseFloat(roiPerDay.toFixed(3)),
-                    roiPerYear: parseFloat((roi * 365 / dte).toFixed(2)),
-                    pop: parseFloat((Math.max(60, 100 - distance)).toFixed(1)), // Ensure minimum 60% PoP
-                    distance: parseFloat(distance.toFixed(2)),
-                    breakeven: optionType === 'put' ? strike - estimatedPremium : strike + estimatedPremium,
-                    capital: optionType === 'put' ? strike * 100 : 0,
-                    stockPrice: 100, // Default stock price
-                    delta: 0,
-                    gamma: 0,
-                    theta: 0,
-                    vega: 0,
-                    iv: 0,
-                    volume: 0,
-                    openInterest: Math.floor(Math.random() * 5000) + 50, // Ensure minimum 50 OI
-                    strategy: filters.strategy,
-                    source: 'fallback'
-                  }
-                  
-                  console.log(`Generated fallback option for ${ticker}:`, {
-                    symbol: result.symbol,
-                    roiPerDay: result.roiPerDay,
-                    pop: result.pop,
-                    distance: result.distance,
-                    dte: result.dte,
-                    openInterest: result.openInterest
-                  })
-                  
-                  return result
-                })
-                
-                console.log(`Fallback results for ${ticker}:`, fallbackResults.length, 'options')
-                allResults.push(...fallbackResults)
-                continue
-              }
-            }
-          } catch (fallbackError) {
-            console.error(`Fallback API also failed for ${ticker}:`, fallbackError)
-          }
-          
-          // If we get here, both APIs failed
-          console.error(`Both APIs failed for ${ticker}`)
-          continue
-          
-          const data = await response.json()
-          console.log(`Data for ${ticker}:`, data)
-          
-          if (data.results && Array.isArray(data.results)) {
-            console.log(`Processing ${data.results.length} options for ${ticker}`)
-            
-            // Filter and map results
-            const tickerResults = data.results
-              .filter((option: any) => {
-                // Apply basic filters - check if properties exist first
-                if (option.roi !== undefined && (option.roi < filters.roi_min || option.roi > filters.roi_max)) return false
-                if (option.roiPerDay !== undefined && (option.roiPerDay < filters.roi_per_day_min || option.roiPerDay > filters.roi_per_day_max)) return false
-                if (option.pop !== undefined && option.pop < filters.pop_min) return false
-                if (option.capital !== undefined && option.capital > filters.capital_max) return false
-                if (option.distance !== undefined && (option.distance < filters.distance_min || option.distance > filters.distance_max)) return false
-                if (option.volume !== undefined && option.volume < filters.min_volume) return false
-                if (option.openInterest !== undefined && option.openInterest < filters.min_oi) return false
-                // Never show options with 0 OI - no market for them
-                if (option.openInterest === 0) return false
-                
-                // Apply option type filter
-                if (filters.option_type !== 'both' && option.type !== undefined && option.type !== filters.option_type) return false
-                
-                // Apply Greeks filters - check if properties exist first
-                if (option.delta !== undefined && (option.delta < filters.delta_min || option.delta > filters.delta_max)) return false
-                if (option.gamma !== undefined && (option.gamma < filters.gamma_min || option.gamma > filters.gamma_max)) return false
-                if (option.theta !== undefined && (option.theta < filters.theta_min || option.theta > filters.theta_max)) return false
-                if (option.vega !== undefined && (option.vega < filters.vega_min || option.vega > filters.vega_max)) return false
-                
-                // Apply IV and pricing filters - check if properties exist first
-                if (option.iv !== undefined && (option.iv < filters.iv_min || option.iv > filters.iv_max)) return false
-                if (option.strike !== undefined && (option.strike < filters.strike_min || option.strike > filters.strike_max)) return false
-                if (option.premium !== undefined && (option.premium < filters.premium_min || option.premium > filters.premium_max)) return false
-                
-                // Apply stock filters - check if properties exist first
-                if (option.stockPrice !== undefined && (option.stockPrice < filters.stock_price_min || option.stockPrice > filters.stock_price_max)) return false
-                if (option.volume !== undefined && option.volume < filters.volume_min) return false
-                
-                return true
-              })
-              .map((option: any) => ({
-                ...option,
-                strategy: filters.strategy
-              }))
-            
-            allResults.push(...tickerResults)
-          }
-        } catch (error) {
-          console.error(`Error fetching ${ticker}:`, error)
-        }
+      if (!response.ok) {
+        throw new Error(`Screener API failed: ${response.status}`)
       }
       
-      // Sort results
-      const sorted = sortResults(allResults, sortBy, sortDirection)
-      setResults(sorted.slice(0, 50)) // Limit to top 50
+      const result = await response.json()
       
-      console.log('Screener completed. Total results:', allResults.length)
-      console.log('All results:', allResults)
-      
-      if (allResults.length === 0) {
-        setError('No options found matching your criteria. Try adjusting filters or adding more liquid tickers like SPY, QQQ, AAPL.')
-        console.log('No results found. Current filters:', filters)
+      if (result.success) {
+        console.log(`Screener found ${result.results.length} opportunities`)
+        setResults(result.results)
+        setTotalResults(result.total)
       } else {
-        console.log(`Found ${allResults.length} total results`)
+        throw new Error(result.error || 'Screener failed')
       }
-    } catch (error) {
-      console.error('Screener error:', error)
-      setError('Failed to run screener. Please try again.')
+      
+    } catch (err: any) {
+      console.error('Screener error:', err)
+      setError(err.message)
+      setResults([])
+      setTotalResults(0)
     } finally {
       setLoading(false)
     }

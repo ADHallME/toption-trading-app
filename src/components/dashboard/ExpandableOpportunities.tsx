@@ -6,7 +6,6 @@ import {
   TrendingUp, DollarSign, Clock, Shield, Brain 
 } from 'lucide-react'
 import SortableOpportunityTable from './SortableOpportunityTable'
-import { getMarketOpportunities } from '@/lib/polygon/market-client'
 
 interface ExpandableOpportunitiesProps {
   marketType: 'equity' | 'index' | 'futures'
@@ -44,19 +43,27 @@ export default function ExpandableOpportunities({
   const fetchOpportunities = async () => {
     setLoading(true)
     try {
-      const data = await getMarketOpportunities(marketType)
+      const response = await fetch(`/api/opportunities?marketType=${marketType}`)
+      const result = await response.json()
       
-      // Categorize opportunities
-      const categorized = {
-        'high-roi': data.filter(o => parseFloat(o.roi) > 20).slice(0, 20),
-        'safe-picks': data.filter(o => parseFloat(o.pop || '85') > 80).slice(0, 20),
-        'weekly': data.filter(o => o.dte <= 7).slice(0, 20),
-        'ai-recommended': applyAIFilters(data, aiSpecs).slice(0, 20)
+      if (result.success) {
+        const data = result.data.opportunities
+        
+        // Categorize opportunities
+        const categorized = {
+          'high-roi': data.filter((o: any) => o.roi > 5).slice(0, 20),
+          'safe-picks': data.filter((o: any) => o.pop > 60).slice(0, 20),
+          'weekly': data.filter((o: any) => o.dte <= 7).slice(0, 20),
+          'ai-recommended': data.filter((o: any) => o.strategy.includes('Iron Condor') || o.strategy.includes('Straddle')).slice(0, 20)
+        }
+        
+        setOpportunities(categorized)
+      } else {
+        setError(result.error || 'Failed to fetch opportunities')
       }
-      
-      setOpportunities(categorized)
     } catch (error) {
       console.error('Error fetching opportunities:', error)
+      setError('Failed to fetch opportunities')
     } finally {
       setLoading(false)
     }
