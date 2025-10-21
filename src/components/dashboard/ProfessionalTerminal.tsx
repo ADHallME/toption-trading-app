@@ -1,15 +1,7 @@
-// COMPREHENSIVE UPDATE SCRIPT FOR CURSOR
-// This integrates ALL fixes into the ProfessionalTerminal component
-// Copy this entire file into Cursor and apply it to ProfessionalTerminal.tsx
-
-// File: src/components/dashboard/ProfessionalTerminal.tsx
-// FULL REPLACEMENT WITH ALL FIXES INTEGRATED
-
 'use client'
 
 import { useState, useEffect } from 'react'
 import { useUser } from '@clerk/nextjs'
-import Link from 'next/link'
 import { 
   TrendingUp, 
   TrendingDown, 
@@ -19,918 +11,605 @@ import {
   ChevronDown,
   ChevronRight,
   Maximize2,
+  Minimize2,
   Grid,
   List,
   Eye,
+  EyeOff,
   Filter,
   Search,
   AlertTriangle,
   Zap,
   Target,
-  BarChart3,
-  Plus,
-  Brain,
-  Shield,
-  Clock,
-  DollarSign,
-  Calendar,
-  Star,
-  Info,
-  RefreshCw,
-  X,
-  User as UserIcon,
-  LogOut,
-  HelpCircle,
-  Key,
-  CreditCard,
-  LineChart,
-  BookOpen,
-  FileText,
-  PieChart,
-  CandlestickChart,
-  Calculator,
-  Play
+  BarChart3
 } from 'lucide-react'
-import { MarketType } from '@/hooks/useEnhancedOptions'
+import { useEnhancedOptions, MarketType } from '@/hooks/useEnhancedOptions'
 
-// Import live data hooks
-import { usePopularTickers, useOptionsChain, useTickerSearch } from '@/hooks/useLiveData'
-import { useAIOpportunities } from '@/hooks/useAIOpportunities'
-import { useMarketData } from '@/hooks/useMarketData'
-import { AIOpportunity } from '@/lib/ai/opportunity-finder'
-
-// Import LIVE components - REAL DATA
+// Import existing components to preserve functionality
 import OptionsScreenerEnhanced from './OptionsScreenerEnhanced'
-import EnhancedResearchTab from './EnhancedResearchTab'
-import AnalyticsTabFixed from './AnalyticsTabFixed'
-import EducationTabEnhanced from './EducationTabEnhanced'
-import HistoricalTab from './HistoricalTab'
-import ChartPopup from './ChartPopup'
-import { ChartPopout } from './ChartPopout'
-import { OpportunitiesService } from '@/lib/opportunitiesService'
-import { OpportunitiesFinal } from './OpportunitiesFinal'
-import TickerSearch from './TickerSearch'
-import AIOpportunitiesLive from './AIOpportunitiesLive'  // NEW LIVE COMPONENT
-import StrategyCardsContainer from './StrategyCardsLive'  // NEW LIVE COMPONENT
-import { OpportunityCarousel, generateSampleOpportunities } from './OpportunityCard'
-import SettingsPanel from './SettingsPanel'
-import FeatureGate from '@/components/paywall/FeatureGate'
+import ResearchTab from './ResearchTab'
+import AnalyticsTab from './AnalyticsTab'
 
-// Main component stays mostly the same but uses fixed components
+// Workspace layout types
+type PanelSize = 'minimized' | 'normal' | 'maximized'
+type ViewMode = 'grid' | 'list' | 'compact'
+
+interface WorkspacePanel {
+  id: string
+  title: string
+  component: 'screener' | 'chain' | 'positions' | 'watchlist' | 'flow' | 'analytics' | 'research'
+  size: PanelSize
+  visible: boolean
+  position: { x: number; y: number; w: number; h: number }
+}
+
+// User preferences structure
+interface UserPreferences {
+  marketTypes: MarketType[]
+  favoriteUnderlyings: string[]
+  strategies: string[]
+  riskTolerance: 'conservative' | 'moderate' | 'aggressive'
+  aiWatchdogEnabled: boolean
+  alertThresholds: {
+    iv: number
+    volume: number
+    unusual: number
+    deltaThreshold: number
+  }
+  autoExecute: boolean
+  workspace: {
+    layout: 'single' | 'dual' | 'quad'
+    panels: WorkspacePanel[]
+  }
+}
+
+const DEFAULT_PREFERENCES: UserPreferences = {
+  marketTypes: [MarketType.EQUITY_OPTIONS],
+  favoriteUnderlyings: ['SPY', 'QQQ', 'AAPL', 'TSLA'],
+  strategies: ['covered-call', 'cash-secured-put', 'spread'],
+  riskTolerance: 'moderate',
+  aiWatchdogEnabled: false,
+  alertThresholds: {
+    iv: 50,
+    volume: 1000,
+    unusual: 2,
+    deltaThreshold: 0.3
+  },
+  autoExecute: false,
+  workspace: {
+    layout: 'dual',
+    panels: []
+  }
+}
+
+// Liquid futures contracts
+const LIQUID_FUTURES = {
+  'Indices': ['ES', 'NQ', 'RTY', 'YM', 'VX'],
+  'Energy': ['CL', 'NG', 'RB', 'HO', 'BZ'],
+  'Metals': ['GC', 'SI', 'HG', 'PL', 'PA'],
+  'Agriculture': ['ZC', 'ZW', 'ZS', 'KE', 'CC', 'SB', 'KC', 'CT'],
+  'Currencies': ['6E', '6B', '6J', '6C', '6A', '6S', '6N'],
+  'Rates': ['ZN', 'ZB', 'ZF', 'ZT', 'GE'],
+  'Livestock': ['LE', 'HE', 'GF'],
+  'Crypto': ['BTC', 'ETH']
+}
+
 export default function ProfessionalTerminal() {
   const { user } = useUser()
-  const [activeTab, setActiveTab] = useState<'main' | 'analysis' | 'education' | 'historical'>('main')
-  const [activeMarket, setActiveMarket] = useState<MarketType>(MarketType.EQUITY_OPTIONS)
-  const [selectedOpportunityType, setSelectedOpportunityType] = useState<'ai' | 'watchlist'>('ai')
-  const [watchlist, setWatchlist] = useState<string[]>([])
-  const [showNotifications, setShowNotifications] = useState(false)
+  const [preferences, setPreferences] = useState<UserPreferences>(DEFAULT_PREFERENCES)
+  const [activeWorkspace, setActiveWorkspace] = useState<'main' | 'analysis'>('main')
   const [showSettings, setShowSettings] = useState(false)
-  const [showSettingsPanel, setShowSettingsPanel] = useState(false)
-  const [showProfile, setShowProfile] = useState(false)
-  const [readNotifications, setReadNotifications] = useState<Set<number>>(new Set())
-  const [expandedSections, setExpandedSections] = useState({
-    opportunities: true,
-    strategies: true
+  const [viewMode, setViewMode] = useState<ViewMode>('grid')
+  const [selectedMarketType, setSelectedMarketType] = useState<MarketType>(MarketType.EQUITY_OPTIONS)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [alerts, setAlerts] = useState<any[]>([])
+  const [expandedPanels, setExpandedPanels] = useState<Set<string>>(new Set(['screener', 'chain']))
+  
+  // Track user behavior for AI learning
+  const [userActivity, setUserActivity] = useState({
+    searches: [] as string[],
+    viewedContracts: [] as string[],
+    tradedContracts: [] as string[],
+    timeSpentPerSection: {} as Record<string, number>
   })
-  const [selectedChart, setSelectedChart] = useState<{ ticker: string; data: any } | null>(null)
-  const [showChartPopup, setShowChartPopup] = useState(false)
-  const [marketPrices, setMarketPrices] = useState<{[key: string]: {price: number, change: number, changePercent: number}}>({})
-  const [showChartPopout, setShowChartPopout] = useState(false)
-  const [selectedSymbol, setSelectedSymbol] = useState('')
-  const [opportunities, setOpportunities] = useState<any[]>([])
 
-  // Close dropdowns when clicking outside
+  // Load user preferences
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      const target = event.target as Element
-      if (!target.closest('.dropdown-container')) {
-        setShowNotifications(false)
-        setShowSettings(false)
-        setShowProfile(false)
-      }
-    }
-
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [])
-
-  // Helper function to convert MarketType to string
-  const getMarketTypeString = (marketType: MarketType): 'equity' | 'index' | 'futures' => {
-    switch (marketType) {
-      case MarketType.EQUITY_OPTIONS:
-        return 'equity'
-      case MarketType.INDEX_OPTIONS:
-        return 'index'
-      case MarketType.FUTURES_OPTIONS:
-        return 'futures'
-      default:
-        return 'equity'
-    }
-  }
-
-  // Data hooks
-  const { opportunities: aiOpportunities, loading: aiLoading, error: aiError, refresh: refreshAI } = useAIOpportunities(getMarketTypeString(activeMarket), 300000)
-  const { data: marketData, loading: marketLoading } = useMarketData()
-
-  // Market data fetching
-  useEffect(() => {
-    const fetchMarketData = async () => {
-      const tickers = getMarketIndices()
-      const prices: {[key: string]: {price: number, change: number, changePercent: number}} = {}
-      
-      for (const ticker of tickers) {
-        try {
-          const response = await fetch(`/api/polygon/quote?symbol=${ticker}`)
-          if (response.ok) {
-            const data = await response.json()
-            prices[ticker] = {
-              price: data.last?.trade?.p || 100 + Math.random() * 50,
-              change: (Math.random() - 0.5) * 10,
-              changePercent: (Math.random() - 0.5) * 5
-            }
-          } else {
-            // Fallback to realistic mock data
-            prices[ticker] = {
-              price: 100 + Math.random() * 200,
-              change: (Math.random() - 0.5) * 10,
-              changePercent: (Math.random() - 0.5) * 5
-            }
-          }
-        } catch (error) {
-          // Fallback to realistic mock data
-          prices[ticker] = {
-            price: 100 + Math.random() * 200,
-            change: (Math.random() - 0.5) * 10,
-            changePercent: (Math.random() - 0.5) * 5
-          }
+    const loadPreferences = async () => {
+      if (user?.id) {
+        // In production, load from database
+        const saved = localStorage.getItem(`prefs_${user.id}`)
+        if (saved) {
+          setPreferences(JSON.parse(saved))
         }
       }
-      setMarketPrices(prices)
     }
-    
-    fetchMarketData()
-    const interval = setInterval(fetchMarketData, 30000) // Update every 30 seconds
-    return () => clearInterval(interval)
-  }, [activeMarket])
+    loadPreferences()
+  }, [user])
 
-  // Fetch opportunities with proper sorting
+  // Save preferences when changed
   useEffect(() => {
-    const loadOpportunities = async () => {
-      const service = OpportunitiesService.getInstance()
-      const opps = await service.getOpportunities(undefined, 50)
-      setOpportunities(opps)
+    if (user?.id) {
+      localStorage.setItem(`prefs_${user.id}`, JSON.stringify(preferences))
     }
-    
-    loadOpportunities()
-    const interval = setInterval(loadOpportunities, 30000)
-    return () => clearInterval(interval)
-  }, [])
+  }, [preferences, user])
 
-  const toggleSection = (section: keyof typeof expandedSections) => {
-    setExpandedSections(prev => ({
-      ...prev,
-      [section]: !prev[section]
-    }))
-  }
-
-  const handleAddToWatchlist = (ticker: string) => {
-    setWatchlist(prev => {
-      if (prev.includes(ticker)) {
-        return prev.filter(t => t !== ticker)
+  // Track user activity for AI learning
+  const trackActivity = (action: string, data: any) => {
+    setUserActivity(prev => {
+      const updated = { ...prev }
+      if (action === 'search') {
+        updated.searches = [...updated.searches, data].slice(-100) // Keep last 100
+      } else if (action === 'view') {
+        updated.viewedContracts = [...updated.viewedContracts, data].slice(-100)
       }
-      return [...prev, ticker]
+      // AI can analyze this data to provide better recommendations
+      return updated
     })
   }
 
-  const handleViewChart = (ticker: string) => {
-    // Generate sample chart data
-    const data = Array.from({ length: 30 }, (_, i) => ({
-      date: new Date(Date.now() - (29 - i) * 24 * 60 * 60 * 1000).toLocaleDateString(),
-      price: 100 + Math.sin(i / 5) * 10 + Math.random() * 5,
-      volume: Math.floor(1000000 + Math.random() * 500000)
-    }))
-    setSelectedChart({ ticker, data })
-  }
-
-  // Market indices with SPY in the right place
-  const getMarketIndices = () => {
-    if (activeMarket === MarketType.INDEX_OPTIONS) {
-      return ['SPY', 'QQQ', 'IWM', 'DIA', 'VIX']
-    } else if (activeMarket === MarketType.FUTURES_OPTIONS) {
-      return ['/ES', '/NQ', '/RTY', '/YM', '/CL']
-    } else {
-      // Equity - NO SPY HERE
-      return ['AAPL', 'MSFT', 'NVDA', 'TSLA', 'AMD']
-    }
-  }
-
-  // Generate strategy opportunities with market-specific tickers
-  const generateStrategyOpportunities = () => {
-    const diverseTickers = getMarketIndices() // Use the same tickers as the top bar
-    const strategies: { [key: string]: any[] } = {
-      'CSP': [],
-      'Covered Call': [],
-      'Straddle': [],
-      'Strangle': [],
-      'Condor': [],
-      'Call Credit Spread': [],
-      'Put Credit Spread': [],
-      'Call Calendar Spread': []
-    }
-
-    // Generate realistic opportunities for each strategy
-    Object.keys(strategies).forEach(strategy => {
-      for (let i = 0; i < 50; i++) { // Generate 50 opportunities per strategy
-        const ticker = diverseTickers[Math.floor(Math.random() * diverseTickers.length)]
-        const stockPrice = 50 + Math.random() * 200
-        const strike = Math.round(stockPrice * (0.85 + Math.random() * 0.3))
-        const premium = Math.max(1.0, Math.abs(stockPrice - strike) * 0.15)
-        const dte = 7 + Math.floor(Math.random() * 38)
-        const roi = (premium / strike) * 100
-        
-        strategies[strategy].push({
-          ticker,
-          strike,
-          premium: Number(premium.toFixed(2)),
-          roi: Number(Math.max(2.0, roi).toFixed(2)), // Minimum 2% ROI
-          roiPerDay: Number(Math.max(0.2, roi / dte).toFixed(3)), // Minimum 0.2% ROI per day
-          roiAnnualized: Number(((roi / dte) * 365).toFixed(1)),
-          pop: 65 + Math.random() * 25, // 65-90% PoP
-          dte,
-          distance: Number((Math.random() * 15 + 2).toFixed(1)), // 2-17% distance
-          volume: Math.floor(100 + Math.random() * 2000),
-          openInterest: Math.floor(100 + Math.random() * 5000),
-          delta: -0.3 + Math.random() * 0.6,
-          theta: -0.05 - Math.random() * 0.03,
-          gamma: 0.02 + Math.random() * 0.01,
-          vega: 0.15 + Math.random() * 0.1
-        })
+  const togglePanel = (panelId: string) => {
+    setExpandedPanels(prev => {
+      const next = new Set(prev)
+      if (next.has(panelId)) {
+        next.delete(panelId)
+      } else {
+        next.add(panelId)
       }
+      return next
     })
-
-    return strategies
   }
-
-  const generateMarketMovers = () => {
-    return [
-      {
-        ticker: 'SOFI',
-        price: 8.45,
-        priceChange: 0.23,
-        priceChangePercent: 2.79,
-        strategy: 'CASH SECURED PUT',
-        strikes: '$8.00',
-        dte: 15,
-        expiration: '15 Oct 2025',
-        delta: -0.35,
-        premium: 0.28,
-        capitalRequired: 800,
-        maxGain: 28,
-        maxLoss: 800,
-        returnOnCapital: 3.5,
-        annualizedReturn: 85.2,
-        breakeven: 7.72,
-        pop: 68,
-        distanceFromStrike: 5.3
-      },
-      {
-        ticker: 'PLTR',
-        price: 20.75,
-        priceChange: -0.45,
-        priceChangePercent: -2.12,
-        strategy: 'PUT CREDIT SPREAD',
-        strikes: '$20 / $19',
-        dte: 12,
-        expiration: '12 Oct 2025',
-        delta: [-0.28, -0.18],
-        premium: 0.45,
-        capitalRequired: 100,
-        maxGain: 45,
-        maxLoss: 100,
-        returnOnCapital: 45.0,
-        annualizedReturn: 1368.8,
-        pop: 72,
-        distanceFromStrike: 3.6
-      },
-      {
-        ticker: 'UBER',
-        price: 64.36,
-        priceChange: 1.45,
-        priceChangePercent: 2.30,
-        strategy: 'CALL CREDIT SPREAD',
-        strikes: '$67 / $70',
-        dte: 18,
-        expiration: '18 Oct 2025',
-        delta: [0.25, 0.15],
-        premium: 0.95,
-        capitalRequired: 300,
-        maxGain: 95,
-        maxLoss: 300,
-        returnOnCapital: 31.67,
-        annualizedReturn: 642.2,
-        pop: 75,
-        distanceFromStrike: 4.1
-      }
-    ]
-  }
-
-  const generateHighIVPlays = () => {
-    return [
-      {
-        ticker: 'MARA',
-        price: 18.52,
-        priceChange: 2.31,
-        priceChangePercent: 14.82,
-        strategy: 'CASH SECURED PUT',
-        strikes: '$16',
-        dte: 30,
-        expiration: '31 Oct 2025',
-        delta: -0.30,
-        premium: 1.25,
-        capitalRequired: 1600,
-        maxGain: 125,
-        maxLoss: 1600,
-        returnOnCapital: 7.8,
-        annualizedReturn: 95.0,
-        breakeven: 14.75,
-        pop: 70,
-        distanceFromStrike: 13.6
-      },
-      {
-        ticker: 'COIN',
-        price: 245.80,
-        priceChange: 12.45,
-        priceChangePercent: 5.34,
-        strategy: 'STRADDLE',
-        strikes: '$245',
-        dte: 21,
-        expiration: '21 Oct 2025',
-        delta: 0.50,
-        premium: 8.50,
-        capitalRequired: 850,
-        maxGain: 850,
-        maxLoss: 850,
-        returnOnCapital: 100.0,
-        annualizedReturn: 1738.1,
-        pop: 65,
-        distanceFromStrike: 0.3
-      }
-    ]
-  }
-
-  const generateConservativePlays = () => {
-    return [
-      {
-        ticker: 'JNJ',
-        price: 158.45,
-        priceChange: 0.85,
-        priceChangePercent: 0.54,
-        strategy: 'COVERED CALL',
-        strikes: '$160',
-        dte: 45,
-        expiration: '45 Oct 2025',
-        delta: 0.25,
-        premium: 2.15,
-        capitalRequired: 15845,
-        maxGain: 215,
-        maxLoss: 15845,
-        returnOnCapital: 1.36,
-        annualizedReturn: 11.0,
-        breakeven: 156.30,
-        pop: 75,
-        distanceFromStrike: 1.0
-      },
-      {
-        ticker: 'PG',
-        price: 152.30,
-        priceChange: -0.45,
-        priceChangePercent: -0.29,
-        strategy: 'CASH SECURED PUT',
-        strikes: '$150',
-        dte: 30,
-        expiration: '30 Oct 2025',
-        delta: -0.20,
-        premium: 1.80,
-        capitalRequired: 15000,
-        maxGain: 180,
-        maxLoss: 15000,
-        returnOnCapital: 1.20,
-        annualizedReturn: 14.6,
-        breakeven: 148.20,
-        pop: 80,
-        distanceFromStrike: 1.5
-      }
-    ]
-  }
-
-  const generateEarningsPlays = () => {
-    return [
-      {
-        ticker: 'TSLA',
-        price: 248.50,
-        priceChange: 5.20,
-        priceChangePercent: 2.14,
-        strategy: 'STRANGLE',
-        strikes: '$240 / $260',
-        dte: 7,
-        expiration: '7 Oct 2025',
-        delta: [0.30, -0.30],
-        premium: 12.50,
-        capitalRequired: 1250,
-        maxGain: 1250,
-        maxLoss: 1250,
-        returnOnCapital: 100.0,
-        annualizedReturn: 5214.3,
-        pop: 60,
-        distanceFromStrike: 3.4
-      }
-    ]
-  }
-
-  const strategyOpportunities = generateStrategyOpportunities()
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white">
-      {/* Header */}
-      <div className="bg-gray-900 border-b border-gray-800">
-        <div className="container mx-auto px-4">
-          <div className="flex items-center justify-between h-16">
+    <div className="min-h-screen bg-gray-950 text-gray-100 flex flex-col">
+      {/* Professional Terminal Header */}
+      <header className="bg-gray-900 border-b border-gray-800 px-4 py-2">
+        <div className="flex items-center justify-between">
           <div className="flex items-center gap-6">
-            <div className="flex items-center gap-2">
-                <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg flex items-center justify-center font-bold text-sm">
-                  T
-              </div>
-                <span className="font-bold text-xl">TOPTION</span>
-            </div>
+            <h1 className="text-lg font-semibold text-white">TOPTION</h1>
             
-              {/* Market Selector */}
-              <div className="flex gap-2">
-              <button
-                  onClick={() => setActiveMarket(MarketType.EQUITY_OPTIONS)}
-                  className={`px-3 py-1 rounded text-sm font-medium transition ${
-                    activeMarket === MarketType.EQUITY_OPTIONS ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white'
-                }`}
-              >
-                Equities
-              </button>
-              <FeatureGate
-                feature="hasIndexes"
-                requiredTier="professional"
-                featureName="Index Options"
-                description="Access index options data with Professional plan or higher."
-                fallback={
-                  <button
-                    className="px-3 py-1 rounded text-sm font-medium transition text-gray-400 cursor-not-allowed"
-                    disabled
-                  >
-                    Indexes
-                  </button>
-                }
-              >
+            {/* Market Type Selector */}
+            <div className="flex items-center gap-2 bg-gray-800 rounded-lg p-1">
+              {[
+                { value: MarketType.EQUITY_OPTIONS, label: 'Equity', color: 'blue' },
+                { value: MarketType.INDEX_OPTIONS, label: 'Index', color: 'purple' },
+                { value: MarketType.FUTURES_OPTIONS, label: 'Futures', color: 'orange' }
+              ].map((type) => (
                 <button
-                  onClick={() => setActiveMarket(MarketType.INDEX_OPTIONS)}
-                  className={`px-3 py-1 rounded text-sm font-medium transition ${
-                    activeMarket === MarketType.INDEX_OPTIONS ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white'
+                  key={type.value}
+                  onClick={() => setSelectedMarketType(type.value)}
+                  className={`px-3 py-1 rounded text-xs font-medium transition-all ${
+                    selectedMarketType === type.value
+                      ? `bg-${type.color}-600 text-white`
+                      : 'text-gray-400 hover:text-gray-300'
                   }`}
                 >
-                  Indexes
+                  {type.label}
                 </button>
-              </FeatureGate>
-              <FeatureGate
-                feature="hasFutures"
-                requiredTier="professional"
-                featureName="Futures Options"
-                description="Access futures options data with Professional plan or higher."
-                fallback={
-                  <button
-                    className="px-3 py-1 rounded text-sm font-medium transition text-gray-400 cursor-not-allowed"
-                    disabled
-                  >
-                    Futures
-                  </button>
-                }
-              >
-                <button
-                  onClick={() => setActiveMarket(MarketType.FUTURES_OPTIONS)}
-                  className={`px-3 py-1 rounded text-sm font-medium transition ${
-                    activeMarket === MarketType.FUTURES_OPTIONS ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white'
-                  }`}
-                >
-                  Futures
-                </button>
-              </FeatureGate>
+              ))}
             </div>
 
-              {/* Market Tickers */}
-              <div className="flex gap-4 text-sm">
-                {getMarketIndices().map(ticker => {
-                  const priceData = marketPrices[ticker] || {price: 0, change: 0, changePercent: 0}
-                  return (
-                    <div key={ticker} className="flex items-center gap-2">
-                      <span className="text-gray-400">{ticker}</span>
-                      <span className="font-medium">${priceData.price.toFixed(2)}</span>
-                      <span className={`text-xs ${priceData.change >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                        {priceData.change >= 0 ? '+' : ''}{priceData.change.toFixed(2)}%
-                      </span>
-                    </div>
-                  )
-                })}
+            {/* Quick Search */}
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value)
+                  trackActivity('search', e.target.value)
+                }}
+                placeholder="Symbol, strike, or strategy..."
+                className="pl-9 pr-3 py-1.5 bg-gray-800 border border-gray-700 rounded-lg text-sm text-white placeholder-gray-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 w-64"
+              />
             </div>
           </div>
 
-            {/* Right side */}
           <div className="flex items-center gap-4">
-              {/* Notifications Dropdown */}
-              <div className="relative dropdown-container">
-                <button 
-                  onClick={() => {
-                    setShowNotifications(!showNotifications)
-                    setShowSettings(false)
-                    setShowProfile(false)
-                  }}
-                  className="p-2 hover:bg-gray-800 rounded-lg transition relative"
-                >
-                  <Bell className="w-5 h-5" />
-                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">
-              {3 - readNotifications.size}
-            </span>
-                </button>
-                {showNotifications && (
-                  <div className="absolute right-0 top-12 w-80 bg-gray-800 border border-gray-700 rounded-lg shadow-xl z-50">
-                    <div className="p-4 border-b border-gray-700">
-                      <h3 className="text-lg font-semibold text-white">Notifications</h3>
-                    </div>
-                    <div className="max-h-64 overflow-y-auto">
-                <div 
-                  className={`p-3 hover:bg-gray-700 border-b border-gray-700 cursor-pointer ${
-                    readNotifications.has(0) ? 'opacity-60' : 'bg-gray-750'
-                  }`}
-                  onClick={() => {
-                    setReadNotifications(prev => new Set(Array.from(prev).concat(0)))
-                    setSelectedChart({
-                      ticker: 'SOFI',
-                      data: {
-                        price: 8.50,
-                        change: 0.23,
-                        changePercent: 2.79,
-                        strike: 8.00,
-                        premium: 0.28,
-                        dte: 15,
-                        strategy: 'CSP'
-                      }
-                    })
-                    setShowChartPopup(true)
-                    setShowNotifications(false)
-                  }}
-                >
-                  <div className="text-sm text-white">New high ROI opportunity: SOFI $8.50 CSP</div>
-                  <div className="text-xs text-gray-400 mt-1">2 minutes ago</div>
-                </div>
-                      <div 
-                        className={`p-3 hover:bg-gray-700 border-b border-gray-700 cursor-pointer ${
-                          readNotifications.has(1) ? 'opacity-60' : 'bg-gray-750'
-                        }`}
-                        onClick={() => {
-                          setReadNotifications(prev => new Set(Array.from(prev).concat(1)))
-                          setSelectedChart({
-                            ticker: 'VIX',
-                            data: {
-                              price: 18.45,
-                              change: 2.1,
-                              changePercent: 12.8,
-                              strike: 20.00,
-                              premium: 1.25,
-                              dte: 7,
-                              strategy: 'Straddle'
-                            }
-                          })
-                          setShowChartPopup(true)
-                          setShowNotifications(false)
-                        }}
-                      >
-                        <div className="text-sm text-white">Market alert: VIX spike detected</div>
-                        <div className="text-xs text-gray-400 mt-1">15 minutes ago</div>
-                      </div>
-                      <div 
-                        className={`p-3 hover:bg-gray-700 cursor-pointer ${
-                          readNotifications.has(2) ? 'opacity-60' : 'bg-gray-750'
-                        }`}
-                        onClick={() => {
-                          setReadNotifications(prev => new Set(Array.from(prev).concat(2)))
-                          setSelectedChart({
-                            ticker: 'PLTR',
-                            data: {
-                              price: 20.75,
-                              change: -0.45,
-                              changePercent: -2.12,
-                              strike: 20.00,
-                              premium: 1.15,
-                              dte: 3,
-                              strategy: 'CSP'
-                            }
-                          })
-                          setShowChartPopup(true)
-                          setShowNotifications(false)
-                        }}
-                      >
-                        <div className="text-sm text-white">Your watchlist: PLTR option expiring soon</div>
-                        <div className="text-xs text-gray-400 mt-1">1 hour ago</div>
-                      </div>
-                    </div>
-                  </div>
-                )}
+            {/* AI Watchdog Status */}
+            {preferences.aiWatchdogEnabled && (
+              <div className="flex items-center gap-2 px-3 py-1 bg-green-900/20 border border-green-800 rounded-lg">
+                <Zap className="w-4 h-4 text-green-400" />
+                <span className="text-xs font-medium text-green-400">AI Active</span>
               </div>
-
-              {/* Settings Dropdown */}
-              <div className="relative dropdown-container">
-                <button 
-                  onClick={() => {
-                    setShowSettings(!showSettings)
-                    setShowNotifications(false)
-                    setShowProfile(false)
-                  }}
-                  className="p-2 hover:bg-gray-800 rounded-lg transition"
-                >
-                  <Settings className="w-5 h-5" />
-                </button>
-                {showSettings && (
-                  <div className="absolute right-0 top-12 w-64 bg-gray-800 border border-gray-700 rounded-lg shadow-xl z-50">
-                    <div className="p-2">
-                      <button 
-                        onClick={() => {
-                          setShowSettingsPanel(true)
-                          setShowSettings(false)
-                        }}
-                        className="w-full text-left px-3 py-2 hover:bg-gray-700 rounded text-white flex items-center gap-2 transition-colors"
-                      >
-                        <Settings className="w-4 h-4" />
-                        Open Settings Panel
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Profile Dropdown */}
-              <div className="relative dropdown-container">
-                <button 
-                  onClick={() => {
-                    setShowProfile(!showProfile)
-                    setShowNotifications(false)
-                    setShowSettings(false)
-                  }}
-                  className="flex items-center gap-2 p-2 hover:bg-gray-800 rounded-lg transition"
-                >
-                  <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
-                    <UserIcon className="w-4 h-4 text-white" />
-                  </div>
-                  <span className="text-sm text-white">{user?.firstName || 'User'}</span>
-                  <ChevronDown className="w-4 h-4 text-gray-400" />
-                </button>
-                {showProfile && (
-                  <div className="absolute right-0 top-12 w-64 bg-gray-800 border border-gray-700 rounded-lg shadow-xl z-50">
-                    <div className="p-4 border-b border-gray-700">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
-                          <UserIcon className="w-5 h-5 text-white" />
-                        </div>
-                        <div>
-                          <div className="text-white font-medium">{user?.firstName} {user?.lastName}</div>
-                          <div className="text-gray-400 text-sm">{user?.emailAddresses[0]?.emailAddress}</div>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="p-2">
-                      <Link 
-                        href="/settings" 
-                        className="w-full text-left px-3 py-2 hover:bg-gray-700 rounded text-white flex items-center gap-2 transition-colors"
-                        onClick={() => setShowProfile(false)}
-                      >
-                        <Settings className="w-4 h-4" />
-                        Account Settings
-                      </Link>
-                    </div>
-                  </div>
-                )}
-              </div>
-              <div className="flex items-center gap-2 px-4 py-2 bg-green-500/20 text-green-400 rounded-lg min-w-fit">
-                <Zap className="w-4 h-4" />
-                <span className="text-sm font-medium">AI Active</span>
-              </div>
+            )}
+            
+            {/* Alerts */}
+            <button className="relative p-2 hover:bg-gray-800 rounded-lg transition-colors">
+              <Bell className="w-4 h-4 text-gray-400" />
+              {alerts.length > 0 && (
+                <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+              )}
+            </button>
+            
+            {/* View Mode Toggle */}
+            <div className="flex items-center gap-1 bg-gray-800 rounded-lg p-1">
+              <button
+                onClick={() => setViewMode('grid')}
+                className={`p-1 rounded ${viewMode === 'grid' ? 'bg-gray-700' : ''}`}
+              >
+                <Grid className="w-4 h-4 text-gray-400" />
+              </button>
+              <button
+                onClick={() => setViewMode('list')}
+                className={`p-1 rounded ${viewMode === 'list' ? 'bg-gray-700' : ''}`}
+              >
+                <List className="w-4 h-4 text-gray-400" />
+              </button>
             </div>
-            </div>
+            
+            {/* Settings */}
+            <button
+              onClick={() => setShowSettings(!showSettings)}
+              className="p-2 hover:bg-gray-800 rounded-lg transition-colors"
+            >
+              <Settings className="w-4 h-4 text-gray-400" />
+            </button>
           </div>
         </div>
 
-      {/* Tabs */}
-      <div className="bg-gray-900 border-b border-gray-800">
-        <div className="container mx-auto px-4">
-          <div className="flex gap-6">
+        {/* Workspace Tabs */}
+        <div className="flex gap-4 mt-2">
           <button
-              onClick={() => setActiveTab('main')}
-              className={`py-3 border-b-2 transition ${
-                activeTab === 'main' 
-                  ? 'border-blue-500 text-white' 
-                  : 'border-transparent text-gray-400 hover:text-white'
+            onClick={() => setActiveWorkspace('main')}
+            className={`px-3 py-1 text-xs font-medium rounded-lg transition-colors ${
+              activeWorkspace === 'main' 
+                ? 'bg-gray-800 text-white' 
+                : 'text-gray-400 hover:text-gray-300'
             }`}
           >
             Main Workspace
           </button>
           <button
-              onClick={() => setActiveTab('analysis')}
-              className={`py-3 border-b-2 transition ${
-                activeTab === 'analysis' 
-                  ? 'border-blue-500 text-white' 
-                  : 'border-transparent text-gray-400 hover:text-white'
+            onClick={() => setActiveWorkspace('analysis')}
+            className={`px-3 py-1 text-xs font-medium rounded-lg transition-colors ${
+              activeWorkspace === 'analysis' 
+                ? 'bg-gray-800 text-white' 
+                : 'text-gray-400 hover:text-gray-300'
             }`}
           >
             Analysis & Research
           </button>
-            <button
-              onClick={() => setActiveTab('education')}
-              className={`py-3 border-b-2 transition ${
-                activeTab === 'education' 
-                  ? 'border-blue-500 text-white' 
-                  : 'border-transparent text-gray-400 hover:text-white'
-              }`}
-            >
-              Education
-            </button>
-            <button
-              onClick={() => setActiveTab('historical')}
-              className={`py-3 border-b-2 transition ${
-                activeTab === 'historical' 
-                  ? 'border-blue-500 text-white' 
-                  : 'border-transparent text-gray-400 hover:text-white'
-              }`}
-            >
-              Historical
-            </button>
-          </div>
         </div>
+      </header>
+
+      {/* Main Terminal Content */}
+      <div className="flex-1 flex">
+        {/* Settings Panel (Slide-out) */}
+        {showSettings && (
+          <div className="w-80 bg-gray-900 border-r border-gray-800 p-4 overflow-y-auto">
+            <h3 className="text-sm font-semibold text-white mb-4">AI Watchdog Settings</h3>
+            
+            {/* AI Watchdog Toggle */}
+            <div className="mb-6">
+              <label className="flex items-center justify-between">
+                <span className="text-sm text-gray-400">Enable AI Watchdog</span>
+                <input
+                  type="checkbox"
+                  checked={preferences.aiWatchdogEnabled}
+                  onChange={(e) => setPreferences({
+                    ...preferences,
+                    aiWatchdogEnabled: e.target.checked
+                  })}
+                  className="rounded"
+                />
+              </label>
+              <p className="text-xs text-gray-500 mt-1">
+                AI monitors your activity and alerts you to opportunities
+              </p>
             </div>
 
-      {/* Main Content */}
-      <div className="container mx-auto px-4 py-6">
-        {activeTab === 'main' && (
-          <div className="space-y-6">
-            {/* Top Option Plays Section - NEW */}
-            
-            {/* Opportunities & Watchlist */}
-            <div className="bg-gray-900 rounded-lg border border-gray-800">
-              <div 
-                className="flex items-center justify-between p-4 cursor-pointer hover:bg-gray-800/50"
-                onClick={() => toggleSection('opportunities')}
-              >
-                <div className="flex items-center gap-3">
-                  <Zap className="w-5 h-5 text-purple-400" />
-                  <h2 className="text-lg font-semibold">Opportunities & Watchlist</h2>
-                  <span className="text-sm text-gray-400">
-                    ({selectedOpportunityType === 'ai' ? aiOpportunities.length : watchlist.length} {selectedOpportunityType === 'ai' ? 'opportunities' : 'starred'})
+            {/* Favorite Underlyings */}
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-400 mb-2">
+                Favorite Symbols
+              </label>
+              <div className="flex flex-wrap gap-2">
+                {preferences.favoriteUnderlyings.map(symbol => (
+                  <span key={symbol} className="px-2 py-1 bg-gray-800 rounded text-xs">
+                    {symbol}
                   </span>
+                ))}
               </div>
-                {expandedSections.opportunities ? <ChevronDown className="w-5 h-5" /> : <ChevronRight className="w-5 h-5" />}
-              </div>
-              
-              {expandedSections.opportunities && (
-                <div className="p-4 pt-0">
-                  {/* Tab selector */}
-                  <div className="flex gap-4 mb-4">
-                    <button 
-                      onClick={() => setSelectedOpportunityType('ai')}
-                      className={`flex items-center gap-2 px-4 py-2 rounded-lg transition ${
-                        selectedOpportunityType === 'ai' 
-                          ? 'bg-purple-600 text-white' 
-                          : 'bg-gray-800 text-gray-400 hover:text-white'
-                      }`}
-                    >
-                      <Brain className="w-4 h-4" />
-                      AI Opportunities
-                    </button>
-                    <button 
-                      onClick={() => setSelectedOpportunityType('watchlist')}
-                      className={`flex items-center gap-2 px-4 py-2 rounded-lg transition ${
-                        selectedOpportunityType === 'watchlist' 
-                          ? 'bg-yellow-600 text-white' 
-                          : 'bg-gray-800 text-gray-400 hover:text-white'
-                      }`}
-                    >
-                      <Star className="w-4 h-4" />
-                      Watchlist
-                    </button>
-                  </div>
+            </div>
 
-                  {/* Content based on selection */}
-                  {selectedOpportunityType === 'ai' ? (
-                    <AIOpportunitiesLive marketType={getMarketTypeString(activeMarket)} />
-                  ) : (
-                    watchlist.length > 0 ? (
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {watchlist.map(ticker => (
-                          <div key={ticker} className="bg-gray-800 rounded-lg p-4">
-                            <div className="flex justify-between items-center">
-                              <span className="font-semibold">{ticker}</span>
-                              <button
-                                onClick={() => handleAddToWatchlist(ticker)}
-                                className="text-yellow-400"
-                              >
-                                <Star className="w-4 h-4 fill-current" />
-                              </button>
-                            </div>
-                          </div>
+            {/* Risk Tolerance */}
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-400 mb-2">
+                Risk Tolerance
+              </label>
+              <select
+                value={preferences.riskTolerance}
+                onChange={(e) => setPreferences({
+                  ...preferences,
+                  riskTolerance: e.target.value as any
+                })}
+                className="w-full px-3 py-1.5 bg-gray-800 border border-gray-700 rounded-lg text-sm"
+              >
+                <option value="conservative">Conservative</option>
+                <option value="moderate">Moderate</option>
+                <option value="aggressive">Aggressive</option>
+              </select>
+            </div>
+
+            {/* Alert Thresholds */}
+            <div className="mb-6">
+              <h4 className="text-sm font-medium text-gray-400 mb-3">Alert Thresholds</h4>
+              <div className="space-y-3">
+                <div>
+                  <label className="flex items-center justify-between text-xs">
+                    <span>IV Threshold</span>
+                    <span>{preferences.alertThresholds.iv}%</span>
+                  </label>
+                  <input
+                    type="range"
+                    min="20"
+                    max="100"
+                    value={preferences.alertThresholds.iv}
+                    onChange={(e) => setPreferences({
+                      ...preferences,
+                      alertThresholds: {
+                        ...preferences.alertThresholds,
+                        iv: parseInt(e.target.value)
+                      }
+                    })}
+                    className="w-full"
+                  />
+                </div>
+                
+                <div>
+                  <label className="flex items-center justify-between text-xs">
+                    <span>Volume Alert</span>
+                    <span>{preferences.alertThresholds.volume}</span>
+                  </label>
+                  <input
+                    type="range"
+                    min="100"
+                    max="10000"
+                    step="100"
+                    value={preferences.alertThresholds.volume}
+                    onChange={(e) => setPreferences({
+                      ...preferences,
+                      alertThresholds: {
+                        ...preferences.alertThresholds,
+                        volume: parseInt(e.target.value)
+                      }
+                    })}
+                    className="w-full"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Preferred Strategies */}
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-400 mb-2">
+                Preferred Strategies
+              </label>
+              <div className="space-y-2">
+                {['covered-call', 'cash-secured-put', 'spread', 'iron-condor', 'straddle'].map(strategy => (
+                  <label key={strategy} className="flex items-center gap-2 text-xs">
+                    <input
+                      type="checkbox"
+                      checked={preferences.strategies.includes(strategy)}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setPreferences({
+                            ...preferences,
+                            strategies: [...preferences.strategies, strategy]
+                          })
+                        } else {
+                          setPreferences({
+                            ...preferences,
+                            strategies: preferences.strategies.filter(s => s !== strategy)
+                          })
+                        }
+                      }}
+                      className="rounded"
+                    />
+                    <span className="capitalize">{strategy.replace('-', ' ')}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            {/* Futures Selection */}
+            {selectedMarketType === MarketType.FUTURES_OPTIONS && (
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-400 mb-2">
+                  Preferred Futures
+                </label>
+                <div className="space-y-2 max-h-48 overflow-y-auto">
+                  {Object.entries(LIQUID_FUTURES).map(([category, symbols]) => (
+                    <div key={category}>
+                      <p className="text-xs font-medium text-gray-500 mb-1">{category}</p>
+                      <div className="flex flex-wrap gap-1">
+                        {symbols.map(symbol => (
+                          <button
+                            key={symbol}
+                            className="px-2 py-1 bg-gray-800 hover:bg-gray-700 rounded text-xs transition-colors"
+                          >
+                            {symbol}
+                          </button>
                         ))}
                       </div>
-                    ) : (
-                      <div className="text-center py-12 text-gray-500">
-                        <Star className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                        <p>No starred opportunities</p>
-                        <p className="text-sm mt-1">Star opportunities to add them to your watchlist</p>
-                      </div>
-                    )
-                  )}
-                </div>
-              )}
                     </div>
-                    
-            {/* Opportunities by Strategy - Use Fixed Component */}
-            <div className="bg-gray-900 rounded-lg border border-gray-800">
-              <div 
-                className="flex items-center justify-between p-4 cursor-pointer hover:bg-gray-800/50"
-                onClick={() => toggleSection('strategies')}
-                        >
-                          <div className="flex items-center gap-3">
-                  <Target className="w-5 h-5 text-green-400" />
-                  <h2 className="text-lg font-semibold">Opportunities by Strategy</h2>
-                  <span className="text-sm text-gray-400">(12 total)</span>
+                  ))}
                 </div>
-                {expandedSections.strategies ? <ChevronDown className="w-5 h-5" /> : <ChevronRight className="w-5 h-5" />}
-              </div>
-
-              {expandedSections.strategies && (
-                <div className="p-4 pt-0">
-                  <StrategyCardsContainer marketType={getMarketTypeString(activeMarket)} />
-                </div>
-              )}
-      </div>
-
-            {/* Options Screener - Use Enhanced Component */}
-            <FeatureGate
-              feature="hasAdvancedScreener"
-              requiredTier="basic"
-              featureName="Advanced Options Screener"
-              description="Access the advanced options screener with Basic plan or higher."
-            >
-              <OptionsScreenerEnhanced marketType={getMarketTypeString(activeMarket)} />
-            </FeatureGate>
               </div>
             )}
-
-        {activeTab === 'analysis' && <AnalyticsTabFixed />}
-        {activeTab === 'education' && <EducationTabEnhanced />}
-        {activeTab === 'historical' && <HistoricalTab historical={[]} onRemoveFromHistorical={() => {}} />}
           </div>
+        )}
 
-      {/* Chart Popup */}
-      {selectedChart && (
-        <ChartPopup
-          isOpen={true}
-          symbol={selectedChart.ticker}
-          companyName={`${selectedChart.ticker} Corporation`}
-          currentPrice={selectedChart.data?.price || 100}
-          change={selectedChart.data?.change || 0}
-          changePercent={selectedChart.data?.changePercent || 0}
-          onClose={() => setSelectedChart(null)}
-        />
-      )}
+        {/* Main Content Area */}
+        <div className="flex-1 p-4 overflow-auto">
+          {activeWorkspace === 'main' ? (
+            <div className={`grid gap-4 ${viewMode === 'grid' ? 'grid-cols-2' : ''}`}>
+              {/* Options Chain Panel */}
+              <div className={`bg-gray-900 rounded-lg border border-gray-800 ${
+                expandedPanels.has('chain') ? '' : 'h-12'
+              }`}>
+                <div 
+                  className="flex items-center justify-between p-3 border-b border-gray-800 cursor-pointer"
+                  onClick={() => togglePanel('chain')}
+                >
+                  <div className="flex items-center gap-2">
+                    <ChevronRight className={`w-4 h-4 text-gray-400 transition-transform ${
+                      expandedPanels.has('chain') ? 'rotate-90' : ''
+                    }`} />
+                    <h3 className="text-sm font-semibold text-white">Options Chain</h3>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-gray-500">SPY 450-460</span>
+                    <button className="p-1 hover:bg-gray-800 rounded">
+                      <Maximize2 className="w-3 h-3 text-gray-400" />
+                    </button>
+                  </div>
+                </div>
+                {expandedPanels.has('chain') && (
+                  <div className="p-4">
+                    {/* Options chain content here - would integrate with existing component */}
+                    <div className="text-sm text-gray-400">
+                      Options chain data loading...
+                    </div>
+                  </div>
+                )}
+              </div>
 
-      {/* Chart Popout */}
-      {showChartPopout && (
-        <ChartPopout 
-          symbol={selectedSymbol} 
-          onClose={() => setShowChartPopout(false)} 
-        />
-      )}
+              {/* Screener Panel */}
+              <div className={`bg-gray-900 rounded-lg border border-gray-800 ${
+                expandedPanels.has('screener') ? '' : 'h-12'
+              }`}>
+                <div 
+                  className="flex items-center justify-between p-3 border-b border-gray-800 cursor-pointer"
+                  onClick={() => togglePanel('screener')}
+                >
+                  <div className="flex items-center gap-2">
+                    <ChevronRight className={`w-4 h-4 text-gray-400 transition-transform ${
+                      expandedPanels.has('screener') ? 'rotate-90' : ''
+                    }`} />
+                    <h3 className="text-sm font-semibold text-white">Options Screener</h3>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-green-400">12 opportunities</span>
+                    <button className="p-1 hover:bg-gray-800 rounded">
+                      <Filter className="w-3 h-3 text-gray-400" />
+                    </button>
+                  </div>
+                </div>
+                {expandedPanels.has('screener') && (
+                  <div className="p-4">
+                    <OptionsScreenerEnhanced />
+                  </div>
+                )}
+              </div>
 
-      {/* Settings Panel */}
-      <SettingsPanel 
-        isOpen={showSettingsPanel} 
-        onClose={() => setShowSettingsPanel(false)}
-        onApply={() => {}}
-        currentFilters={{
-          minROI: 0,
-          maxROI: 100,
-          minDTE: 0,
-          maxDTE: 90,
-          minPremium: 0,
-          maxPremium: 10000,
-          minPOP: 0,
-          maxPOP: 100,
-          minVolume: 0,
-          minOI: 0,
-          strategies: ['Cash Secured Put', 'Covered Call'],
-          riskLevels: ['low', 'medium', 'high']
-        }}
-      />
+              {/* Unusual Flow Panel */}
+              <div className={`bg-gray-900 rounded-lg border border-gray-800 ${
+                expandedPanels.has('flow') ? '' : 'h-12'
+              }`}>
+                <div 
+                  className="flex items-center justify-between p-3 border-b border-gray-800 cursor-pointer"
+                  onClick={() => togglePanel('flow')}
+                >
+                  <div className="flex items-center gap-2">
+                    <ChevronRight className={`w-4 h-4 text-gray-400 transition-transform ${
+                      expandedPanels.has('flow') ? 'rotate-90' : ''
+                    }`} />
+                    <h3 className="text-sm font-semibold text-white">Unusual Options Flow</h3>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Activity className="w-3 h-3 text-orange-400 animate-pulse" />
+                    <span className="text-xs text-orange-400">Live</span>
+                  </div>
+                </div>
+                {expandedPanels.has('flow') && (
+                  <div className="p-4">
+                    <div className="space-y-2">
+                      {/* Sample unusual flow data */}
+                      <div className="flex items-center justify-between p-2 bg-gray-800 rounded">
+                        <div className="flex items-center gap-3">
+                          <span className="text-xs font-medium text-green-400">CALL</span>
+                          <span className="text-sm font-mono">AAPL 175C</span>
+                          <span className="text-xs text-gray-500">12/15</span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <span className="text-xs text-gray-400">Vol: 5,234</span>
+                          <span className="text-xs text-orange-400">3.2x OI</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Positions Panel */}
+              <div className={`bg-gray-900 rounded-lg border border-gray-800 ${
+                expandedPanels.has('positions') ? '' : 'h-12'
+              }`}>
+                <div 
+                  className="flex items-center justify-between p-3 border-b border-gray-800 cursor-pointer"
+                  onClick={() => togglePanel('positions')}
+                >
+                  <div className="flex items-center gap-2">
+                    <ChevronRight className={`w-4 h-4 text-gray-400 transition-transform ${
+                      expandedPanels.has('positions') ? 'rotate-90' : ''
+                    }`} />
+                    <h3 className="text-sm font-semibold text-white">Positions & P&L</h3>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-green-400">+$1,234</span>
+                    <TrendingUp className="w-3 h-3 text-green-400" />
+                  </div>
+                </div>
+                {expandedPanels.has('positions') && (
+                  <div className="p-4">
+                    <div className="text-sm text-gray-400">
+                      No open positions
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 gap-4">
+              {/* Research Panel */}
+              <div className="bg-gray-900 rounded-lg border border-gray-800">
+                <div className="p-3 border-b border-gray-800">
+                  <h3 className="text-sm font-semibold text-white">Research</h3>
+                </div>
+                <div className="p-4">
+                  <ResearchTab />
+                </div>
+              </div>
+
+              {/* Analytics Panel */}
+              <div className="bg-gray-900 rounded-lg border border-gray-800">
+                <div className="p-3 border-b border-gray-800">
+                  <h3 className="text-sm font-semibold text-white">Analytics</h3>
+                </div>
+                <div className="p-4">
+                  <AnalyticsTab />
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Status Bar */}
+      <footer className="bg-gray-900 border-t border-gray-800 px-4 py-1">
+        <div className="flex items-center justify-between text-xs text-gray-500">
+          <div className="flex items-center gap-4">
+            <span>Connected</span>
+            <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+          </div>
+          <div className="flex items-center gap-4">
+            <span>Last Update: {new Date().toLocaleTimeString()}</span>
+            <span>Data: Polygon.io</span>
+          </div>
+        </div>
+      </footer>
     </div>
   )
 }
