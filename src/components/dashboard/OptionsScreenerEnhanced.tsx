@@ -235,6 +235,7 @@ const OptionsScreenerEnhanced: React.FC<{ marketType?: 'equity' | 'index' | 'fut
   })
 
   const [results, setResults] = useState<ScreenerResult[]>([])
+  const [totalResults, setTotalResults] = useState(0)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [tickerInput, setTickerInput] = useState('')

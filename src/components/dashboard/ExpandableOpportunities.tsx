@@ -29,6 +29,7 @@ export default function ExpandableOpportunities({
     'ai-recommended': false
   })
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [aiSpecs, setAiSpecs] = useState({
     minROI: 15,
     maxRisk: 30,
