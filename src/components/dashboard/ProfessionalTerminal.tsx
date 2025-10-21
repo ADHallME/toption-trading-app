@@ -21,7 +21,9 @@ import {
   AlertTriangle,
   Zap,
   Target,
-  BarChart3
+  BarChart3,
+  Brain,
+  Star
 } from 'lucide-react'
 import { useEnhancedOptions, MarketType } from '@/hooks/useEnhancedOptions'
 
@@ -29,6 +31,8 @@ import { useEnhancedOptions, MarketType } from '@/hooks/useEnhancedOptions'
 import OptionsScreenerEnhanced from './OptionsScreenerEnhanced'
 import ResearchTab from './ResearchTab'
 import { AnalyticsTab } from './AnalyticsTab'
+import ExpandableOpportunities from './ExpandableOpportunities'
+import AIOpportunitiesLive from './AIOpportunitiesLive'
 
 // Workspace layout types
 type PanelSize = 'minimized' | 'normal' | 'maximized'
@@ -153,7 +157,7 @@ export default function ProfessionalTerminal() {
       const next = new Set(prev)
       if (next.has(panelId)) {
         next.delete(panelId)
-      } else {
+    } else {
         next.add(panelId)
       }
       return next
@@ -187,7 +191,7 @@ export default function ProfessionalTerminal() {
                   {type.label}
                 </button>
               ))}
-            </div>
+              </div>
 
             {/* Quick Search */}
             <div className="relative">
@@ -230,7 +234,7 @@ export default function ProfessionalTerminal() {
               >
                 <Grid className="w-4 h-4 text-gray-400" />
               </button>
-              <button
+                  <button
                 onClick={() => setViewMode('list')}
                 className={`p-1 rounded ${viewMode === 'list' ? 'bg-gray-700' : ''}`}
               >
@@ -239,18 +243,18 @@ export default function ProfessionalTerminal() {
             </div>
             
             {/* Settings */}
-            <button
+                <button
               onClick={() => setShowSettings(!showSettings)}
               className="p-2 hover:bg-gray-800 rounded-lg transition-colors"
             >
               <Settings className="w-4 h-4 text-gray-400" />
-            </button>
+                </button>
           </div>
         </div>
 
         {/* Workspace Tabs */}
         <div className="flex gap-4 mt-2">
-          <button
+                  <button
             onClick={() => setActiveWorkspace('main')}
             className={`px-3 py-1 text-xs font-medium rounded-lg transition-colors ${
               activeWorkspace === 'main' 
@@ -259,8 +263,8 @@ export default function ProfessionalTerminal() {
             }`}
           >
             Main Workspace
-          </button>
-          <button
+                  </button>
+                <button
             onClick={() => setActiveWorkspace('analysis')}
             className={`px-3 py-1 text-xs font-medium rounded-lg transition-colors ${
               activeWorkspace === 'analysis' 
@@ -269,7 +273,7 @@ export default function ProfessionalTerminal() {
             }`}
           >
             Analysis & Research
-          </button>
+                </button>
         </div>
       </header>
 
@@ -308,10 +312,10 @@ export default function ProfessionalTerminal() {
                 {preferences.favoriteUnderlyings.map(symbol => (
                   <span key={symbol} className="px-2 py-1 bg-gray-800 rounded text-xs">
                     {symbol}
-                  </span>
+                      </span>
                 ))}
               </div>
-            </div>
+                    </div>
 
             {/* Risk Tolerance */}
             <div className="mb-6">
@@ -355,8 +359,8 @@ export default function ProfessionalTerminal() {
                     })}
                     className="w-full"
                   />
-                </div>
-                
+          </div>
+
                 <div>
                   <label className="flex items-center justify-between text-xs">
                     <span>Volume Alert</span>
@@ -494,12 +498,66 @@ export default function ProfessionalTerminal() {
                     <span className="text-xs text-green-400">12 opportunities</span>
                     <button className="p-1 hover:bg-gray-800 rounded">
                       <Filter className="w-3 h-3 text-gray-400" />
-                    </button>
-                  </div>
+                      </button>
+                    </div>
                 </div>
                 {expandedPanels.has('screener') && (
                   <div className="p-4">
                     <OptionsScreenerEnhanced />
+                  </div>
+                )}
+              </div>
+
+              {/* AI Opportunities Panel */}
+              <div className={`bg-gray-900 rounded-lg border border-gray-800 ${
+                expandedPanels.has('ai-opportunities') ? '' : 'h-12'
+              }`}>
+                <div 
+                  className="flex items-center justify-between p-3 border-b border-gray-800 cursor-pointer"
+                  onClick={() => togglePanel('ai-opportunities')}
+                >
+                  <div className="flex items-center gap-2">
+                    <ChevronRight className={`w-4 h-4 text-gray-400 transition-transform ${
+                      expandedPanels.has('ai-opportunities') ? 'rotate-90' : ''
+                    }`} />
+                    <h3 className="text-sm font-semibold text-white">AI Opportunities</h3>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Brain className="w-3 h-3 text-blue-400" />
+                    <span className="text-xs text-blue-400">Live</span>
+                  </div>
+                </div>
+                {expandedPanels.has('ai-opportunities') && (
+                  <div className="p-4">
+                    <ExpandableOpportunities marketType={selectedMarketType === MarketType.EQUITY_OPTIONS ? 'equity' : selectedMarketType === MarketType.INDEX_OPTIONS ? 'index' : 'futures'} />
+                  </div>
+                )}
+              </div>
+
+              {/* Watchlist Panel */}
+              <div className={`bg-gray-900 rounded-lg border border-gray-800 ${
+                expandedPanels.has('watchlist') ? '' : 'h-12'
+              }`}>
+                <div 
+                  className="flex items-center justify-between p-3 border-b border-gray-800 cursor-pointer"
+                  onClick={() => togglePanel('watchlist')}
+                >
+                  <div className="flex items-center gap-2">
+                    <ChevronRight className={`w-4 h-4 text-gray-400 transition-transform ${
+                      expandedPanels.has('watchlist') ? 'rotate-90' : ''
+                    }`} />
+                    <h3 className="text-sm font-semibold text-white">Watchlist</h3>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Star className="w-3 h-3 text-yellow-400" />
+                    <span className="text-xs text-yellow-400">0 items</span>
+                  </div>
+                </div>
+                {expandedPanels.has('watchlist') && (
+                  <div className="p-4">
+                    <div className="text-gray-400 text-sm">
+                      Watchlist functionality coming soon...
+                    </div>
                   </div>
                 )}
               </div>
@@ -528,7 +586,7 @@ export default function ProfessionalTerminal() {
                     <div className="space-y-2">
                       {/* Sample unusual flow data */}
                       <div className="flex items-center justify-between p-2 bg-gray-800 rounded">
-                        <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-3">
                           <span className="text-xs font-medium text-green-400">CALL</span>
                           <span className="text-sm font-mono">AAPL 175C</span>
                           <span className="text-xs text-gray-500">12/15</span>
@@ -577,12 +635,12 @@ export default function ProfessionalTerminal() {
               <div className="bg-gray-900 rounded-lg border border-gray-800">
                 <div className="p-3 border-b border-gray-800">
                   <h3 className="text-sm font-semibold text-white">Research</h3>
-                </div>
+            </div>
                 <div className="p-4">
                   <ResearchTab />
-                </div>
               </div>
-
+              </div>
+              
               {/* Analytics Panel */}
               <div className="bg-gray-900 rounded-lg border border-gray-800">
                 <div className="p-3 border-b border-gray-800">
@@ -592,8 +650,8 @@ export default function ProfessionalTerminal() {
                   <AnalyticsTab symbol="AAPL" />
                 </div>
               </div>
-            </div>
-          )}
+                </div>
+              )}
         </div>
       </div>
 
@@ -603,7 +661,7 @@ export default function ProfessionalTerminal() {
           <div className="flex items-center gap-4">
             <span>Connected</span>
             <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-          </div>
+              </div>
           <div className="flex items-center gap-4">
             <span>Last Update: {new Date().toLocaleTimeString()}</span>
             <span>Data: Polygon.io</span>
