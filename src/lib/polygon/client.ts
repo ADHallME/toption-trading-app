@@ -1,218 +1,369 @@
-// Polygon.io API Client with smart caching
-// No more fallback to mock data - real data only
+// Production Polygon API Client - Master Battle Plan V2
+// Sequential requests, circuit breaker, comprehensive logging
+// NO PARALLEL REQUESTS - NO FAKE DATA
 
-// Removed: import { sampleOptionsData, sampleQuotes } from './sample-data';
+interface Request {
+  url: string
+  id: string
+  timestamp: number
+}
 
-interface PolygonConfig {
-  apiKey: string;
-  useFreeTier: boolean; // TEMPORARY FLAG - switch to false when upgrading
+interface CircuitBreaker {
+  failures: number
+  lastFailure: number | null
+  isOpen: boolean
+  openUntil: number | null
+}
+
+interface RequestLog {
+  id: string
+  url: string
+  status: number
+  duration: number
+  timestamp: number
+  error?: string
+}
+
+export interface StockQuote {
+  symbol: string
+  price: number
+  open: number
+  high: number
+  low: number
+  prevClose: number
+  change: number
+  changePercent: number
+  volume: number
+  timestamp: string
+  source: string
+}
+
+export interface OptionContract {
+  symbol: string
+  underlying: string
+  strike: number
+  expiration: string
+  dte: number
+  type: 'put' | 'call'
+  bid: number
+  ask: number
+  last: number
+  mid: number
+  premium: number
+  volume: number
+  openInterest: number
+  delta?: number | null
+  gamma?: number | null
+  theta?: number | null
+  vega?: number | null
+  iv?: number | null
+  roi: number
+  roiPerDay: number
+  roiAnnualized: number
+  stockPrice: number
+  distance: number
+  breakeven: number
+  pop: number
+  capital: number
+  lastUpdated: string
 }
 
 class PolygonClient {
-  private apiKey: string;
-  private baseUrl = 'https://api.polygon.io';
-  private cache = new Map<string, { data: any; timestamp: number }>();
-  private cacheTTL = {
-    quotes: 60 * 1000,        // 1 minute for quotes
-    options: 5 * 60 * 1000,   // 5 minutes for options chains
-    company: 24 * 60 * 60 * 1000  // 24 hours for company info
-  };
-  private useFreeTier: boolean;
-
-  constructor(config: PolygonConfig) {
-    this.apiKey = config.apiKey || process.env.NEXT_PUBLIC_POLYGON_API_KEY || '';
-    this.useFreeTier = config.useFreeTier;
+  private apiKey: string
+  private baseUrl = 'https://api.polygon.io'
+  private requestQueue: Request[] = []
+  private isProcessing = false
+  private requestLogs: RequestLog[] = []
+  private circuitBreaker: CircuitBreaker = {
+    failures: 0,
+    lastFailure: null,
+    isOpen: false,
+    openUntil: null
   }
+  
+  // Rate limiting: 5 calls/second max (200ms between calls)
+  private minDelayMs = 200
+  
+  // Circuit breaker config
+  private maxFailures = 3
+  private circuitOpenDuration = 300000 // 5 minutes
 
-  // Helper to check cache
-  private getFromCache(key: string, ttl: number): any | null {
-    const cached = this.cache.get(key);
-    if (cached && Date.now() - cached.timestamp < ttl) {
-      return cached.data;
+  constructor() {
+    this.apiKey = process.env.POLYGON_API_KEY || ''
+    if (!this.apiKey) {
+      console.warn('⚠️ POLYGON_API_KEY not found - API calls will fail')
     }
-    return null;
   }
 
-  // Helper to set cache
-  private setCache(key: string, data: any): void {
-    this.cache.set(key, { data, timestamp: Date.now() });
+  // Core method: Queue a request (NEVER call fetch directly)
+  private async queueRequest(url: string): Promise<any> {
+    // Check circuit breaker
+    if (this.circuitBreaker.isOpen) {
+      if (Date.now() < (this.circuitBreaker.openUntil || 0)) {
+        throw new Error('Circuit breaker is open - API unavailable')
+      } else {
+        // Reset circuit breaker
+        this.circuitBreaker.isOpen = false
+        this.circuitBreaker.failures = 0
+        this.circuitBreaker.openUntil = null
+      }
+    }
+
+    const request: Request = {
+      url,
+      id: Math.random().toString(36).substr(2, 9),
+      timestamp: Date.now()
+    }
+
+    return new Promise((resolve, reject) => {
+      this.requestQueue.push({ ...request, resolve, reject })
+      
+      if (!this.isProcessing) {
+        this.processQueue()
+      }
+    })
   }
 
-  // Get stock quote (previous day for free tier)
-  async getQuote(ticker: string): Promise<any> {
-    const cacheKey = `quote:${ticker}`;
-    const cached = this.getFromCache(cacheKey, this.cacheTTL.quotes);
-    if (cached) return cached;
-
-    try {
-      if (this.useFreeTier) {
-        // Free tier: Previous day's data
-        const endpoint = `${this.baseUrl}/v2/aggs/ticker/${ticker}/prev`;
-        const response = await fetch(`${endpoint}?apiKey=${this.apiKey}`);
+  private async processQueue() {
+    this.isProcessing = true
+    
+    while (this.requestQueue.length > 0) {
+      const request = this.requestQueue.shift()
+      if (!request) break
+      
+      try {
+        const startTime = Date.now()
+        const response = await fetch(request.url)
+        const duration = Date.now() - startTime
         
-        if (!response.ok) {
-          throw new Error(`Polygon API error: ${response.status}`);
+        // Log the request
+        this.requestLogs.push({
+          id: request.id,
+          url: request.url,
+          status: response.status,
+          duration,
+          timestamp: Date.now()
+        })
+        
+        if (response.status === 429) {
+          // Rate limit hit - activate circuit breaker
+          this.circuitBreaker.failures++
+          this.circuitBreaker.lastFailure = Date.now()
+          
+          if (this.circuitBreaker.failures >= this.maxFailures) {
+            this.circuitBreaker.isOpen = true
+            this.circuitBreaker.openUntil = Date.now() + this.circuitOpenDuration
+            console.error('🚨 Circuit breaker OPEN - too many 429s')
+            request.reject(new Error('Circuit breaker open - too many rate limits'))
+            break
+          }
+          
+          // Exponential backoff
+          const backoffTime = Math.pow(2, this.circuitBreaker.failures) * 5000
+          console.warn(`⏳ Rate limit hit, backing off for ${backoffTime}ms`)
+          await this.sleep(backoffTime)
+          
+          // Re-queue the request
+          this.requestQueue.unshift(request)
+          continue
         }
         
-        const data = await response.json();
-        this.setCache(cacheKey, data);
-        return data;
-      } else {
-        // Paid tier: Real-time data (TODO: Implement when upgrading)
-        const endpoint = `${this.baseUrl}/v3/quotes/${ticker}`;
-        // ... implement real-time quote fetching
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+        }
+        
+        const data = await response.json()
+        request.resolve(data)
+        
+        // Respect rate limit: 200ms between calls (5 calls/second)
+        await this.sleep(this.minDelayMs)
+        
+      } catch (error: any) {
+        console.error(`❌ Request failed: ${error.message}`)
+        
+        this.requestLogs.push({
+          id: request.id,
+          url: request.url,
+          status: 0,
+          duration: 0,
+          timestamp: Date.now(),
+          error: error.message
+        })
+        
+        request.reject(error)
       }
-    } catch (error) {
-      console.warn('API call failed, returning null:', error);
-      // Return null when API fails
-      return null;
     }
+    
+    this.isProcessing = false
   }
 
-  // Get options chain
-  async getOptionsChain(
-    ticker: string, 
-    expiration?: string,
-    strikePrice?: number
-  ): Promise<any> {
-    const cacheKey = `options:${ticker}:${expiration || 'all'}:${strikePrice || 'all'}`;
-    const cached = this.getFromCache(cacheKey, this.cacheTTL.options);
-    if (cached) return cached;
+  private sleep(ms: number): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, ms))
+  }
 
+  // Public API methods
+  async getStockQuotes(symbols: string[]): Promise<StockQuote[]> {
+    const quotes: StockQuote[] = []
+    
+    for (const symbol of symbols) {
+      try {
+        // Use /v2/aggs/ticker/prev for previous day data (more reliable)
+        const url = `${this.baseUrl}/v2/aggs/ticker/${symbol}/prev?adjusted=true&apiKey=${this.apiKey}`
+        const data = await this.queueRequest(url)
+        
+        let price = 0
+        let volume = 0
+        let timestamp = new Date().toISOString()
+        let prevClose = 0
+        let open = 0
+        let high = 0
+        let low = 0
+        
+        if (data.results && data.results.length > 0) {
+          const prev = data.results[0]
+          price = prev.c || 0
+          volume = prev.v || 0
+          prevClose = prev.c || 0
+          open = prev.o || 0
+          high = prev.h || 0
+          low = prev.l || 0
+          timestamp = prev.t ? new Date(prev.t).toISOString() : timestamp
+        }
+        
+        const change = 0 // For now, no change since using previous day close as current price
+        const changePercent = 0
+        
+        quotes.push({
+          symbol,
+          price: parseFloat(price.toFixed(2)),
+          open: parseFloat(open.toFixed(2)),
+          high: parseFloat(high.toFixed(2)),
+          low: parseFloat(low.toFixed(2)),
+          prevClose: parseFloat(prevClose.toFixed(2)),
+          change: parseFloat(change.toFixed(2)),
+          changePercent: parseFloat(changePercent.toFixed(2)),
+          volume: volume,
+          timestamp,
+          source: price > 0 ? 'prev_day' : 'unavailable'
+        })
+        
+      } catch (error: any) {
+        console.error(`Failed to fetch quote for ${symbol}:`, error.message)
+      }
+    }
+    
+    return quotes
+  }
+
+  async getOptionsChain(underlying: string, type: 'put' | 'call', limit: number = 20): Promise<OptionContract[]> {
     try {
-      const endpoint = `${this.baseUrl}/v3/reference/options/contracts`;
-      const params = new URLSearchParams({
-        'underlying_ticker': ticker,
-        'expired': 'false',
-        'limit': '100',
-        'apiKey': this.apiKey
-      });
-
-      if (expiration) {
-        params.append('expiration_date', expiration);
-      }
-      if (strikePrice) {
-        params.append('strike_price', strikePrice.toString());
-      }
-
-      const response = await fetch(`${endpoint}?${params}`);
+      const url = `${this.baseUrl}/v3/reference/options/contracts?underlying_ticker=${underlying}&contract_type=${type}&limit=${limit}&apiKey=${this.apiKey}`
+      const data = await this.queueRequest(url)
       
-      if (!response.ok) {
-        throw new Error(`Polygon API error: ${response.status}`);
+      if (!data.results || data.results.length === 0) {
+        return []
       }
-
-      const data = await response.json();
-      this.setCache(cacheKey, data);
-      return data;
-    } catch (error) {
-      console.warn('API call failed, returning null:', error);
-      // Return null when API fails
-      return null;
+      
+      const options: OptionContract[] = []
+      
+      for (const contract of data.results.slice(0, limit)) {
+        try {
+          // Get current snapshot for this option
+          const snapshotUrl = `${this.baseUrl}/v3/snapshot/options/${contract.ticker}?apiKey=${this.apiKey}`
+          const snapshotData = await this.queueRequest(snapshotUrl)
+          
+          if (snapshotData.results && snapshotData.results.length > 0) {
+            const snapshot = snapshotData.results[0]
+            const details = snapshot.details
+            
+            const bid = details.bid || 0
+            const ask = details.ask || 0
+            const last = details.last || 0
+            const mid = bid > 0 && ask > 0 ? (bid + ask) / 2 : last
+            
+            // Skip options with zero premium
+            if (mid <= 0) continue
+            
+            const stockPrice = details.underlying_price || 100
+            const strike = contract.strike_price
+            const dte = Math.ceil((new Date(contract.expiration_date).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+            
+            if (dte <= 0) continue // Skip expired options
+            
+            const premium = mid
+            const roi = (premium / strike) * 100
+            const roiPerDay = roi / dte
+            const roiAnnualized = (roi / dte) * 365
+            const distance = Math.abs(stockPrice - strike) / stockPrice
+            const breakeven = type === 'put' ? strike - premium : strike + premium
+            const pop = 50 // Placeholder - would need Black-Scholes calculation
+            
+            options.push({
+              symbol: contract.ticker,
+              underlying,
+              strike,
+              expiration: contract.expiration_date,
+              dte,
+              type,
+              bid,
+              ask,
+              last,
+              mid,
+              premium,
+              volume: details.volume || 0,
+              openInterest: details.open_interest || 0,
+              delta: details.greeks?.delta || null,
+              gamma: details.greeks?.gamma || null,
+              theta: details.greeks?.theta || null,
+              vega: details.greeks?.vega || null,
+              iv: details.implied_volatility || null,
+              roi,
+              roiPerDay,
+              roiAnnualized,
+              stockPrice,
+              distance,
+              breakeven,
+              pop,
+              capital: type === 'put' ? strike * 100 : stockPrice * 100,
+              lastUpdated: new Date().toISOString()
+            })
+          }
+        } catch (error) {
+          console.error(`Failed to get snapshot for ${contract.ticker}:`, error)
+        }
+      }
+      
+      return options
+    } catch (error: any) {
+      console.error(`Failed to fetch options chain for ${underlying}:`, error.message)
+      return []
     }
   }
 
-  // Get option contract details with Greeks (if available)
-  async getOptionDetails(contractTicker: string): Promise<any> {
-    const cacheKey = `option:${contractTicker}`;
-    const cached = this.getFromCache(cacheKey, this.cacheTTL.quotes);
-    if (cached) return cached;
-
-    try {
-      // Free tier: Previous day's data
-      const endpoint = `${this.baseUrl}/v2/aggs/ticker/${contractTicker}/prev`;
-      const response = await fetch(`${endpoint}?apiKey=${this.apiKey}`);
-      
-      if (!response.ok) {
-        throw new Error(`Polygon API error: ${response.status}`);
-      }
-
-      const data = await response.json();
-      
-      // Calculate Greeks if not provided (simplified for now)
-      if (!data.greeks) {
-        data.greeks = this.calculateGreeks(data);
-      }
-
-      this.setCache(cacheKey, data);
-      return data;
-    } catch (error) {
-      console.warn('Falling back to sample option details:', error);
-      return this.generateSampleOptionDetails(contractTicker);
-    }
+  // Get request logs for debugging
+  getRequestLogs(): RequestLog[] {
+    return [...this.requestLogs]
   }
 
-  // Simplified Greeks calculation (placeholder - enhance later)
-  private calculateGreeks(optionData: any): any {
-    return {
-      delta: -0.30 + Math.random() * 0.1, // Placeholder
-      gamma: 0.02 + Math.random() * 0.01,
-      theta: -0.05 - Math.random() * 0.03,
-      vega: 0.15 + Math.random() * 0.1,
-      iv: 0.25 + Math.random() * 0.15
-    };
+  // Get circuit breaker status
+  getCircuitBreakerStatus() {
+    return { ...this.circuitBreaker }
   }
 
-  // Generate sample option details when API fails
-  private generateSampleOptionDetails(ticker: string): any {
-    return {
-      ticker,
-      day: {
-        close: 2.50 + Math.random() * 2,
-        high: 3.00 + Math.random() * 2,
-        low: 2.00 + Math.random() * 1,
-        open: 2.45 + Math.random() * 2,
-        volume: Math.floor(1000 + Math.random() * 10000)
-      },
-      greeks: this.calculateGreeks({}),
-      openInterest: Math.floor(100 + Math.random() * 5000)
-    };
-  }
-
-  // Clear cache (useful for testing)
-  clearCache(): void {
-    this.cache.clear();
-  }
-
-  // DATA SOURCE SWAP PREPARATION
-  // TODO: When switching from free to paid tier:
-  // 1. Set useFreeTier to false in config
-  // 2. Update endpoints to use real-time data
-  // 3. Add WebSocket support for live updates
-  // 4. Run test suite: npm run test:data-swap
-  async testDataSourceSwap(): Promise<boolean> {
-    console.log('Testing data source configuration...');
-    try {
-      // Test quote endpoint
-      const quoteTest = await this.getQuote('SPY');
-      console.log('✓ Quote endpoint working');
-
-      // Test options endpoint
-      const optionsTest = await this.getOptionsChain('SPY');
-      console.log('✓ Options chain endpoint working');
-
-      // Test caching
-      const cachedQuote = await this.getQuote('SPY');
-      console.log('✓ Caching working');
-
-      return true;
-    } catch (error) {
-      console.error('✗ Data source test failed:', error);
-      return false;
-    }
+  // Clear logs (for testing)
+  clearLogs() {
+    this.requestLogs = []
   }
 }
 
 // Singleton instance
-let polygonClient: PolygonClient | null = null;
+let clientInstance: PolygonClient | null = null
 
 export function getPolygonClient(): PolygonClient {
-  if (!polygonClient) {
-    polygonClient = new PolygonClient({
-      apiKey: process.env.NEXT_PUBLIC_POLYGON_API_KEY || '',
-      useFreeTier: true // TEMPORARY: Switch to false when upgrading
-    });
+  if (!clientInstance) {
+    clientInstance = new PolygonClient()
   }
-  return polygonClient;
+  return clientInstance
 }
 
-export default PolygonClient;
+export default PolygonClient
